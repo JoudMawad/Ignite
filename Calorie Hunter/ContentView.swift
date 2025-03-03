@@ -3,6 +3,8 @@ import Charts
 
 struct ContentView: View {
     @StateObject var viewModel = FoodViewModel()
+    @StateObject var userProfileViewModel = UserProfileViewModel()  // ✅ Single shared instance
+
     @State private var showUserProfile = false
     @Environment(\.colorScheme) var colorScheme
 
@@ -10,10 +12,10 @@ struct ContentView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 0) {
-                    // ✅ Charts scroll with sections
+                    //Charts scroll with sections
                     TabView {
                         CalorieChartView(totalCalories: viewModel.totalCalories)
-                        
+
                         FoodChartView(
                             totalProtein: viewModel.totalProtein,
                             totalCarbs: viewModel.totalCarbs,
@@ -23,19 +25,32 @@ struct ContentView: View {
                     .tabViewStyle(.page(indexDisplayMode: .always))
                     .frame(height: 330)
                     .padding(.top, 10)
-
+                    
+                    
+                    //Add Food Button
                     ExpandingButton(title: "Add Food") {
                         openAddFoodView()
                     }
                     
+                    //Reset Button
                     ExpandingButton(title: "Reset") {
                         viewModel.resetAll()
                     }
-
-                    // ✅ Food Sections Scroll With Charts
+                    
+                    //Food List
                     FoodListView(viewModel: viewModel)
+                    
+                    //Weight Progress Chart
+                    WeightChartView(
+                        startWeight: userProfileViewModel.startWeight,
+                        currentWeight: $userProfileViewModel.currentWeight,
+                        goalWeight: userProfileViewModel.goalWeight,
+                        onWeightChange: {
+                            userProfileViewModel.updateCurrentWeight(userProfileViewModel.currentWeight)
+                        }
+                    )
+                    .padding(.vertical, 20)
 
-                    Spacer()
                 }
                 .padding(.horizontal, 16)
             }
@@ -46,11 +61,11 @@ struct ContentView: View {
                     Image(systemName: "person.circle.fill")
                         .resizable()
                         .frame(width: 30, height: 30)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.primary)
                 }
             )
             .sheet(isPresented: $showUserProfile) {
-                UserProfileView()
+                UserProfileView(viewModel: userProfileViewModel)
             }
             .ignoresSafeArea(.keyboard)
         }
