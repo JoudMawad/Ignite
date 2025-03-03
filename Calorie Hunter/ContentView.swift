@@ -32,11 +32,6 @@ struct ContentView: View {
                         openAddFoodView()
                     }
                     
-                    //Reset Button
-                    ExpandingButton(title: "Reset") {
-                        viewModel.resetAll()
-                    }
-                    
                     //Food List
                     FoodListView(viewModel: viewModel)
                     

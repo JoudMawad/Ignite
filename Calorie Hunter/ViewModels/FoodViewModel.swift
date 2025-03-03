@@ -53,15 +53,6 @@ class FoodViewModel: ObservableObject {
         foodItems.append(newFood)
         updateTotals()
     }
-    
-    func resetAll() {
-        foodItems.removeAll() // Remove all food items
-        totalCalories = 0
-        totalProtein = 0
-        totalCarbs = 0
-        totalFat = 0
-        saveToUserDefaults() // Optionally save the reset state
-    }
 
     func removeFood(by id: UUID) {
         foodItems.removeAll { $0.id == id }
