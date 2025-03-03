@@ -1,17 +1,12 @@
-//
-//  FoodSection.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 02.03.25.
-//
-
 import SwiftUI
 
 struct FoodSection: View {
     @ObservedObject var viewModel: FoodViewModel
     @Environment(\.colorScheme) var colorScheme
     let mealType: String
-    @Binding var expandedSections: Set<String> // ✅ Tracks expanded meal sections
+    @Binding var expandedSections: Set<String>
+
+    @State private var isEditing = false // Track edit mode
 
     var filteredItems: [FoodItem] {
         viewModel.foodItems.filter { food in
@@ -24,15 +19,14 @@ struct FoodSection: View {
     }
     
     private func isFoodFromToday(_ date: Date) -> Bool {
-        let calendar = Calendar.current
-        return calendar.isDateInToday(date)
+        return Calendar.current.isDateInToday(date)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            // ✅ Custom Toggle Header (Replaces `DisclosureGroup`)
+            // Header with "Edit" button (only when expanded & not empty)
             HStack {
-                Image(systemName: isExpanded ? "minus.circle.fill" : "plus.circle.fill") // ✅ Custom icons
+                Image(systemName: isExpanded ? "minus.circle.fill" : "plus.circle.fill")
                     .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
 
                 Text(mealType)
@@ -40,20 +34,30 @@ struct FoodSection: View {
                     .bold()
 
                 Spacer()
+                
+                if isExpanded && !filteredItems.isEmpty { // Edit button appears only when expanded & has items
+                    Button(isEditing ? "Done" : "Edit") {
+                        withAnimation {
+                            isEditing.toggle()
+                        }
+                    }
+                    .foregroundColor(.primary)
+                }
             }
             .padding()
-            .background(Color.clear) // ✅ No grey background
+            .background(Color.clear)
             .onTapGesture {
                 withAnimation {
                     if isExpanded {
                         expandedSections.remove(mealType)
+                        isEditing = false // Reset edit mode when collapsing
                     } else {
                         expandedSections.insert(mealType)
                     }
                 }
             }
 
-            // ✅ Show/Hide Food Items Manually
+            // Show food items only when expanded
             if isExpanded {
                 VStack(alignment: .leading, spacing: 5) {
                     if filteredItems.isEmpty {
@@ -63,16 +67,28 @@ struct FoodSection: View {
                             .padding(.vertical, 5)
                     } else {
                         ForEach(filteredItems) { food in
-                            FoodRow(food: food) // ✅ Displays individual food items
+                            HStack {
+                                FoodRow(food: food)
+                                Spacer()
+                                
+                                if isEditing { // Show red minus only when editing
+                                    Button(action: {
+                                        viewModel.removeFood(by: food.id)
+                                    }) {
+                                        Image(systemName: "minus.circle.fill")
+                                            .foregroundColor(.red)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                .frame(maxWidth: .infinity) // ✅ Ensures full width
+                .frame(maxWidth: .infinity)
                 .background(Color.clear)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: isExpanded ? .none : 50) // ✅ Ensures section fully expands
-        .background(Color.clear) // ✅ No background issues
+        .frame(maxWidth: .infinity, maxHeight: isExpanded ? .none : 50)
+        .background(Color.clear)
         .padding(.horizontal)
     }
 }
