@@ -22,18 +22,6 @@ struct UserProfileView: View {
                         Stepper("Goal Weight: \(viewModel.goalWeight) kg", value: $viewModel.goalWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
                         Stepper("Calorie Goal: \(viewModel.dailyCalorieGoal) kcal", value: $viewModel.dailyCalorieGoal, in: 1000...4000, step: 50, onEditingChanged: { _ in viewModel.saveProfile() })
                     }
-
-                    // ✅ Weight Progress Chart (Now correctly updates)
-                    Section(header: Text("Weight Progress")) {
-                        WeightChartView(
-                            startWeight: viewModel.startWeight,
-                            currentWeight: $viewModel.currentWeight,
-                            goalWeight: viewModel.goalWeight,
-                            onWeightChange: {
-                                viewModel.updateCurrentWeight(viewModel.currentWeight)
-                            }
-                        )
-                    }
                 }
                 .frame(maxHeight: .infinity)
             }
