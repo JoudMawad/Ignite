@@ -40,10 +40,10 @@ struct ExpandingButton: View {
                             startPoint: isPressed ? gradientStart : .leading, // ✅ Animate start point
                             endPoint: isPressed ? gradientEnd : .trailing // ✅ Animate end point
                         ),
-                        lineWidth: isPressed ? 4 : 0 // ✅ Only visible when pressed
+                        lineWidth: isPressed ? 4 : 4 // ✅ Only visible when pressed
                     )
-                    .scaleEffect(isPressed ? 1.05 : 1.0) // ✅ Expand border with button
-                    .frame(width: 338, height: 66) // Match this with the button size
+                    .scaleEffect(isPressed ? 1.05 : 0.525) // ✅ Expand border with button
+                    .frame(width: 336, height: 66) // Match this with the button size
                     .animation(.easeInOut(duration: 0.2), value: isPressed)
 
                 // Button content
