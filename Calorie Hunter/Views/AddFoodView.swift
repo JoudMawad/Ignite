@@ -9,13 +9,13 @@ struct AddFoodView: View {
     @State private var protein: String = ""
     @State private var carbs: String = ""
     @State private var fat: String = ""
-    @State private var grams: String = "" // ✅ Ensure grams is included
+    @State private var grams: String = ""
     @State private var mealType: String = "Breakfast"
     @State private var selectedPredefinedFood: FoodItem?
+    @State private var searchText: String = ""
 
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
 
-    // ✅ Check if manual input fields are filled
     private var isManualInputValid: Bool {
         return !name.trimmingCharacters(in: .whitespaces).isEmpty &&
                !grams.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -30,19 +30,61 @@ struct AddFoodView: View {
                Double(fat) != nil
     }
 
+    private var filteredFoods: [FoodItem] {
+        if searchText.isEmpty {
+            return PredefinedFoods.foods
+        } else {
+            return PredefinedFoods.foods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                // ✅ Predefined Food Selection
-                Section(header: Text("Predefined Foods")) {
-                    Picker("Select Food", selection: $selectedPredefinedFood) {
-                        ForEach(PredefinedFoods.foods, id: \.id) { food in
-                            Text(food.name).tag(food as FoodItem?)
+                // ✅ Show search only when no food is selected
+                if selectedPredefinedFood == nil {
+                    Section(header: Text("Search Predefined Foods")) {
+                        TextField("Search food...", text: $searchText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        
+                        if !filteredFoods.isEmpty {
+                            ScrollView {
+                                VStack(spacing: 2) {
+                                    ForEach(filteredFoods, id: \.id) { food in
+                                        Button(action: {
+                                            selectedPredefinedFood = food
+                                            searchText = "" // ✅ Hide search after selection
+                                        }) {
+                                            HStack {
+                                                Text(food.name)
+                                                    .foregroundColor(.primary)
+                                                    .padding(.vertical, 6)
+                                                Spacer()
+                                            }
+                                            .padding(.horizontal)
+                                        }
+                                        Divider()
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 200)
                         }
                     }
-                    .pickerStyle(.navigationLink)
+                }
 
-                    if selectedPredefinedFood != nil {
+                // ✅ Show selected food only after choosing
+                if let selectedFood = selectedPredefinedFood {
+                    Section(header: Text("Selected Food")) {
+                        HStack {
+                            Text(selectedFood.name)
+                                .font(.headline)
+                            Spacer()
+                            Button(action: { selectedPredefinedFood = nil }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.red)
+                            }
+                        }
+
                         TextField("Grams Consumed", text: $grams)
                             .keyboardType(.decimalPad)
 
@@ -57,7 +99,7 @@ struct AddFoodView: View {
                 // ✅ Manual Entry for Custom Food
                 Section(header: Text("Manual Entry")) {
                     TextField("Food Name", text: $name)
-                    TextField("Grams Consumed", text: $grams) // ✅ Add back grams input
+                    TextField("Grams Consumed", text: $grams)
                         .keyboardType(.decimalPad)
                     TextField("Calories", text: $calories).keyboardType(.numberPad)
                     TextField("Protein (g)", text: $protein).keyboardType(.decimalPad)
@@ -77,7 +119,7 @@ struct AddFoodView: View {
                 if let selectedPredefinedFood = selectedPredefinedFood, let gramsDouble = Double(grams) {
                     viewModel.addPredefinedFood(food: selectedPredefinedFood, gramsConsumed: gramsDouble, mealType: mealType)
                 } else if isManualInputValid {
-                    let gramsDouble = Double(grams) ?? 100 // Default to 100g if missing
+                    let gramsDouble = Double(grams) ?? 100
                     let adjustedCalories = Int((Double(calories) ?? 0) * gramsDouble / 100)
                     let adjustedProtein = (Double(protein) ?? 0) * gramsDouble / 100
                     let adjustedCarbs = (Double(carbs) ?? 0) * gramsDouble / 100
