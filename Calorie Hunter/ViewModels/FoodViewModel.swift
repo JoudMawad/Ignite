@@ -53,16 +53,15 @@ class FoodViewModel: ObservableObject {
         foodItems.append(newFood)
         updateTotals()
     }
-
-
-
-    func removeFood(by id: UUID) {
-        foodItems.removeAll { $0.id == id }
+    
+    func resetToday() {
+        let today = Calendar.current.startOfDay(for: Date())
+        foodItems.removeAll { Calendar.current.isDate($0.date, inSameDayAs: today) }
         updateTotals()
     }
 
-    func resetFood() {
-        foodItems.removeAll()
+    func removeFood(by id: UUID) {
+        foodItems.removeAll { $0.id == id }
         updateTotals()
     }
 

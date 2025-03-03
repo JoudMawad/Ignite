@@ -9,7 +9,7 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 0) {
                     // ✅ Charts scroll with sections
                     TabView {
                         CalorieChartView(totalCalories: viewModel.totalCalories)
@@ -26,6 +26,10 @@ struct ContentView: View {
 
                     ExpandingButton(title: "Add Food") {
                         openAddFoodView()
+                    }
+                    
+                    ExpandingButton(title: "Reset") {
+                        viewModel.resetToday()
                     }
 
                     // ✅ Food Sections Scroll With Charts
