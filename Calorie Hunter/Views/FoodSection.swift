@@ -14,11 +14,18 @@ struct FoodSection: View {
     @Binding var expandedSections: Set<String> // ✅ Tracks expanded meal sections
 
     var filteredItems: [FoodItem] {
-        viewModel.foodItems.filter { $0.mealType == mealType } // ✅ Precompute filtered list
+        viewModel.foodItems.filter { food in
+            food.mealType == mealType && isFoodFromToday(food.date)
+        }
     }
 
     var isExpanded: Bool {
         expandedSections.contains(mealType)
+    }
+    
+    private func isFoodFromToday(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        return calendar.isDateInToday(date)
     }
 
     var body: some View {
