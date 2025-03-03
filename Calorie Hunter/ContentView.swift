@@ -6,81 +6,63 @@
 //
 
 import SwiftUI
-import CoreData
+import Charts
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
+    @StateObject var viewModel = FoodViewModel() // Store food data
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+            ScrollView { // Enable full-screen scrolling
+                VStack {
+                    FoodChartView(
+                        totalProtein: viewModel.totalProtein,
+                        totalCarbs: viewModel.totalCarbs,
+                        totalFat: viewModel.totalFat
+                    )
+                    .onAppear {
+                        viewModel.loadFromUserDefaults()
                     }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                    .frame(height: 300)
+                    .padding()
+
+                    Text("Protein: \(viewModel.totalProtein, specifier: "%.1f") g, Carbs: \(viewModel.totalCarbs, specifier: "%.1f") g, Fat: \(viewModel.totalFat, specifier: "%.1f") g")
+                        .font(.subheadline)
+                        .padding()
+
+                    Text("Total Calories: \(viewModel.totalCalories) kcal")
+                        .font(.largeTitle)
+                        .padding()
+
+                    // ✅ Use ExpandingButton with correct navigation
+                    ExpandingButton(title: "Add Food") {
+                        openAddFoodView()
                     }
+
+                    // ✅ Food List View
+                    FoodListView(viewModel: viewModel)
+
+                    // ✅ Reset Button
+                    ExpandingButton(title: "Reset") {
+                        viewModel.resetFood()
+                    }
+                    .background(Color.primary) // ✅ Custom color for Reset button
                 }
             }
-            Text("Select an item")
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+    
+    // ✅ Function to Open `AddFoodView` Without Deprecated API
+    private func openAddFoodView() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
+            let addFoodView = AddFoodView(viewModel: viewModel)
+            let hostingController = UIHostingController(rootView: addFoodView)
+            keyWindow.rootViewController?.present(hostingController, animated: true, completion: nil)
         }
     }
 }
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
 #Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-}
+    ContentView() 
+    }
