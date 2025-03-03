@@ -1,59 +1,57 @@
-//
-//  ContentView.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 01.03.25.
-//
-
 import SwiftUI
 import Charts
 
 struct ContentView: View {
-    @StateObject var viewModel = FoodViewModel() // Store food data
+    @StateObject var viewModel = FoodViewModel()
+    @State private var showUserProfile = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
-            ScrollView { // Enable full-screen scrolling
-                VStack {
-                    FoodChartView(
-                        totalProtein: viewModel.totalProtein,
-                        totalCarbs: viewModel.totalCarbs,
-                        totalFat: viewModel.totalFat
-                    )
-                    .onAppear {
-                        viewModel.loadFromUserDefaults()
+            ScrollView {
+                VStack(spacing: 20) {
+                    // ✅ Charts scroll with sections
+                    TabView {
+                        CalorieChartView(totalCalories: viewModel.totalCalories)
+                        
+                        FoodChartView(
+                            totalProtein: viewModel.totalProtein,
+                            totalCarbs: viewModel.totalCarbs,
+                            totalFat: viewModel.totalFat
+                        )
                     }
-                    .frame(height: 300)
-                    .padding()
+                    .tabViewStyle(.page(indexDisplayMode: .always))
+                    .frame(height: 330)
+                    .padding(.top, 10)
 
-                    Text("Protein: \(viewModel.totalProtein, specifier: "%.1f") g, Carbs: \(viewModel.totalCarbs, specifier: "%.1f") g, Fat: \(viewModel.totalFat, specifier: "%.1f") g")
-                        .font(.subheadline)
-                        .padding()
-
-                    Text("Total Calories: \(viewModel.totalCalories) kcal")
-                        .font(.largeTitle)
-                        .padding()
-
-                    // ✅ Use ExpandingButton with correct navigation
                     ExpandingButton(title: "Add Food") {
                         openAddFoodView()
                     }
 
-                    // ✅ Food List View
+                    // ✅ Food Sections Scroll With Charts
                     FoodListView(viewModel: viewModel)
 
-                    // ✅ Reset Button
-                    ExpandingButton(title: "Reset") {
-                        viewModel.resetFood()
-                    }
-                    .background(Color.primary) // ✅ Custom color for Reset button
+                    Spacer()
                 }
+                .padding(.horizontal, 16)
             }
+            .navigationBarItems(
+                leading: Button(action: {
+                    showUserProfile = true
+                }) {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(.gray)
+                }
+            )
+            .sheet(isPresented: $showUserProfile) {
+                UserProfileView()
+            }
+            .ignoresSafeArea(.keyboard)
         }
     }
-    
-    // ✅ Function to Open `AddFoodView` Without Deprecated API
+
     private func openAddFoodView() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
@@ -63,6 +61,7 @@ struct ContentView: View {
         }
     }
 }
+
 #Preview {
-    ContentView() 
-    }
+    ContentView()
+}

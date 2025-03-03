@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct FoodSection: View {
+    @ObservedObject var viewModel: FoodViewModel
     @Environment(\.colorScheme) var colorScheme
     let mealType: String
-    let foodItems: [FoodItem]
     @Binding var expandedSections: Set<String> // ✅ Tracks expanded meal sections
 
     var filteredItems: [FoodItem] {
-        foodItems.filter { $0.mealType == mealType } // ✅ Precompute filtered list
+        viewModel.foodItems.filter { $0.mealType == mealType } // ✅ Precompute filtered list
     }
 
     var isExpanded: Bool {
@@ -35,7 +35,7 @@ struct FoodSection: View {
                 Spacer()
             }
             .padding()
-            .background(Color.clear) // ✅ No more grey background
+            .background(Color.clear) // ✅ No grey background
             .onTapGesture {
                 withAnimation {
                     if isExpanded {
@@ -60,10 +60,12 @@ struct FoodSection: View {
                         }
                     }
                 }
-                .background(Color.clear) // ✅ Ensure expanded section has no background
+                .frame(maxWidth: .infinity) // ✅ Ensures full width
+                .background(Color.clear)
             }
         }
-        .background(Color.clear) // ✅ Remove all grey background
+        .frame(maxWidth: .infinity, maxHeight: isExpanded ? .none : 50) // ✅ Ensures section fully expands
+        .background(Color.clear) // ✅ No background issues
         .padding(.horizontal)
     }
 }
