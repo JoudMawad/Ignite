@@ -41,11 +41,10 @@ struct AddFoodView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // ✅ Show search only when no food is selected
+                //Show search only when no food is selected
                 if selectedPredefinedFood == nil {
                     Section(header: Text("Search Predefined Foods")) {
                         TextField("Search food...", text: $searchText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
                         
                         if !filteredFoods.isEmpty {
                             ScrollView {
@@ -53,7 +52,7 @@ struct AddFoodView: View {
                                     ForEach(filteredFoods, id: \.id) { food in
                                         Button(action: {
                                             selectedPredefinedFood = food
-                                            searchText = "" // ✅ Hide search after selection
+                                            searchText = "" //Hide search after selection
                                         }) {
                                             HStack {
                                                 Text(food.name)
@@ -72,7 +71,7 @@ struct AddFoodView: View {
                     }
                 }
 
-                // ✅ Show selected food only after choosing
+                //Show selected food only after choosing
                 if let selectedFood = selectedPredefinedFood {
                     Section(header: Text("Selected Food")) {
                         HStack {
@@ -96,7 +95,7 @@ struct AddFoodView: View {
                     }
                 }
 
-                // ✅ Manual Entry for Custom Food
+                //Manual Entry for Custom Food
                 Section(header: Text("Manual Entry")) {
                     TextField("Food Name", text: $name)
                     TextField("Grams Consumed", text: $grams)
