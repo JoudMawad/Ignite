@@ -10,10 +10,10 @@ struct FoodListView: View {
     @ObservedObject var viewModel: FoodViewModel
     
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
-    @State private var expandedSections: Set<String> = [] // ✅ Tracks expanded sections
+    @State private var expandedSections: Set<String> = [] // Tracks expanded sections
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) { // ✅ Removed ScrollView to avoid nested scrolling
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(mealTypes, id: \.self) { meal in
                 FoodSection(viewModel: viewModel, mealType: meal, expandedSections: $expandedSections)
                     .frame(maxWidth: .infinity)
