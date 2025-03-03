@@ -25,7 +25,7 @@ struct FoodItem: Identifiable, Codable, Hashable {
         self.isUserAdded = isUserAdded
     }
 
-    // ✅ Ensure FoodItem is Hashable
+    //Ensure FoodItem is Hashable
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
