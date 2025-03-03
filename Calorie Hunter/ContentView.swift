@@ -29,7 +29,7 @@ struct ContentView: View {
                     }
                     
                     ExpandingButton(title: "Reset") {
-                        viewModel.resetToday()
+                        viewModel.resetAll()
                     }
 
                     // ✅ Food Sections Scroll With Charts
