@@ -1,51 +1,46 @@
 import SwiftUI
 
 struct UserProfileView: View {
-    @AppStorage("userName") private var userName: String = "User Profile"
-    @AppStorage("dailyCalorieGoal") private var dailyCalorieGoal: Int = 1500
-    @AppStorage("startWeight") private var startWeight: Int = 70
-    @AppStorage("userWeight") private var userWeight: Int = 70
     @Environment(\.dismiss) var dismiss
-
-    // ✅ Get App Version and Build Number
-    var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
-    }
-    var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
-    }
+    @StateObject private var viewModel = UserProfileViewModel()
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 Form {
-                    // ✅ Section for User Name
+                    //Section for User Name
                     Section(header: Text("Personal Information")) {
-                        TextField("Enter your name", text: $userName)
+                        TextField("Enter your name", text: $viewModel.profile.name, onEditingChanged: { _ in
+                            viewModel.saveProfile()
+                        })
                     }
 
-                    // ✅ Section for Weight & Goals
+                    //Section for Weight & Goals
                     Section(header: Text("Health Goals")) {
-                        Stepper("Starting Weight: \(startWeight) kg", value: $startWeight, in: 40...200, step: 1)
-                        Stepper("Current Weight: \(userWeight) kg", value: $userWeight, in: 40...200, step: 1)
-                        Stepper("Calorie Goal: \(dailyCalorieGoal) kcal", value: $dailyCalorieGoal, in: 1000...4000, step: 50)
+                        Stepper("Start Weight: \(viewModel.profile.startWeight) kg", value: $viewModel.profile.startWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
+                        Stepper("Current Weight: \(viewModel.profile.currentWeight) kg", value: $viewModel.profile.currentWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
+                        Stepper("Goal Weight: \(viewModel.profile.goalWeight) kg", value: $viewModel.profile.goalWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
+                        Stepper("Calorie Goal: \(viewModel.profile.dailyCalorieGoal) kcal", value: $viewModel.profile.dailyCalorieGoal, in: 1000...4000, step: 50, onEditingChanged: { _ in viewModel.saveProfile() })
                     }
                 }
+                .frame(maxHeight: .infinity) // Ensures form takes most space
 
-                // ✅ App Version Display at the Bottom
-                Text("Version \(appVersion) (Build \(buildNumber))")
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, 10)
             }
-            .navigationTitle(userName.isEmpty ? "User Profile" : userName)
+            .navigationTitle(viewModel.profile.name.isEmpty ? "User Profile" : viewModel.profile.name)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
                 }
+            }
+            //Ensures the app version is always at the bottom, even on scrolling
+            .safeAreaInset(edge: .bottom) {
+                Text("Version \(viewModel.appVersion) (Build \(viewModel.buildNumber))")
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 10)
             }
         }
     }

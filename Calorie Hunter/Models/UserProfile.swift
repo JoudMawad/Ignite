@@ -1,13 +1,9 @@
-//
-//  UserProfile.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 01.03.25.
-//
-
 import Foundation
 
 struct UserProfile: Codable {
+    var name: String
     var dailyCalorieGoal: Int
-    var Weight: Int
+    var startWeight: Int
+    var currentWeight: Int
+    var goalWeight: Int
 }
