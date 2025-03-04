@@ -3,18 +3,19 @@ import Charts
 
 struct ContentView: View {
     @StateObject var viewModel = FoodViewModel()
-    @StateObject var userProfileViewModel = UserProfileViewModel()  // ✅ Single shared instance
+    @StateObject var userProfileViewModel = UserProfileViewModel()  // Single shared instance
 
-    @State private var showUserProfile = false
+    @State private var showSettings = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 0) {
-                    //Charts scroll with sections
+                    // Charts scroll with sections
                     TabView {
-                        CalorieChartView(totalCalories: viewModel.totalCalories)
+                        CalorieChartView(viewModel: UserProfileViewModel() , totalCalories: viewModel.totalCalories)
+                        UserProfileView(viewModel: UserProfileViewModel())
 
                         FoodChartView(
                             totalProtein: viewModel.totalProtein,
@@ -26,16 +27,15 @@ struct ContentView: View {
                     .frame(height: 330)
                     .padding(.top, 10)
                     
-                    
-                    //Add Food Button
+                    // Add Food Button
                     ExpandingButton(title: "Add Food") {
                         openAddFoodView()
                     }
                     
-                    //Food List
+                    // Food List
                     FoodListView(viewModel: viewModel)
                     
-                    //Weight Progress Chart
+                    // Weight Progress Chart
                     WeightChartView(
                         startWeight: userProfileViewModel.startWeight,
                         currentWeight: $userProfileViewModel.currentWeight,
@@ -45,22 +45,21 @@ struct ContentView: View {
                         }
                     )
                     .padding(.vertical, 20)
-
                 }
                 .padding(.horizontal, 16)
             }
             .navigationBarItems(
                 leading: Button(action: {
-                    showUserProfile = true
+                    showSettings = true  // Open Settings Page instead of Profile
                 }) {
-                    Image(systemName: "person.circle.fill")
+                    Image(systemName: "gearshape.fill")  // Changed to settings icon
                         .resizable()
                         .frame(width: 30, height: 30)
                         .foregroundColor(.primary)
                 }
             )
-            .sheet(isPresented: $showUserProfile) {
-                UserProfileView(viewModel: userProfileViewModel)
+            .sheet(isPresented: $showSettings) {
+                SettingsView() // Opens the Settings Page
             }
             .ignoresSafeArea(.keyboard)
         }
@@ -75,6 +74,7 @@ struct ContentView: View {
         }
     }
 }
+
 
 #Preview {
     ContentView()
