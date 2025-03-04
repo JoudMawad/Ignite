@@ -5,15 +5,15 @@ class UserProfileViewModel: ObservableObject {
 
     @Published var name: String = ""
     @Published var dailyCalorieGoal: Int = 1500
-    @Published var startWeight: Int = 70
-    @Published var currentWeight: Int = 70
-    @Published var goalWeight: Int = 65
+    @Published var startWeight: Double = 70.0
+    @Published var currentWeight: Double = 70.0
+    @Published var goalWeight: Double = 65.0
 
     init() {
         loadProfile()
     }
 
-    // ✅ Load profile from AppStorage
+    //Load profile from AppStorage
     func loadProfile() {
         if let savedData = userData, let decodedProfile = try? JSONDecoder().decode(UserProfile.self, from: savedData) {
             DispatchQueue.main.async {
@@ -26,7 +26,7 @@ class UserProfileViewModel: ObservableObject {
         }
     }
 
-    // ✅ Save profile to AppStorage
+    //Save profile to AppStorage
     func saveProfile() {
         let profile = UserProfile(
             name: self.name,
@@ -41,8 +41,8 @@ class UserProfileViewModel: ObservableObject {
         }
     }
 
-    // ✅ Fix: Ensure weight updates are properly saved
-    func updateCurrentWeight(_ newWeight: Int) {
+    //Fix: Ensure weight updates are properly saved
+    func updateCurrentWeight(_ newWeight: Double) {
         DispatchQueue.main.async {
             self.currentWeight = newWeight
             self.saveProfile()

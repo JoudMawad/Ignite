@@ -37,7 +37,7 @@ struct ContentView: View {
                     // Weight Progress Chart
                     WeightChartView(
                                     startWeight: userProfileViewModel.startWeight,
-                                    viewModel: userProfileViewModel, // ✅ Pass ViewModel instance
+                                    viewModel: userProfileViewModel, //Pass ViewModel instance
                                     onWeightChange: {
                                         userProfileViewModel.saveProfile()
                                     }

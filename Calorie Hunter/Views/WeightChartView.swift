@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct WeightChartView: View {
-    var startWeight: Int
-    @ObservedObject var viewModel: UserProfileViewModel // ✅ Observe weight updates
+    var startWeight: Double
+    @ObservedObject var viewModel: UserProfileViewModel //Observe weight updates
     var onWeightChange: () -> Void
 
-    // ✅ Calculate progress correctly
+    //Calculate progress correctly
     private var progress: CGFloat {
         guard viewModel.goalWeight != startWeight else { return 0 }
         let weightRange = CGFloat(viewModel.goalWeight - startWeight)
@@ -15,9 +15,9 @@ struct WeightChartView: View {
 
     var body: some View {
         VStack {
-            // ✅ Start & Goal Weight Labels
+            //Start & Goal Weight Labels
             HStack {
-                Text("\(startWeight) kg") // Start weight (left side)
+                Text("\(String(format: "%.1f",startWeight)) kg") // Start weight (left side)
                     .font(.caption)
                     .foregroundColor(.gray)
 
@@ -30,7 +30,7 @@ struct WeightChartView: View {
                             .frame(height: 10)
                             .foregroundColor(Color.gray.opacity(0.3))
 
-                        // ✅ Ensure progress bar updates
+                        // Ensure progress bar updates
                         RoundedRectangle(cornerRadius: 10)
                             .frame(width: max(geometry.size.width * progress, 5), height: 10)
                             .foregroundColor(.blue)
@@ -41,18 +41,18 @@ struct WeightChartView: View {
 
                 Spacer()
 
-                Text("\(viewModel.goalWeight) kg") // Goal weight (right side)
+                Text("\(String(format: "%.1f",viewModel.goalWeight)) kg") // Goal weight (right side)
                     .font(.caption)
                     .foregroundColor(.gray)
             }
 
-            // ✅ Current Weight with Interactive Buttons
+            // Current Weight with Interactive Buttons
             HStack {
                 // Decrease Button
                 Button(action: {
-                    withAnimation {  // ✅ Force animation update
-                        viewModel.currentWeight -= 1
-                        onWeightChange()  // ✅ Ensure weight change is saved
+                    withAnimation {  //Force animation update
+                        viewModel.currentWeight -= 0.1
+                        onWeightChange()  //Ensure weight change is saved
                     }
                 }) {
                     Image(systemName: "minus.circle.fill")
@@ -60,16 +60,16 @@ struct WeightChartView: View {
                         .font(.title2)
                 }
 
-                // ✅ Display Current Weight
-                Text("\(viewModel.currentWeight) kg")
+                // Display Current Weight
+                Text("\(String(format: "%.1f", viewModel.currentWeight)) kg")
                     .font(.headline)
                     .padding(.horizontal, 10)
 
                 // Increase Button
                 Button(action: {
-                    withAnimation {  // ✅ Ensure smooth animation
-                        viewModel.currentWeight += 1
-                        onWeightChange()  // ✅ Save change
+                    withAnimation {  // Ensure smooth animation
+                        viewModel.currentWeight += 0.1
+                        onWeightChange()  // Save change
                     }
                 }) {
                     Image(systemName: "plus.circle.fill")

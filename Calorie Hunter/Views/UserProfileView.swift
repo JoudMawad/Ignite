@@ -8,49 +8,78 @@ struct UserProfileView: View {
         NavigationStack {
             VStack {
                 Form {
-                    Section(header: Text("").foregroundColor(.white)) {
-                        ZStack {
-                            Color.black //Forces background to be black
-                            TextField("Enter your name", text: $viewModel.name, onEditingChanged: { _ in
-                                viewModel.saveProfile()
-                            })
-                            .background(Color.black) // Forces black background
-                            .foregroundColor(.white) // white text
-                            .font(.system(size: 40, weight: .bold))
-                        }
-                        .listRowBackground(Color.black) //Ensures row stays black
-                    }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.black)
-                    
-                    Section(header: Text("Health Goals").foregroundColor(.white)) {
-                        Stepper("Start Weight: \(viewModel.startWeight) kg", value: $viewModel.startWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
-                            .foregroundColor(.white)
-                            .listRowBackground(Color.black)
-                        Stepper("Current Weight: \(viewModel.currentWeight) kg", value: $viewModel.currentWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
-                            .foregroundColor(.white)
-                            .listRowBackground(Color.black)
-                        Stepper("Goal Weight: \(viewModel.goalWeight) kg", value: $viewModel.goalWeight, in: 40...200, step: 1, onEditingChanged: { _ in viewModel.saveProfile() })
-                            .foregroundColor(.white)
-                            .listRowBackground(Color.black)
-                        Stepper("Calorie Goal: \(viewModel.dailyCalorieGoal) kcal", value: $viewModel.dailyCalorieGoal, in: 1000...4000, step: 50, onEditingChanged: { _ in viewModel.saveProfile() })
-                            .foregroundColor(.white)
-                            .listRowBackground(Color.black)
-                    }
+                    NameSection(viewModel: viewModel)
+                    HealthGoalsSection(viewModel: viewModel)
                 }
-                .scrollContentBackground(.hidden) // Hides default gray form background
-                .background(Color.black) //Full black background
+                .scrollContentBackground(.hidden) // Ensure there is no gray background
+                .background(Color.black) // Ensure the background now is black
             }
             .navigationTitle(viewModel.name.isEmpty ? "" : viewModel.name)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+        }
+        
+    }
+}
+
+struct NameSection: View {
+    @ObservedObject var viewModel: UserProfileViewModel
+    
+    var body: some View {
+        Section(header: Text("").foregroundColor(.white)) {
+            ZStack {
+                Color.black
+                TextField("Enter your name", text: $viewModel.name, onEditingChanged: { _ in
+                    viewModel.saveProfile()
+                })
+                .foregroundColor(.white)
+                .font(.system(size: 40, weight: .bold))
+            }
+            .listRowBackground(Color.black) // Name box is Black
+        }
+    }
+}
+
+struct HealthGoalsSection: View {
+    @ObservedObject var viewModel: UserProfileViewModel
+    
+    var body: some View {
+        Section() {
+            VStack {
+                WeightPicker(title: "Start Weight:", selection: $viewModel.startWeight)
+                WeightPicker(title: "Current Weight:", selection: $viewModel.currentWeight)
+                WeightPicker(title: "Goal Weight:", selection: $viewModel.goalWeight)
+                Stepper("Calorie Goal: \(viewModel.dailyCalorieGoal) kcal",
+                        value: $viewModel.dailyCalorieGoal,
+                        in: 1000...4000,
+                        step: 50,
+                        onEditingChanged: { _ in viewModel.saveProfile() })
+                    .foregroundColor(.white)            }
+        }
+        .listRowBackground(Color.black) // Ensure the Health Goal box is Black
+    }
+}
+
+struct WeightPicker: View {
+    let title: String
+    @Binding var selection: Double
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.white)
+            Spacer()
+            Picker("", selection: $selection) {
+                ForEach(Array(stride(from: 40.0, through: 200.9, by: 0.1)), id: \.self) { weight in
+                    Text(String(format: "%.1f kg", weight)).tag(weight)
                 }
             }
-            .background(Color.black.edgesIgnoringSafeArea(.all)) //Ensures full black background
+            .pickerStyle(WheelPickerStyle())
+            .frame(width: 100, height: 50)
+            .clipped()
+            .tint(Color.black)
         }
     }
 }
 
 #Preview {
-    UserProfileView(viewModel: UserProfileViewModel()) //Pass a ViewModel instance for preview
+    UserProfileView(viewModel: UserProfileViewModel())
 }
