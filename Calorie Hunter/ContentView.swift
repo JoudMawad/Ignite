@@ -15,8 +15,7 @@ struct ContentView: View {
                     // Charts scroll with sections
                     TabView {
                         CalorieChartView(viewModel: UserProfileViewModel() , totalCalories: viewModel.totalCalories)
-                        UserProfileView(viewModel: UserProfileViewModel())
-
+                        
                         FoodChartView(
                             totalProtein: viewModel.totalProtein,
                             totalCarbs: viewModel.totalCarbs,
@@ -37,13 +36,12 @@ struct ContentView: View {
                     
                     // Weight Progress Chart
                     WeightChartView(
-                        startWeight: userProfileViewModel.startWeight,
-                        currentWeight: $userProfileViewModel.currentWeight,
-                        goalWeight: userProfileViewModel.goalWeight,
-                        onWeightChange: {
-                            userProfileViewModel.updateCurrentWeight(userProfileViewModel.currentWeight)
-                        }
-                    )
+                                    startWeight: userProfileViewModel.startWeight,
+                                    viewModel: userProfileViewModel, // ✅ Pass ViewModel instance
+                                    onWeightChange: {
+                                        userProfileViewModel.saveProfile()
+                                    }
+                                )
                     .padding(.vertical, 20)
                 }
                 .padding(.horizontal, 16)
