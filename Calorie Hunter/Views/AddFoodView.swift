@@ -19,6 +19,11 @@ struct AddFoodView: View {
 
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
 
+    // Function to sanitize numeric input by replacing "," with "."
+    func sanitizeDoubleInput(_ input: String) -> Double? {
+        return Double(input.replacingOccurrences(of: ",", with: "."))
+    }
+
     private var isManualInputValid: Bool {
         return !name.trimmingCharacters(in: .whitespaces).isEmpty &&
                !grams.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -26,11 +31,11 @@ struct AddFoodView: View {
                !protein.trimmingCharacters(in: .whitespaces).isEmpty &&
                !carbs.trimmingCharacters(in: .whitespaces).isEmpty &&
                !fat.trimmingCharacters(in: .whitespaces).isEmpty &&
-               Double(grams) != nil &&
-               Double(calories) != nil &&
-               Double(protein) != nil &&
-               Double(carbs) != nil &&
-               Double(fat) != nil
+               sanitizeDoubleInput(grams) != nil &&
+               sanitizeDoubleInput(calories) != nil &&
+               sanitizeDoubleInput(protein) != nil &&
+               sanitizeDoubleInput(carbs) != nil &&
+               sanitizeDoubleInput(fat) != nil
     }
 
     var body: some View {
@@ -86,35 +91,48 @@ struct AddFoodView: View {
                                 }
                             }
                             
-                            customTextField("Grams Consumed", text: $grams)
-                            
+                            TextField("Grams Consumed", text: $grams)
+                                .keyboardType(.decimalPad)
+
                             Picker("Meal Type", selection: $mealType) {
                                 ForEach(mealTypes, id: \.self) { meal in
                                     Text(meal)
-                                        .foregroundColor(.white) //Forces white text inside picker
+                                        .foregroundColor(.white)
                                 }
                             }
-                            .pickerStyle(MenuPickerStyle()) //Use menu style to support text color change
-                            .tint(.black)
+                            .pickerStyle(MenuPickerStyle())
+                            .tint(.gray)
                         }
+                        .listRowBackground(Color.black)
                     }
 
                     // Manual Entry Section
                     Section(header: Text("Manual Entry").foregroundColor(.white)) {
-                        customTextField("Food Name", text: $name)
-                        customTextField("Grams Consumed", text: $grams)
-                        customTextField("Calories", text: $calories)
-                        customTextField("Protein (g)", text: $protein)
-                        customTextField("Carbs (g)", text: $carbs)
-                        customTextField("Fat (g)", text: $fat)
+                        TextField("Food Name", text: $name)
+
+                        TextField("Grams Consumed", text: $grams)
+                            .keyboardType(.decimalPad)
+
+                        TextField("Calories", text: $calories)
+                            .keyboardType(.decimalPad)
+
+                        TextField("Protein (g)", text: $protein)
+                            .keyboardType(.decimalPad)
+
+                        TextField("Carbs (g)", text: $carbs)
+                            .keyboardType(.decimalPad)
+
+                        TextField("Fat (g)", text: $fat)
+                            .keyboardType(.decimalPad)
 
                         Picker("Meal Type", selection: $mealType) {
                             ForEach(mealTypes, id: \.self) { meal in
                                 Text(meal).tag(meal)
                             }
                         }
-                        .pickerStyle(MenuPickerStyle()) // ✅ Ensures dark mode for picker
-                        .foregroundColor(.white)
+                        .foregroundColor(.gray.opacity(0.5))
+                        .pickerStyle(MenuPickerStyle())
+                        .tint(.gray)
 
                         if !errorMessages.isEmpty {
                             ForEach(errorMessages, id: \.self) { message in
@@ -135,10 +153,14 @@ struct AddFoodView: View {
 
                             if !isManualInputValid {
                                 errorMessages.append("All fields must be filled.")
-                            }
-
-                            if let gramsValue = Double(grams), gramsValue != 100 {
-                                errorMessages.append("Grams must be exactly 100.")
+                                
+                                if let gramsValue = sanitizeDoubleInput(grams) {
+                                    if gramsValue != 100 {
+                                        errorMessages.append("Grams must be exactly 100.")
+                                    }
+                                } else if grams.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    errorMessages.append("Grams must be exactly 100.")
+                                }
                             }
 
                             let allFoods = PredefinedFoods.foods + PredefinedUserFoods.shared.foods
@@ -150,9 +172,9 @@ struct AddFoodView: View {
                                 let newFood = FoodItem(
                                     name: name,
                                     calories: Int(calories) ?? 0,
-                                    protein: Double(protein) ?? 0,
-                                    carbs: Double(carbs) ?? 0,
-                                    fat: Double(fat) ?? 0,
+                                    protein: sanitizeDoubleInput(protein) ?? 0,
+                                    carbs: sanitizeDoubleInput(carbs) ?? 0,
+                                    fat: sanitizeDoubleInput(fat) ?? 0,
                                     grams: 100,
                                     mealType: mealType
                                 )
@@ -166,14 +188,20 @@ struct AddFoodView: View {
                         }
 
                         ExpandingButton(title: "Add") {
-                            if let gramsValue = Double(grams), gramsValue == 100 {
+                            errorMessages = []
+
+                            if !isManualInputValid {
+                                errorMessages.append("All fields must be filled.")
+                            }
+                            
+                            if let gramsValue = sanitizeDoubleInput(grams) {
                                 if let selectedPredefinedFood = selectedPredefinedFood {
                                     viewModel.addPredefinedFood(food: selectedPredefinedFood, gramsConsumed: gramsValue, mealType: mealType)
                                 } else if isManualInputValid {
-                                    let adjustedCalories = Int((Double(calories) ?? 0) * gramsValue / 100)
-                                    let adjustedProtein = (Double(protein) ?? 0) * gramsValue / 100
-                                    let adjustedCarbs = (Double(carbs) ?? 0) * gramsValue / 100
-                                    let adjustedFat = (Double(fat) ?? 0) * gramsValue / 100
+                                    let adjustedCalories = Int((sanitizeDoubleInput(calories) ?? 0) * gramsValue / 100)
+                                    let adjustedProtein = (sanitizeDoubleInput(protein) ?? 0) * gramsValue / 100
+                                    let adjustedCarbs = (sanitizeDoubleInput(carbs) ?? 0) * gramsValue / 100
+                                    let adjustedFat = (sanitizeDoubleInput(fat) ?? 0) * gramsValue / 100
 
                                     viewModel.addFood(
                                         name: name,
@@ -188,9 +216,8 @@ struct AddFoodView: View {
                                 dismiss()
                             }
                         }
-                        .disabled(Double(grams) != 100)
                     }
-                    .listRowBackground(Color.black) // ✅ Ensures entire section is black
+                    .listRowBackground(Color.black)
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.black)
@@ -198,15 +225,6 @@ struct AddFoodView: View {
             .navigationTitle("Add Food")
             .background(Color.black.edgesIgnoringSafeArea(.all))
         }
-    }
-
-    // Custom TextField for consistent styling
-    func customTextField(_ placeholder: String, text: Binding<String>) -> some View {
-        TextField(placeholder, text: text)
-            .background(Color.black.opacity(0.8))
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black, lineWidth: 1))
     }
 }
 
