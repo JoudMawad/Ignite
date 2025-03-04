@@ -21,10 +21,14 @@ struct FoodSection: View {
     private func isFoodFromToday(_ date: Date) -> Bool {
         return Calendar.current.isDateInToday(date)
     }
+    
+    var totalCalories: Int {
+        viewModel.totalCaloriesForMeal(mealType)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            // Header with "Edit" button (only when expanded & not empty)
+            // Header with meal name, total calories, and "Edit" button
             HStack {
                 Image(systemName: isExpanded ? "minus.circle.fill" : "plus.circle.fill")
                     .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
@@ -34,7 +38,12 @@ struct FoodSection: View {
                     .bold()
 
                 Spacer()
-                
+
+                // Display total calories
+                Text("\(totalCalories) kcal")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+
                 if isExpanded && !filteredItems.isEmpty { // Edit button appears only when expanded & has items
                     Button(isEditing ? "Done" : "Edit") {
                         withAnimation {

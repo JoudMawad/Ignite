@@ -78,6 +78,14 @@ class FoodViewModel: ObservableObject {
         }
     }
     
+    func totalCaloriesForMeal(_ mealType: String) -> Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        return foodItems
+            .filter { $0.mealType == mealType && Calendar.current.isDate($0.date, inSameDayAs: today) }
+            .reduce(0) { $0 + $1.calories }
+    }
+
+    
     private func saveToUserDefaults() {
         if let encoded = try? JSONEncoder().encode(foodItems) {
             UserDefaults.standard.set(encoded, forKey: "foodItems")
