@@ -30,16 +30,9 @@ struct FoodChartView: View {
         ZStack {
             // Outer Glow Effect
             Circle()
-                .strokeBorder(
-                    AngularGradient(
-                        gradient: Gradient(colors: [Color.gray.opacity(0.4)]),
-                        center: .center
-                    ),
-                    lineWidth: 12
-                )
-                .frame(width: 305, height: 305)
-                .blur(radius: 10)
-                .shadow(color: .gray.opacity(0.3), radius: 10)
+                .stroke(Color.gray.opacity(0.45), lineWidth: 10)
+                .frame(width: 290, height: 290)
+                .blur(radius: 8)
             
             // Pie Chart
             Chart {

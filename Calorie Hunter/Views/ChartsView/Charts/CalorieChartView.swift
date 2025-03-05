@@ -14,16 +14,25 @@ struct CalorieChartView: View {
 
     var body: some View {
         let progress = Double(totalCalories) / Double(viewModel.dailyCalorieGoal)
+        let gradientColors: [Color] = progress > 1
+            ? [Color.red, Color.red]  // Overeating -> Full red
+            : [Color.green, Color.yellow, Color.orange, Color.green]  // Gradual transition
 
         ZStack {
             Circle()
-                .stroke(Color.orange.opacity(0.3), lineWidth: 12)
+                .stroke(Color.gray.opacity(0.45), lineWidth: 10)
                 .frame(width: 290, height: 290)
                 .blur(radius: 8)
 
             Circle()
                 .trim(from: 0, to: CGFloat(progress > 1 ? 1 : progress))
-                .stroke(Color.orange, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: gradientColors),
+                        center: .center
+                                    ),
+                                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                                )
                 .frame(width: 290, height: 290)
                 .rotationEffect(.degrees(-90))
 
