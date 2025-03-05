@@ -2,22 +2,20 @@ import SwiftUI
 
 struct WeightChartView: View {
     var startWeight: Double
-    @ObservedObject var viewModel: UserProfileViewModel //Observe weight updates
+    @ObservedObject var viewModel: UserProfileViewModel
     var onWeightChange: () -> Void
 
-    //Calculate progress correctly
     private var progress: CGFloat {
         guard viewModel.goalWeight != startWeight else { return 0 }
         let weightRange = CGFloat(viewModel.goalWeight - startWeight)
         let currentOffset = CGFloat(viewModel.currentWeight - startWeight)
-        return min(max(currentOffset / weightRange, 0), 1) // Ensure progress is between 0 and 1
+        return min(max(currentOffset / weightRange, 0), 1)
     }
 
     var body: some View {
         VStack {
-            //Start & Goal Weight Labels
             HStack {
-                Text("\(String(format: "%.1f",startWeight)) kg") // Start weight (left side)
+                Text("\(String(format: "%.1f", startWeight)) kg")
                     .font(.caption)
                     .foregroundColor(.gray)
 
@@ -30,10 +28,20 @@ struct WeightChartView: View {
                             .frame(height: 10)
                             .foregroundColor(Color.gray.opacity(0.3))
 
-                        // Ensure progress bar updates
+                        // Gradient Progress Bar
                         RoundedRectangle(cornerRadius: 10)
                             .frame(width: max(geometry.size.width * progress, 5), height: 10)
-                            .foregroundColor(.blue)
+                            .overlay(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.red, Color.orange, Color.yellow, Color.green]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .mask(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .frame(width: max(geometry.size.width * progress, 5), height: 10)
+                            )
                             .animation(.easeInOut(duration: 0.3), value: progress)
                     }
                 }
@@ -41,18 +49,16 @@ struct WeightChartView: View {
 
                 Spacer()
 
-                Text("\(String(format: "%.1f",viewModel.goalWeight)) kg") // Goal weight (right side)
+                Text("\(String(format: "%.1f", viewModel.goalWeight)) kg")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
 
-            // Current Weight with Interactive Buttons
             HStack {
-                // Decrease Button
                 Button(action: {
-                    withAnimation {  //Force animation update
+                    withAnimation {
                         viewModel.currentWeight -= 0.1
-                        onWeightChange()  //Ensure weight change is saved
+                        onWeightChange()
                     }
                 }) {
                     Image(systemName: "minus.circle.fill")
@@ -60,16 +66,14 @@ struct WeightChartView: View {
                         .font(.title2)
                 }
 
-                // Display Current Weight
                 Text("\(String(format: "%.1f", viewModel.currentWeight)) kg")
                     .font(.headline)
                     .padding(.horizontal, 10)
 
-                // Increase Button
                 Button(action: {
-                    withAnimation {  // Ensure smooth animation
+                    withAnimation {
                         viewModel.currentWeight += 0.1
-                        onWeightChange()  // Save change
+                        onWeightChange()
                     }
                 }) {
                     Image(systemName: "plus.circle.fill")
