@@ -23,8 +23,9 @@ struct FoodSection: View {
     }
     
     var totalCalories: Int {
-        viewModel.totalCaloriesForMeal(mealType)
+        viewModel.totalCaloriesForMealType(mealType)
     }
+
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {

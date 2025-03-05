@@ -10,8 +10,11 @@ class FoodViewModel: ObservableObject {
     @Published var totalCarbs: Double = 0
     @Published var totalFat: Double = 0
     
+    private let calorieHistoryManager = CalorieHistoryManager() // Separate history tracking
+
     init() {
         loadFromUserDefaults()
+        calorieHistoryManager.checkForMidnightReset(foodItems: foodItems) // Auto-save at 12 AM
     }
     
     func addFood(name: String, calories: Int, protein: Double, carbs: Double, fat: Double, grams: Double, mealType: String) {
@@ -62,7 +65,7 @@ class FoodViewModel: ObservableObject {
         foodItems.removeAll { $0.id == id }
         updateTotals()
     }
-    
+
     private func updateTotals() {
         DispatchQueue.main.async {
             let today = Calendar.current.startOfDay(for: Date())
@@ -78,13 +81,23 @@ class FoodViewModel: ObservableObject {
         }
     }
     
-    func totalCaloriesForMeal(_ mealType: String) -> Int {
+    func totalCaloriesForMealType(_ mealType: String) -> Int {
         let today = Calendar.current.startOfDay(for: Date())
         return foodItems
             .filter { $0.mealType == mealType && Calendar.current.isDate($0.date, inSameDayAs: today) }
             .reduce(0) { $0 + $1.calories }
     }
 
+
+    // Fetch total calories for a specific date
+    func totalCaloriesForDate(_ date: Date) -> Int {
+        return calorieHistoryManager.totalCaloriesForDate(date)
+    }
+
+    // Fetch calories for a specific period (week, month, year)
+    func totalCaloriesForPeriod(days: Int) -> [(date: String, calories: Int)] {
+        return calorieHistoryManager.totalCaloriesForPeriod(days: days)
+    }
     
     private func saveToUserDefaults() {
         if let encoded = try? JSONEncoder().encode(foodItems) {
@@ -92,7 +105,7 @@ class FoodViewModel: ObservableObject {
         }
     }
     
-    func loadFromUserDefaults() {
+    private func loadFromUserDefaults() {
         if let savedData = UserDefaults.standard.data(forKey: "foodItems"),
            let decodedFoods = try? JSONDecoder().decode([FoodItem].self, from: savedData) {
             self.foodItems = decodedFoods

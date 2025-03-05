@@ -13,7 +13,7 @@ struct SettingsView: View {
                 
                 UserPreDefinedFoodsView()
                     .tabItem {
-                        Label("Predefined Foods", systemImage: "list.bullet")
+                        Label("Food Storage", systemImage: "list.bullet")
                     }
             }
             .background(Color.black.edgesIgnoringSafeArea(.all)) //Black background
