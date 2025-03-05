@@ -1,3 +1,10 @@
+//
+//  FoodChartView.swift
+//  Calorie Hunter
+//
+//  Created by Jude Mawad on 05.03.25.
+//
+
 import SwiftUI
 import Charts
 
@@ -6,74 +13,82 @@ struct FoodChartView: View {
     var totalProtein: Double
     var totalCarbs: Double
     var totalFat: Double
-
+    
     var body: some View {
         let isEmpty = (totalProtein == 0 && totalCarbs == 0 && totalFat == 0)
-
+        
         let nutrients: [Nutrient] = isEmpty ? [
-            Nutrient(name: "Empty", amount: 1, color: .gray.opacity(0.3)) //Placeholder chart
+            Nutrient(name: "Empty", amount: 1, color: .gray.opacity(0.3))
         ] : [
             Nutrient(name: "Protein", amount: totalProtein, color: .blue.opacity(0.9)),
             Nutrient(name: "Carbs", amount: totalCarbs, color: .green.opacity(0.9)),
-            Nutrient(name: "Fat", amount: totalFat, color: .red.opacity(0.9))
+            Nutrient(name: "Fat", amount: totalFat, color: .cyan.opacity(0.9))
         ]
-
+        
+        let totalAmount = totalProtein + totalCarbs + totalFat
+        
         ZStack {
-                       //Outer Neon Glow following the Chart Color Segments
+            // Outer Glow Effect
             Circle()
                 .strokeBorder(
                     AngularGradient(
-                        gradient: Gradient(colors: [
-                            Color.gray.opacity(0.6),
-                        ]),
+                        gradient: Gradient(colors: [Color.gray.opacity(0.4)]),
                         center: .center
                     ),
                     lineWidth: 12
                 )
                 .frame(width: 305, height: 305)
-                .blur(radius: 10) //Outer neon glow
-
-            //Pie Chart
+                .blur(radius: 10)
+                .shadow(color: .gray.opacity(0.3), radius: 10)
+            
+            // Pie Chart
             Chart {
+                let angles = ChartGradientHelper.startEndAngles(nutrients: nutrients)
+                
                 ForEach(nutrients) { nutrient in
-                    SectorMark(
-                        angle: .value("Amount", nutrient.amount),
-                        innerRadius: .ratio(0.95), //Thinner ring
-                        angularInset: 1.5
-                    )
-                    .foregroundStyle(nutrient.color)
-                    .cornerRadius(6)
+                    if let (startAngle, endAngle) = angles[nutrient.name] {
+                        SectorMark(
+                            angle: .value("Amount", nutrient.amount),
+                            innerRadius: .ratio(0.95),
+                            angularInset: 1.5
+                        )
+                        .foregroundStyle(
+                            AngularGradient(
+                                gradient: Gradient(colors: ChartGradientHelper.gradientForNutrient(nutrient.name)),
+                                center: .center,
+                                startAngle: .degrees(startAngle),
+                                endAngle: .degrees(endAngle)
+                            )
+                        )
+                        .cornerRadius(6)
+                    }
                 }
             }
             .frame(height: 300)
-            .rotationEffect(.degrees(90)) //Ensures visual consistency
-            .clipShape(Rectangle().offset(y: 0))
-
-            //Macro Breakdown Inside the Circle with Neon Glow
+            .rotationEffect(.degrees(90))
+            
+            // Macro Breakdown
             VStack(spacing: 6) {
-                macroRow(title: "Protein", value: totalProtein, color: .blue)
-                macroRow(title: "Carbs", value: totalCarbs, color: .green)
-                macroRow(title: "Fat", value: totalFat, color: .red)
+                ForEach(nutrients) { nutrient in
+                    if nutrient.name != "Empty" {
+                        MacroRowView(title: nutrient.name, value: nutrient.amount, percentage: (nutrient.amount / totalAmount) * 100)
+                    }
+                }
             }
             .font(.headline)
             .foregroundColor(.primary)
-            .multilineTextAlignment(.center)
+            .padding()
         }
+        .animation(.easeInOut(duration: 0.5), value: totalAmount)
     }
+}
 
-    //Helper Function to Create Each Macro Row with Neon Glow
-    private func macroRow(title: String, value: Double, color: Color) -> some View {
-        HStack {
-            Circle()
-                .fill(color.opacity(0.8))
-                .frame(width: 10, height: 10)
-                .overlay(
-                    Circle()
-                        .stroke(color, lineWidth: 3) //Stronger glow
-                        .blur(radius: 6) //Enhances the neon effect
-                        .opacity(0.9)
-                )
-            Text("\(title): \(Int(value))g")
-        }
+// MARK: - Preview
+struct FoodChartView_Previews: PreviewProvider {
+    static var previews: some View {
+        FoodChartView(totalProtein: 200, totalCarbs: 160, totalFat: 160)
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .background(Color(UIColor.systemBackground))
     }
 }

@@ -21,7 +21,7 @@ struct CustomChartStyle: ViewModifier {
             }
             .overlay(
                 ZStack {
-                    let positions: [CGFloat] = [0, 40, 85, 130, 170, 220, 260, 300] // Control positions
+                    let positions: [CGFloat] = [0, 40, 80, 120, 160, 205, 245, 280] // Control positions
                     
                     ForEach(positions, id: \.self) { x in
                         Rectangle()

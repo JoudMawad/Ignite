@@ -47,8 +47,9 @@ struct CalorieTrackingChartView: View {
                     
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.blue.opacity(0.1)) // Background color with rounded corners
-                            .frame(width: 344,height: 37) // Adjust height if needed
+                            .fill(Color.blue.opacity(0.15)) // Background color with rounded corners
+                            .frame(width: 320,height: 37)
+                            .blur(radius: 10)// Adjust height if needed
 
                         Picker("Timeframe", selection: $selectedTimeframe) {
                             ForEach(Timeframe.allCases, id: \.self) { timeframe in
