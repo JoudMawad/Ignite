@@ -40,28 +40,38 @@ struct NameSection: View {
 
 struct HealthGoalsSection: View {
     @ObservedObject var viewModel: UserProfileViewModel
-    
+
     var body: some View {
-        Section() {
+        Section {
             VStack {
-                WeightPicker(title: "Start Weight:", selection: $viewModel.startWeight)
-                WeightPicker(title: "Current Weight:", selection: $viewModel.currentWeight)
-                WeightPicker(title: "Goal Weight:", selection: $viewModel.goalWeight)
+                WeightPicker(title: "Start Weight:", selection: $viewModel.startWeight) { newWeight in
+                    viewModel.startWeight = newWeight
+                    viewModel.saveProfile()
+                }
+                WeightPicker(title: "Current Weight:", selection: $viewModel.currentWeight) { newWeight in
+                    viewModel.updateCurrentWeight(newWeight) // Ensure weight updates and saves
+                }
+                WeightPicker(title: "Goal Weight:", selection: $viewModel.goalWeight) { newWeight in
+                    viewModel.goalWeight = newWeight
+                    viewModel.saveProfile()
+                }
                 Stepper("Calorie Goal: \(viewModel.dailyCalorieGoal) kcal",
                         value: $viewModel.dailyCalorieGoal,
                         in: 1000...4000,
                         step: 50,
                         onEditingChanged: { _ in viewModel.saveProfile() })
-                    .foregroundColor(.white)            }
+                    .foregroundColor(.white)
+            }
         }
-        .listRowBackground(Color.black) // Ensure the Health Goal box is Black
+        .listRowBackground(Color.black)
     }
 }
 
 struct WeightPicker: View {
     let title: String
     @Binding var selection: Double
-    
+    var onWeightChange: (Double) -> Void  // Closure to trigger saving
+
     var body: some View {
         HStack {
             Text(title)
@@ -76,9 +86,13 @@ struct WeightPicker: View {
             .frame(width: 100, height: 50)
             .clipped()
             .tint(Color.black)
+            .onChange(of: selection) { oldValue, newValue in
+                onWeightChange(newValue)  // Save when weight changes
+            }
         }
     }
 }
+
 
 #Preview {
     UserProfileView(viewModel: UserProfileViewModel())

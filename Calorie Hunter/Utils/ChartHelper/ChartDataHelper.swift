@@ -21,6 +21,13 @@ struct ChartDataHelper {
         }
     }
     
+    static func dateToString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    
     static func stringToDate(_ dateString: String) -> Date {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"

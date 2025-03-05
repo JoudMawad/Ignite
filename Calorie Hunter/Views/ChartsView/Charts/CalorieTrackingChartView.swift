@@ -12,19 +12,33 @@ struct CalorieTrackingChartView: View {
     }
     
     var formattedData: [(label: String, calories: Int)] {
+        let calendar = Calendar.current
+        let today = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+
+        // Generate past 7 days (from yesterday back)
+        let last7Days = (0..<7).map { offset -> (String, Int) in
+            let date = calendar.date(byAdding: .day, value: -offset, to: yesterday)!
+            let dateString = ChartDataHelper.dateToString(date)
+
+            let calories = calorieData.first(where: { $0.date == dateString })?.calories ?? 0
+            let weekdayFormatter = DateFormatter()
+            weekdayFormatter.dateFormat = "EEE"
+
+            return (weekdayFormatter.string(from: date), calories)
+        }
+
         switch selectedTimeframe {
         case .week:
-            return calorieData.suffix(7).map { entry in
-                let weekdayFormatter = DateFormatter()
-                weekdayFormatter.dateFormat = "EEE"
-                return (weekdayFormatter.string(from: ChartDataHelper.stringToDate(entry.date)), entry.calories)
-            }
+            return last7Days.reversed() // Ensure correct order (earliest to latest)
         case .month:
             return ChartDataHelper.groupData(from: calorieData, days: 30, interval: 5, dateFormat: "MMM d")
         case .year:
             return ChartDataHelper.groupData(from: calorieData, days: 365, interval: 90, dateFormat: "MMM yyyy")
         }
     }
+
+
     
     func maxCalorieValue() -> Int {
         let maxValue = formattedData.map { $0.calories }.max() ?? 100
