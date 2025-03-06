@@ -73,7 +73,7 @@ struct PageControl: View {
                     }
             }
         }
-        .padding(.top, 12)
+        .padding(.top, 1)
     }
 }
 

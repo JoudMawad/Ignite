@@ -17,7 +17,7 @@ struct YearlyCalorieChartView: View {
     }
     
     var formattedData: [(label: String, calories: Int)] {
-        ChartDataHelper.groupData(from: calorieData, days: 365, interval: 90, dateFormat: "MMM yyyy")
+        ChartDataHelper.groupData(from: calorieData, days: 365, interval: 90, dateFormat: "MMM yy")
     }
 
     func maxCalorieValue() -> Int {
@@ -46,7 +46,27 @@ struct YearlyCalorieChartView: View {
                         .foregroundStyle(LinearGradient(gradient: Gradient(colors: [.blue, .cyan]), startPoint: .top, endPoint: .bottom))
                     }
                 }
-                .modifier(CustomChartStyle())
+                .chartXAxis {
+                                AxisMarks(values: .automatic) { _ in
+                                    AxisGridLine()
+                                        .foregroundStyle(Color.black) // Makes vertical grid lines black
+                                    AxisTick()
+                                    AxisValueLabel()
+                                }
+                            }
+                .overlay(
+                    ZStack {
+                        let positions: [CGFloat] = [0, 51, 101, 151, 202, 252] // Control positions
+                        
+                        ForEach(positions, id: \.self) { x in
+                            Rectangle()
+                                .frame(width: 3, height: 21)
+                                .foregroundColor(.black)
+                                .blendMode(.normal) // Ensures black rendering
+                                .position(x: x, y: 242)
+                        }
+                    }
+                )
                 .chartYScale(domain: 0...maxCalorieValue())
                 .frame(height: 250)
                 .padding()

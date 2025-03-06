@@ -6,12 +6,10 @@ struct ChartsView: View {
     var body: some View {
         NavigationView {
             VStack {
-                Text("Calorie Charts")
+                Text("Charts")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .padding(.top, 20)
-
-                Spacer()
+                    .padding(.top, 10)
 
                 ChartCarouselView(charts: [
                     AnyView(WeeklyCalorieChartView(viewModel: viewModel)),
@@ -21,7 +19,6 @@ struct ChartsView: View {
 
                 Spacer()
             }
-            .padding(.horizontal, 20)
             .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
         }
     }

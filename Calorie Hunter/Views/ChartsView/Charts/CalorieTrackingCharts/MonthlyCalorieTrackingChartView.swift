@@ -46,7 +46,27 @@ struct MonthlyCalorieChartView: View {
                         .foregroundStyle(LinearGradient(gradient: Gradient(colors: [.blue, .cyan]), startPoint: .top, endPoint: .bottom))
                     }
                 }
-                .modifier(CustomChartStyle())
+                .chartXAxis {
+                                AxisMarks(values: .automatic) { _ in
+                                    AxisGridLine()
+                                        .foregroundStyle(Color.black) // Makes vertical grid lines black
+                                    AxisTick()
+                                    AxisValueLabel()
+                                }
+                            }
+                .overlay(
+                    ZStack {
+                        let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252] // Control positions
+                        
+                        ForEach(positions, id: \.self) { x in
+                            Rectangle()
+                                .frame(width: 3, height: 21)
+                                .foregroundColor(.black)
+                                .blendMode(.normal) // Ensures black rendering
+                                .position(x: x, y: 242)
+                        }
+                    }
+                )
                 .chartYScale(domain: 0...maxCalorieValue())
                 .frame(height: 250)
                 .padding()

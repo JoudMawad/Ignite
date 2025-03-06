@@ -18,9 +18,9 @@ struct ChartCardView<Content: View>: View {
         content
             .padding()
             .background(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 60)
                     .fill(Color(UIColor.systemBackground))
-                    .shadow(color: Color.primary.opacity(0.15), radius: 5, x: 0, y: 4)
+                    .shadow(color: Color.cyan.opacity(0.125), radius: 5, x: 0, y: 4)
             )
     }
 }
