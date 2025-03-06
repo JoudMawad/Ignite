@@ -1,24 +1,28 @@
-//
-//  ChartsView.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 05.03.25.
-//
-
 import SwiftUI
 
 struct ChartsView: View {
     @ObservedObject var viewModel: FoodViewModel
-    
+
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    CalorieTrackingChartView(viewModel: viewModel)
-                }
-                .padding()
+            VStack {
+                Text("Calorie Charts")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top, 20)
+
+                Spacer()
+
+                ChartCarouselView(charts: [
+                    AnyView(WeeklyCalorieChartView(viewModel: viewModel)),
+                    AnyView(MonthlyCalorieChartView(viewModel: viewModel)),
+                    AnyView(YearlyCalorieChartView(viewModel: viewModel))
+                ])
+
+                Spacer()
             }
-            .navigationTitle("Charts")
+            .padding(.horizontal, 20)
+            .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
         }
     }
 }
@@ -26,4 +30,3 @@ struct ChartsView: View {
 #Preview {
     ChartsView(viewModel: FoodViewModel())
 }
-
