@@ -30,15 +30,19 @@ class WeightHistoryManager {
     }
 
     public func saveDailyWeight(currentWeight: Double) {
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-        let dateString = formatDate(yesterday)
-
+        let today = formatDate(Date())
         var history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
-        history[dateString] = currentWeight
+
+        // ✅ Ensure today's weight is always updated
+        history[today] = currentWeight
 
         UserDefaults.standard.set(history, forKey: dailyWeightKey)
-        print("Saved weight: \(currentWeight) kg for \(dateString)")
     }
+
+
+
+
+
 
     func weightForDate(_ date: Date) -> Double? {
         let history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
@@ -50,19 +54,33 @@ class WeightHistoryManager {
         let history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
         var result: [(String, Double)] = []
 
-        var lastKnownWeight: Double? = nil
+        let userProfileViewModel = UserProfileViewModel()
 
         for i in 0..<days {
             if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
                 let dateString = formatDate(date)
-                let weight = history[dateString] ?? lastKnownWeight ?? 70.0
 
-                lastKnownWeight = weight
-                result.append((dateString, weight))
+
+                if let weight = history[dateString] {
+                    result.append((dateString, weight))
+                }
             }
         }
         return result.reversed()
     }
+
+
+    
+    /// ✅ Converts a date string (YYYY-MM-DD) to a `Date` object
+    private func stringToDate(_ dateString: String) -> Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC") // Ensures consistency
+        return formatter.date(from: dateString) ?? Date()
+    }
+
+
+
 
 
     /// **Formats date to "YYYY-MM-DD"**

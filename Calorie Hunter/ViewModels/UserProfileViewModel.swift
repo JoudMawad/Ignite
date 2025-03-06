@@ -45,10 +45,10 @@ class UserProfileViewModel: ObservableObject {
     func updateCurrentWeight(_ newWeight: Double) {
         DispatchQueue.main.async {
             self.currentWeight = newWeight
-            self.saveProfile()
+            self.saveProfile() // ✅ Saves to UserDefaults
 
             let weightHistoryManager = WeightHistoryManager()
-            weightHistoryManager.saveDailyWeight(currentWeight: newWeight) // ✅ Now accessible
+            weightHistoryManager.saveDailyWeight(currentWeight: newWeight) // ✅ Ensures weight history is updat
         }
     }
 }

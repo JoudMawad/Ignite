@@ -12,12 +12,20 @@ struct MonthlyWeightChartView: View {
         ChartDataHelper.groupWeightData(from: weightData, days: 30, interval: 5, dateFormat: "MMM d")
     }
 
+    /// ✅ Dynamically finds the max weight (adds a buffer)
     func maxWeightValue() -> Double {
-        return (formattedData.map { $0.weight }.max() ?? 100) + 1
+        let maxWeight = formattedData.map { $0.weight }.filter { $0 > 0.0 }.max() ?? 100
+        return maxWeight + 2 // Adds 2kg buffer for better visibility
+    }
+
+    /// ✅ Dynamically finds the min weight (adds a buffer)
+    func minWeightValue() -> Double {
+        let minWeight = formattedData.map { $0.weight }.filter { $0 > 0.0 }.min() ?? 50
+        return minWeight - 2 // Adds 2kg buffer to prevent overlap
     }
     
     var body: some View {
-        ChartCardView {
+        ChartCardPinkView {
             VStack {
                 Text("Weight")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -50,22 +58,10 @@ struct MonthlyWeightChartView: View {
                         AxisValueLabel()
                     }
                 }
-                .chartYScale(domain: 0...maxWeightValue())
+                .chartYScale(domain: minWeightValue()...maxWeightValue()) // ✅ Uses new dynamic scaling
                 .frame(height: 250)
                 .padding()
             }
         }
-    }
-}
-
-struct MonthlyWeightChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        let previewManager = WeightHistoryManager()
-        
-        // ✅ Inject preview data
-        previewManager.saveDailyWeight(currentWeight: 100.0)
-        
-        return MonthlyWeightChartView()
-            .preferredColorScheme(.dark)
     }
 }

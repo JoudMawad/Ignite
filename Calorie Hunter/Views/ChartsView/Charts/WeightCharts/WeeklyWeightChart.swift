@@ -36,7 +36,7 @@ struct WeeklyWeightChartView: View {
     }
     
     var body: some View {
-        ChartCardView {
+        ChartCardPinkView {
             VStack {
                 Text("Weight")
                     .font(.system(size: 18, weight: .bold, design: .rounded))

@@ -58,6 +58,7 @@ struct WeightChartView: View {
                 Button(action: {
                     withAnimation {
                         viewModel.currentWeight -= 0.1
+                        viewModel.updateCurrentWeight(viewModel.currentWeight) // ✅ Ensures it persists
                         onWeightChange()
                     }
                 }) {
@@ -73,6 +74,7 @@ struct WeightChartView: View {
                 Button(action: {
                     withAnimation {
                         viewModel.currentWeight += 0.1
+                        viewModel.updateCurrentWeight(viewModel.currentWeight) // ✅ Ensures it persists
                         onWeightChange()
                     }
                 }) {

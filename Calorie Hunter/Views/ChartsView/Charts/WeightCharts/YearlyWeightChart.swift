@@ -32,7 +32,7 @@ struct YearlyWeightChartView: View {
     }
     
     var body: some View {
-        ChartCardView {
+        ChartCardPinkView {
             VStack {
                 Text("Weight")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -86,15 +86,3 @@ struct YearlyWeightChartView: View {
     }
 }
 
-/// ✅ Injects sample weight data for preview
-struct YearlyWeightChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        let previewManager = WeightHistoryManager()
-        
-        // ✅ Inject sample weight data for debugging
-        previewManager.saveDailyWeight(currentWeight: 70.0)
-        
-        return YearlyWeightChartView()
-            .preferredColorScheme(.dark)
-    }
-}
