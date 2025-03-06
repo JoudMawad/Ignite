@@ -6,4 +6,5 @@ struct UserProfile: Codable {
     var startWeight: Double
     var currentWeight: Double
     var goalWeight: Double
+    var profileImageData: Data? // Optional image data property
 }

@@ -18,10 +18,17 @@ struct UserPreDefinedFoodsView: View {
                 // Search Bar
                 TextField("Search food...", text: $searchText)
                     .padding(10)
-                    .background(Color.black.opacity(0.8)) // Dark background
                     .foregroundColor(.white) // White text
                     .cornerRadius(10)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(UIColor.black))
+                            .shadow(color: Color.cyan.opacity(0.25), radius: 8, x: 0, y: 0)
+                            .padding(.horizontal, 30)
+                      )
+                    .padding(.top, 25)
+                    .padding(.bottom, 9)
 
                 List {
                     ForEach(filteredFoods) { food in
@@ -29,10 +36,10 @@ struct UserPreDefinedFoodsView: View {
                             VStack(alignment: .leading) {
                                 Text(food.name)
                                     .font(.headline)
-                                    .foregroundColor(.white) // White text
+                                    .foregroundColor(.white)
                                 Text("Calories: \(food.calories)")
                                     .font(.subheadline)
-                                    .foregroundColor(.gray) // Light gray subtext
+                                    .foregroundColor(.gray)
                             }
                             Spacer()
                             Button(action: {
@@ -42,14 +49,16 @@ struct UserPreDefinedFoodsView: View {
                                     .foregroundColor(.red)
                             }
                         }
-                        .listRowBackground(Color.black) // Ensure row stays black
+                        .listRowBackground(Color.black)
                     }
                     .onDelete(perform: viewModel.deleteFood)
                 }
-                .scrollContentBackground(.hidden) // Hide default gray background
-                .background(Color.black) //  Black background
+                .listStyle(PlainListStyle())
+                .padding(.horizontal, 5)
+                .scrollContentBackground(.hidden)
+                .background(Color.black)
             }
-            .navigationTitle("Food Storage")
+            .navigationTitle("Storage")
             
             .background(Color.black.edgesIgnoringSafeArea(.all)) // Ensures full black background
         }

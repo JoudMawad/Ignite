@@ -34,7 +34,7 @@ struct ChartCarouselView: View {
                 }
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .frame(height: 400)
+            .frame(height: 420)
             .onChange(of: currentIndex) { _, newValue in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     if newValue == 0 {

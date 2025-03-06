@@ -27,12 +27,16 @@ struct MonthlyCalorieChartView: View {
     var body: some View {
         ChartCardView {
             VStack {
-                Text("Monthly Calorie Consumption")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                Text("Calories")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
-                    .padding(.bottom, 10)
+                Text("Month")
+                    .font(.system(size: 18, weight: .light, design: .rounded))
+                    .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
                 
                 Chart {
                     ForEach(formattedData, id: \.label) { entry in
