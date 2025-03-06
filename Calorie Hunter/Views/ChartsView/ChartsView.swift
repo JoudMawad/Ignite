@@ -1,29 +1,43 @@
 import SwiftUI
 
 struct ChartsView: View {
-    @ObservedObject var viewModel: FoodViewModel
+    @ObservedObject var foodViewModel: FoodViewModel
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
 
     var body: some View {
         NavigationView {
-            VStack {
-                Text("Charts")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top, 10)
-
-                ChartCarouselView(charts: [
-                    AnyView(WeeklyCalorieChartView(viewModel: viewModel)),
-                    AnyView(MonthlyCalorieChartView(viewModel: viewModel)),
-                    AnyView(YearlyCalorieChartView(viewModel: viewModel))
-                ])
-
-                Spacer()
+            ScrollView {
+                VStack {
+                    Text("Charts")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.top, 10)
+                    
+                    ChartCarouselView(charts: [
+                        // ✅ Calorie Charts
+                        AnyView(WeeklyCalorieChartView(viewModel: foodViewModel)),
+                        AnyView(MonthlyCalorieChartView(viewModel: foodViewModel)),
+                        AnyView(YearlyCalorieChartView(viewModel: foodViewModel)),
+                    ])
+                    
+                    
+                    Spacer()
+                    
+                    ChartCarouselView(charts: [
+                        
+                        // ✅ Weight Charts
+                        AnyView(WeeklyWeightChartView()),
+                        AnyView(MonthlyWeightChartView()),
+                        AnyView(YearlyWeightChartView()) // ❌ Removed `viewModel`
+                    ])
+                }
+                .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
             }
-            .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
         }
     }
 }
 
+// MARK: - Preview
 #Preview {
-    ChartsView(viewModel: FoodViewModel())
+    ChartsView(foodViewModel: FoodViewModel(), userProfileViewModel: UserProfileViewModel())
 }

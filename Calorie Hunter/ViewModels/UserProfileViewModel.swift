@@ -46,6 +46,9 @@ class UserProfileViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.currentWeight = newWeight
             self.saveProfile()
+
+            let weightHistoryManager = WeightHistoryManager()
+            weightHistoryManager.saveDailyWeight(currentWeight: newWeight) // ✅ Now accessible
         }
     }
 }

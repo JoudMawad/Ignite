@@ -21,6 +21,20 @@ struct ChartDataHelper {
         }
     }
     
+    
+    static func groupWeightData(from weightData: [(date: String, weight: Double)], days: Int, interval: Int, dateFormat: String) -> [(String, Double)] {
+        stride(from: 0, to: days, by: interval).compactMap { offset -> (String, Double)? in
+            let subrange = weightData.suffix(days).dropFirst(offset).prefix(interval)
+            guard !subrange.isEmpty else { return nil }
+            let totalWeight = subrange.reduce(0) { $0 + $1.weight }
+            let avgWeight = totalWeight / Double(subrange.count)
+            let firstDate = stringToDate(subrange.first!.date)
+            let formatter = DateFormatter()
+            formatter.dateFormat = dateFormat
+            return (formatter.string(from: firstDate), avgWeight)
+        }
+    }
+    
     static func dateToString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"

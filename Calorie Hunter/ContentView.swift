@@ -31,7 +31,7 @@ struct ContentView: View {
                     }
 
                 // Charts Page
-                ChartsView(viewModel: viewModel)
+                ChartsView(foodViewModel: FoodViewModel(), userProfileViewModel: UserProfileViewModel())
                     .tabItem {
                         Label("", systemImage: "chart.line.uptrend.xyaxis")
                     }
