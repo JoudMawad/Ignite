@@ -5,6 +5,9 @@ struct WeeklyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
     private let historyManager = CalorieHistoryManager()
     
+    // State for interactive overlay.
+    @State private var selectedOverlay: OverlayData?
+    
     var calorieData: [(date: String, calories: Int)] {
         historyManager.totalCaloriesForPeriod(days: 7)
     }
@@ -17,21 +20,24 @@ struct WeeklyCalorieChartView: View {
         return (0..<7).map { offset -> (String, Int) in
             let date = calendar.date(byAdding: .day, value: -offset, to: yesterday)!
             let dateString = ChartDataHelper.dateToString(date)
-
             let calories = calorieData.first(where: { $0.date == dateString })?.calories ?? 0
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.dateFormat = "EEE"
-
             return (weekdayFormatter.string(from: date), calories)
         }.reversed()
     }
-
+    
+    // Map formatted data to overlay data.
+    var overlayData: [OverlayData] {
+        formattedData.map { OverlayData(label: $0.0, value: Double($0.1)) }
+    }
+    
     func maxCalorieValue() -> Int {
         return (formattedData.map { $0.calories }.max() ?? 100) + 50
     }
     
     var body: some View {
-        ChartCardView {
+        ChartCardCyanView {
             VStack {
                 Text("Calories")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -53,31 +59,43 @@ struct WeeklyCalorieChartView: View {
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
-                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [.blue, .cyan]), startPoint: .top, endPoint: .bottom))
+                        .foregroundStyle(
+                            LinearGradient(gradient: Gradient(colors: [.blue, .cyan]),
+                                           startPoint: .top,
+                                           endPoint: .bottom)
+                        )
                     }
                 }
                 .chartXAxis {
-                                AxisMarks(values: .automatic) { _ in
-                                    AxisGridLine()
-                                        .foregroundStyle(Color.black) // Makes vertical grid lines black
-                                    AxisTick()
-                                    AxisValueLabel()
-                                }
-                            }
+                    AxisMarks(values: .automatic) { _ in
+                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisTick()
+                        AxisValueLabel()
+                    }
+                }
                 .overlay(
                     ZStack {
-                        let positions: [CGFloat] = [0, 36, 72, 108, 145, 180, 216, 253] // Control positions
-                        
+                        let positions: [CGFloat] = [0, 36, 72, 108, 145, 180, 216, 253]
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 2, height: 21)
                                 .foregroundColor(.black)
-                                .blendMode(.normal) // Ensures black rendering
+                                .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }
                     }
                 )
                 .chartYScale(domain: 0...maxCalorieValue())
+                // Use the reusable interactive overlay.
+                .chartOverlay { proxy in
+                    InteractiveChartOverlay(
+                        proxy: proxy,
+                        formattedData: overlayData,
+                        selectedEntry: $selectedOverlay,
+                        markerColor: .cyan,   // Set your marker color here.
+                        labelColor: .black     // Set your label text color here.
+                    )
+                }
                 .frame(height: 250)
                 .padding()
             }

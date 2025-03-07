@@ -54,8 +54,6 @@ class WeightHistoryManager {
         let history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
         var result: [(String, Double)] = []
 
-        let userProfileViewModel = UserProfileViewModel()
-
         for i in 0..<days {
             if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
                 let dateString = formatDate(date)

@@ -1,16 +1,12 @@
-//
-//  MonthlyCalorieTrackingChartView.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 06.03.25.
-//
-
 import SwiftUI
 import Charts
 
 struct MonthlyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
     private let historyManager = CalorieHistoryManager()
+    
+    // Add a mutable state for the overlay selection.
+    @State private var selectedOverlay: OverlayData? = nil
     
     var calorieData: [(date: String, calories: Int)] {
         historyManager.totalCaloriesForPeriod(days: 30)
@@ -19,13 +15,18 @@ struct MonthlyCalorieChartView: View {
     var formattedData: [(label: String, calories: Int)] {
         ChartDataHelper.groupData(from: calorieData, days: 30, interval: 5, dateFormat: "MMM d")
     }
-
+    
+    // Map to overlay data.
+    var overlayData: [OverlayData] {
+        formattedData.map { OverlayData(label: $0.0, value: Double($0.1)) }
+    }
+    
     func maxCalorieValue() -> Int {
         return (formattedData.map { $0.calories }.max() ?? 100) + 50
     }
     
     var body: some View {
-        ChartCardView {
+        ChartCardCyanView {
             VStack {
                 Text("Calories")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -39,49 +40,53 @@ struct MonthlyCalorieChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.label) { entry in
+                    ForEach(formattedData, id: \.0) { entry in
                         LineMark(
-                            x: .value("Date", entry.label),
-                            y: .value("Calories", entry.calories)
+                            x: .value("Date", entry.0),
+                            y: .value("Calories", entry.1)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
-                        .foregroundStyle(LinearGradient(gradient: Gradient(colors: [.blue, .cyan]), startPoint: .top, endPoint: .bottom))
+                        .foregroundStyle(
+                            LinearGradient(gradient: Gradient(colors: [.blue, .cyan]),
+                                           startPoint: .top,
+                                           endPoint: .bottom)
+                        )
                     }
                 }
                 .chartXAxis {
-                                AxisMarks(values: .automatic) { _ in
-                                    AxisGridLine()
-                                        .foregroundStyle(Color.black) // Makes vertical grid lines black
-                                    AxisTick()
-                                    AxisValueLabel()
-                                }
-                            }
+                    AxisMarks(values: .automatic) { _ in
+                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisTick()
+                        AxisValueLabel()
+                    }
+                }
                 .overlay(
                     ZStack {
-                        let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252] // Control positions
-                        
+                        let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252]
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 3, height: 21)
                                 .foregroundColor(.black)
-                                .blendMode(.normal) // Ensures black rendering
+                                .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }
                     }
                 )
-                .chartYScale(domain: 0...maxCalorieValue())
+                .chartYScale(domain: 0...Double(maxCalorieValue()))
+                .chartOverlay { proxy in
+                    InteractiveChartOverlay(
+                        proxy: proxy,
+                        formattedData: overlayData,
+                        selectedEntry: $selectedOverlay, // Use the mutable binding here.
+                        markerColor: .cyan,               // Set your desired marker color.
+                        labelColor: .black                // Set your desired label color.
+                    )
+                }
                 .frame(height: 250)
                 .padding()
             }
         }
-    }
-}
-
-struct MonthlyCalorieChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        MonthlyCalorieChartView(viewModel: FoodViewModel())
-            .preferredColorScheme(.dark)
     }
 }

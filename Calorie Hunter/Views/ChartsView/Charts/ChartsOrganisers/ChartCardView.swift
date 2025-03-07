@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChartCardView<Content: View>: View {
+struct ChartCardCyanView<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -20,7 +20,7 @@ struct ChartCardView<Content: View>: View {
             .background(
                 RoundedRectangle(cornerRadius: 60)
                     .fill(Color(UIColor.systemBackground))
-                    .shadow(color: Color.cyan.opacity(0.125), radius: 5, x: 0, y: 4)
+                    .shadow(color: Color.cyan.opacity(0.15), radius: 5, x: 0, y: 4)
             )
     }
 }
@@ -38,7 +38,7 @@ struct ChartCardPinkView<Content: View>: View {
             .background(
                 RoundedRectangle(cornerRadius: 60)
                     .fill(Color(UIColor.systemBackground))
-                    .shadow(color: Color.pink.opacity(0.125), radius: 5, x: 0, y: 4)
+                    .shadow(color: Color.pink.opacity(0.15), radius: 5, x: 0, y: 4)
             )
     }
 }
