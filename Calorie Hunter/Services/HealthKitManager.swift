@@ -1,4 +1,5 @@
 import HealthKit
+import Foundation
 
 extension Notification.Name {
     static let healthKitWeightDataChanged = Notification.Name("healthKitWeightDataChanged")
@@ -18,12 +19,11 @@ class HealthKitManager {
         
         let typesToRead: Set<HKObjectType> = [bodyMassType, stepType]
         
-        // 2) Request authorization for all these read types
+        // 2) Request authorization for these read types
         healthStore.requestAuthorization(toShare: [], read: typesToRead) { success, error in
             completion(success, error)
         }
     }
-
     
     func fetchLatestWeight(completion: @escaping (Double?) -> Void) {
         guard let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
@@ -46,7 +46,10 @@ class HealthKitManager {
         healthStore.execute(query)
     }
     
-    func fetchHistoricalDailyWeights(startDate: Date, endDate: Date, completion: @escaping ([(date: String, weight: Double)]) -> Void) {
+    func fetchHistoricalDailyWeights(startDate: Date,
+                                     endDate: Date,
+                                     completion: @escaping ([(date: String, weight: Double)]) -> Void)
+    {
         guard let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
             completion([])
             return
@@ -92,9 +95,12 @@ class HealthKitManager {
                                    completion: @escaping ([(date: String, steps: Int)]) -> Void)
     {
         guard let stepsType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            print("DEBUG: .stepCount is not available on this device. Returning empty.")
             completion([])
             return
         }
+        
+        print("DEBUG: Starting daily steps fetch from \(startDate) to \(endDate)")
         
         let interval = DateComponents(day: 1)
         let anchorDate = Calendar.current.startOfDay(for: startDate)
@@ -107,27 +113,39 @@ class HealthKitManager {
                                                 intervalComponents: interval)
         
         query.initialResultsHandler = { _, results, error in
-            guard error == nil else {
+            if let error = error {
+                print("DEBUG: fetch error: \(error.localizedDescription)")
                 completion([])
                 return
             }
             
+            print("DEBUG: fetch succeeded, enumerating results...")
             var dailySteps: [(date: String, steps: Int)] = []
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
+            // Set the formatter time zone to current so that keys match later.
+            formatter.timeZone = TimeZone.current
             
             // Enumerate over each day from startDate to endDate.
             results?.enumerateStatistics(from: startDate, to: endDate, with: { statistics, _ in
+                let dateStr = formatter.string(from: statistics.startDate)
+                
                 if let sumQuantity = statistics.sumQuantity() {
-                    // Convert to an integer step count
                     let stepCount = Int(sumQuantity.doubleValue(for: .count()))
-                    let dateStr = formatter.string(from: statistics.startDate)
                     dailySteps.append((date: dateStr, steps: stepCount))
+                    print("DEBUG: date=\(dateStr), steps=\(stepCount)")
+                } else {
+                    dailySteps.append((date: dateStr, steps: 0))
+                    print("DEBUG: date=\(dateStr), steps=0 (no sumQuantity)")
                 }
             })
+            
+            print("DEBUG: dailySteps final count = \(dailySteps.count)")
             completion(dailySteps)
         }
         
         healthStore.execute(query)
     }
+
+
 }

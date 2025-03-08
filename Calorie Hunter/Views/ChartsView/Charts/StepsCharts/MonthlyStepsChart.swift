@@ -1,26 +1,26 @@
 import SwiftUI
 import Charts
 
-struct YearlyStepsChartView: View {
+struct MonthlyStepsChartView: View {
     @ObservedObject var stepsManager: StepsHistoryManager
     
-    /// Last 365 days of raw step data.
-    private var rawStepsData: [(date: String, steps: Int)] {
-        stepsManager.stepsForPeriod(days: 365)
+    /// Raw step data for the past 30 days (now guaranteed to be 30 entries).
+    private var stepData: [(date: String, steps: Int)] {
+        stepsManager.stepsForPeriod(days: 30)
     }
     
-    /// Group into 90-day intervals, labeled "MMM yy".
+    /// Group the 30 days into buckets of 5 days, labeling each bucket with "MMM d".
     private var formattedData: [(label: String, steps: Int)] {
         ChartDataHelper.groupStepsData(
-            from: rawStepsData,
-            days: 365,
-            interval: 90,
-            dateFormat: "MMM yy"
+            from: stepData,
+            days: 30,
+            interval: 5,
+            dateFormat: "MMM d"
         )
     }
     
     private func maxStepValue() -> Int {
-        (formattedData.map { $0.steps }.max() ?? 0) + 50
+        (formattedData.map { $0.steps }.max() ?? 100) + 50
     }
     
     var body: some View {
@@ -31,8 +31,7 @@ struct YearlyStepsChartView: View {
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
-                
-                Text("Year")
+                Text("Month")
                     .font(.system(size: 18, weight: .light, design: .rounded))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,11 +57,24 @@ struct YearlyStepsChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(.black)
+                        AxisGridLine().foregroundStyle(Color.black)
                         AxisTick()
                         AxisValueLabel()
                     }
                 }
+                .overlay(
+                    ZStack {
+                        // Adjusted positions for ~6 data points in a 250pt wide chart
+                        let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252]
+                        ForEach(positions, id: \.self) { x in
+                            Rectangle()
+                                .frame(width: 3, height: 21)
+                                .foregroundColor(.black)
+                                .blendMode(.normal)
+                                .position(x: x, y: 242)
+                        }
+                    }
+                )
                 .chartYScale(domain: 0...Double(maxStepValue()))
                 .frame(height: 250)
                 .padding()

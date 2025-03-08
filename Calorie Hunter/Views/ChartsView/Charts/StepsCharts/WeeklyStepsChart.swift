@@ -1,24 +1,26 @@
 import SwiftUI
 import Charts
 
-struct YearlyStepsChartView: View {
+struct WeeklyStepsChartView: View {
     @ObservedObject var stepsManager: StepsHistoryManager
     
-    /// Last 365 days of raw step data.
+    /// Grab the last 7 days of raw step data as (date: "yyyy-MM-dd", steps: Int).
     private var rawStepsData: [(date: String, steps: Int)] {
-        stepsManager.stepsForPeriod(days: 365)
+        stepsManager.stepsForPeriod(days: 7)
     }
     
-    /// Group into 90-day intervals, labeled "MMM yy".
+    /// Use ChartDataHelper to group each day (interval=1).
+    /// We'll label them with "EEE" (like "Mon", "Tue", etc.).
     private var formattedData: [(label: String, steps: Int)] {
         ChartDataHelper.groupStepsData(
             from: rawStepsData,
-            days: 365,
-            interval: 90,
-            dateFormat: "MMM yy"
+            days: 7,
+            interval: 1,
+            dateFormat: "EEE"  // e.g. "Mon"
         )
     }
     
+    /// A little headroom above the highest step count
     private func maxStepValue() -> Int {
         (formattedData.map { $0.steps }.max() ?? 0) + 50
     }
@@ -32,7 +34,7 @@ struct YearlyStepsChartView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                 
-                Text("Year")
+                Text("Week")
                     .font(.system(size: 18, weight: .light, design: .rounded))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)

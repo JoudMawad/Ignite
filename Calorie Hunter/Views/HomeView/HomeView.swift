@@ -6,13 +6,24 @@ struct HomeView: View {
     
     @State private var showSettings = false
     
+    // 1) A computed property that returns today's date as a string.
+    private var todayString: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium    // e.g. "Mar 10, 2025"
+        // or use .long for "March 10, 2025" or a custom "EEEE, MMM d"
+        return formatter.string(from: Date())
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 0) {
                     // Sliding Charts Section
                     TabView {
-                        CalorieChartView(viewModel: userProfileViewModel, totalCalories: viewModel.totalCalories)
+                        CalorieChartView(
+                            viewModel: userProfileViewModel,
+                            totalCalories: viewModel.totalCalories
+                        )
                         
                         FoodChartView(
                             totalProtein: viewModel.totalProtein,
@@ -44,8 +55,9 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            .background(Color.clear) // Ensures no background blur
-            .navigationBarTitle("Home", displayMode: .inline)
+            .background(Color.clear)
+            // 2) Use the computed todayString instead of "Home"
+            .navigationBarTitle(todayString, displayMode: .inline)
             .navigationBarItems(
                 leading: Button(action: {
                     showSettings = true

@@ -6,7 +6,7 @@ class StepsHistoryManager: ObservableObject {
     
     private let dailyStepsKey = "dailyStepsHistory"
     
-    /// The local dictionary of [String: Int], keyed by date (e.g., "2025-03-10"), with the step count as the value.
+    /// Local storage of steps keyed by date string "yyyy-MM-dd"
     private var localHistory: [String: Int] {
         get {
             UserDefaults.standard.dictionary(forKey: dailyStepsKey) as? [String: Int] ?? [:]
@@ -17,36 +17,37 @@ class StepsHistoryManager: ObservableObject {
         }
     }
     
-    /// Imports historical step counts without overwriting existing entries.
+    /// Imports historical step counts.
     func importHistoricalSteps(_ stepsData: [(date: String, steps: Int)]) {
         var history = localHistory
         for entry in stepsData {
-            // If there's already an entry for that date, keep it
-            if history[entry.date] == nil {
-                history[entry.date] = entry.steps
-            }
+            history[entry.date] = entry.steps
         }
         localHistory = history
     }
     
-    /// Returns step counts for the last X days, in ascending date order.
+    /// Returns step counts for the last `days` days.
+    /// This method now uses a date formatter with an explicit time zone.
     func stepsForPeriod(days: Int) -> [(date: String, steps: Int)] {
         var results: [(String, Int)] = []
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        // Ensure both storing and retrieval use the same time zone.
+        formatter.timeZone = TimeZone.current
+        
+        // Loop through each day in the past `days`.
         for i in 0..<days {
-            guard let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) else { continue }
-            let dateString = formatDate(date)
-            if let count = localHistory[dateString] {
+            if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
+                let dateString = formatter.string(from: date)
+                let count = localHistory[dateString] ?? 0
                 results.append((dateString, count))
             }
         }
-        // results is in descending order (today to oldest). Reverse it if you want oldest-to-newest.
         return results.reversed()
     }
     
-    /// Formats a Date as "yyyy-MM-dd".
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+    /// Optional: method to clear stored data for testing.
+    func clearData() {
+        localHistory = [:]
     }
 }

@@ -45,6 +45,8 @@ struct ChartsView: View {
                     ChartCarouselView(charts: [
                         
                         // ✅ Weight Charts
+                        AnyView(WeeklyStepsChartView(stepsManager: StepsHistoryManager.shared)),
+                        AnyView(MonthlyStepsChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(YearlyStepsChartView(stepsManager: StepsHistoryManager.shared))
                     ])
                     
