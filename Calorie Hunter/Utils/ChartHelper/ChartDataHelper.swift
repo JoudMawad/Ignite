@@ -22,37 +22,79 @@ struct ChartDataHelper {
     }
     
     
-    static func groupWeightData(from weightData: [(date: String, weight: Double)], days: Int, interval: Int, dateFormat: String) -> [(String, Double)] {
+    static func groupWeightData(from weightData: [(date: String, weight: Double)],
+                                days: Int,
+                                interval: Int,
+                                dateFormat: String) -> [(String, Double)] {
         let calendar = Calendar.current
-        // Determine the start date (days ago from today)
-        let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: Date())!
-        let formatter = DateFormatter()
-        formatter.dateFormat = dateFormat
+        
+        // 1) Determine the overall start date (days - 1) days ago at midnight.
+        guard let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: calendar.startOfDay(for: Date())) else {
+            return []
+        }
+        // We'll call each interval "bucket" from [intervalStart, intervalEnd)
+        // where intervalEnd = intervalStart + (interval days).
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = dateFormat
+
+        // 2) Convert each raw entry's date (string) to a Date.
+        //    We'll store them as (Date, weight) for easier date comparisons.
+        let processedData: [(Date, Double)] = weightData.map { entry in
+            (calendar.startOfDay(for: stringToDate(entry.date)), entry.weight)
+        }
+        
+        // 3) Sort the processed data by date (ascending).
+        let sortedData = processedData.sorted { $0.0 < $1.0 }
 
         var lastKnownWeight: Double? = nil
         var groupedData: [(String, Double)] = []
-
-        // Iterate through the period in fixed intervals
+        
+        // 4) Generate each interval by offset in [0, days) in steps of `interval`.
         for offset in stride(from: 0, to: days, by: interval) {
-            guard let intervalStartDate = calendar.date(byAdding: .day, value: offset, to: startDate) else { continue }
-            let label = formatter.string(from: intervalStartDate)
+            // The start of the interval
+            guard let intervalStart = calendar.date(byAdding: .day, value: offset, to: startDate) else { continue }
+            // The end of the interval (non-inclusive)
+            guard let intervalEnd = calendar.date(byAdding: .day, value: interval, to: intervalStart) else { continue }
             
-            // Get the subrange for this interval
-            let subrange = weightData.suffix(days).dropFirst(offset).prefix(interval)
-            let weight: Double
-            if subrange.isEmpty {
-                // Use the last known weight if available; otherwise default to 0.0
-                weight = lastKnownWeight ?? 0.0
-            } else {
-                let totalWeight = subrange.reduce(0) { $0 + $1.weight }
-                weight = totalWeight / Double(subrange.count)
-                lastKnownWeight = weight
+            // 5) Filter the sortedData to only those entries that fall within [intervalStart, intervalEnd).
+            let subrange = sortedData.filter { (entryDate, _) in
+                entryDate >= intervalStart && entryDate < intervalEnd
             }
-            groupedData.append((label, weight))
+            
+            // 6) Calculate the average. If subrange is empty => fallback to lastKnownWeight or 0.
+            let avgWeight: Double
+            if subrange.isEmpty {
+                avgWeight = lastKnownWeight ?? 0.0
+            } else {
+                let total = subrange.reduce(0.0) { $0 + $1.1 }
+                avgWeight = total / Double(subrange.count)
+                lastKnownWeight = avgWeight
+            }
+            
+            // 7) The label is based on the start date of this interval.
+            let label = dateFormatter.string(from: intervalStart)
+            groupedData.append((label, avgWeight))
         }
         
         return groupedData
     }
+    
+    static func groupStepsData(from stepsData: [(date: String, steps: Int)],
+                               days: Int,
+                               interval: Int,
+                               dateFormat: String) -> [(String, Int)]
+    {
+        // Reuse groupData under the hood by converting `steps` to `calories`.
+        let mapped = stepsData.map { (date: $0.date, calories: $0.steps) }
+        let grouped = groupData(from: mapped,
+                                days: days,
+                                interval: interval,
+                                dateFormat: dateFormat)
+        return grouped
+    }
+
+
 
 
     
@@ -69,4 +111,3 @@ struct ChartDataHelper {
         return formatter.date(from: dateString) ?? Date()
     }
 }
-

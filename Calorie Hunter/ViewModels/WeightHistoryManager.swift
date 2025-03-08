@@ -1,87 +1,70 @@
-//
-//  WeightHistoryManager.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 06.03.25.
-//
-
-//
-//  WeightHistoryManager.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 06.03.25.
-//
-
 import Foundation
+import Combine
 
-class WeightHistoryManager {
+class WeightHistoryManager: ObservableObject {
+    static let shared = WeightHistoryManager()
+    
+    // UserDefaults keys.
     private let lastSavedDateKey = "lastWeightSavedDate"
     private let dailyWeightKey = "dailyWeightHistory"
-
-    /// **Checks if we need to save yesterday's weight at midnight**
-    func checkForMidnightReset(currentWeight: Double) {
-        let lastSavedDate = UserDefaults.standard.object(forKey: lastSavedDateKey) as? Date ?? Date.distantPast
-        let today = Calendar.current.startOfDay(for: Date())
-
-        if lastSavedDate < today {
-            saveDailyWeight(currentWeight: currentWeight)
-            UserDefaults.standard.set(today, forKey: lastSavedDateKey)
+    
+    // Local history is stored as a dictionary [String: Double].
+    private var localHistory: [String: Double] {
+        get {
+            UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: dailyWeightKey)
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+            }
         }
     }
-
-    public func saveDailyWeight(currentWeight: Double) {
+    
+    /// Saves the current weight for today.
+    func saveDailyWeight(currentWeight: Double) {
         let today = formatDate(Date())
-        var history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
-
-        // ✅ Ensure today's weight is always updated
+        var history = localHistory
         history[today] = currentWeight
-
-        UserDefaults.standard.set(history, forKey: dailyWeightKey)
+        localHistory = history
     }
-
-
-
-
-
-
-    func weightForDate(_ date: Date) -> Double? {
-        let history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
-        let dateString = formatDate(date)
-        return history[dateString]
+    
+    /// Imports historical weights from HealthKit (merging without overwriting existing entries).
+    func importHistoricalWeights(_ weights: [(date: String, weight: Double)]) {
+        var history = localHistory
+        for entry in weights {
+            if history[entry.date] == nil {
+                history[entry.date] = entry.weight
+            }
+        }
+        localHistory = history
     }
-
+    
+    /// Exports the local history as CSV text.
+    func exportWeightHistoryToCSV() -> String {
+        let history = localHistory
+        var csvString = "Date,Weight (kg)\n"
+        for (date, weight) in history.sorted(by: { $0.key < $1.key }) {
+            csvString += "\(date),\(weight)\n"
+        }
+        return csvString
+    }
+    
+    /// Returns weight entries for the past 'days' days.
     func weightForPeriod(days: Int) -> [(date: String, weight: Double)] {
-        let history = UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
         var result: [(String, Double)] = []
-
         for i in 0..<days {
             if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
                 let dateString = formatDate(date)
-
-
-                if let weight = history[dateString] {
-                    result.append((dateString, weight))
+                if let weight = localHistory[dateString] {
+                    result.append((date: dateString, weight: weight))
                 }
             }
         }
         return result.reversed()
     }
-
-
     
-    /// ✅ Converts a date string (YYYY-MM-DD) to a `Date` object
-    private func stringToDate(_ dateString: String) -> Date {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(identifier: "UTC") // Ensures consistency
-        return formatter.date(from: dateString) ?? Date()
-    }
-
-
-
-
-
-    /// **Formats date to "YYYY-MM-DD"**
+    /// Formats a Date as "yyyy-MM-dd".
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"

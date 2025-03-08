@@ -2,7 +2,7 @@ import SwiftUI
 import Charts
 
 struct YearlyWeightChartView: View {
-    private let weightHistoryManager = WeightHistoryManager()
+    @ObservedObject private var weightHistoryManager = WeightHistoryManager.shared
     
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 365)
@@ -12,13 +12,12 @@ struct YearlyWeightChartView: View {
         ChartDataHelper.groupWeightData(from: weightData, days: 365, interval: 90, dateFormat: "MMM yy")
     }
     
-    
     func maxWeightValue() -> Double {
-        return (formattedData.map { $0.weight }.max() ?? 100) + 2
+        (formattedData.map { $0.weight }.max() ?? 100) + 2
     }
     
     func minWeightValue() -> Double {
-        return (formattedData.map { $0.weight }.min() ?? 50) - 2
+        (formattedData.map { $0.weight }.min() ?? 50) - 2
     }
     
     var body: some View {
@@ -36,10 +35,10 @@ struct YearlyWeightChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.label) { entry in
+                    ForEach(formattedData, id: \.0) { entry in
                         LineMark(
-                            x: .value("Date", entry.label),
-                            y: .value("Weight", entry.weight)
+                            x: .value("Date", entry.0),
+                            y: .value("Weight", entry.1)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
@@ -51,7 +50,6 @@ struct YearlyWeightChartView: View {
                         )
                     }
                 }
-                
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
                         AxisGridLine().foregroundStyle(Color.black)

@@ -8,6 +8,7 @@ struct ChartsView: View {
         NavigationView {
             ScrollView {
                 LazyVStack {
+
                     Text("Charts")
                         .font(.title2)
                         .fontWeight(.bold)
@@ -40,6 +41,14 @@ struct ChartsView: View {
                         AnyView(MonthlyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(YearlyBMRChartView(viewModel: userProfileViewModel))
                     ])
+                    
+                    ChartCarouselView(charts: [
+                        
+                        // ✅ Weight Charts
+                        AnyView(YearlyStepsChartView(stepsManager: StepsHistoryManager.shared))
+                    ])
+                    
+                    Spacer()
                 }
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
             }
