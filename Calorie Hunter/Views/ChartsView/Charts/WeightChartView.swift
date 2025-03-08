@@ -33,7 +33,7 @@ struct WeightChartView: View {
                             .frame(width: max(geometry.size.width * progress, 5), height: 10)
                             .overlay(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color.red, Color.green]),
+                                    gradient: Gradient(colors: [Color.red, Color.orange, Color.yellow, Color.green]),
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
