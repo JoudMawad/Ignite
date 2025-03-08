@@ -1,40 +1,66 @@
+//
+//  WeaklyBmrChart.swift
+//  Calorie Hunter
+//
+//  Created by Jude Mawad on 08.03.25.
+//
+
 import SwiftUI
 import Charts
 
-struct WeeklyWeightChartView: View {
+struct WeeklyBMRChartView: View {
+    @ObservedObject var viewModel: UserProfileViewModel
     private let weightHistoryManager = WeightHistoryManager()
     
+    /// Retrieve stored weight data for the last 7 days.
+    private func getStoredWeightsForPeriod(days: Int) -> [(date: String, weight: Double)] {
+        let allWeights = weightHistoryManager.weightForPeriod(days: days)
+        return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date)), $0.weight) }
+    }
+    
+    /// Weight data for the week.
     var weightData: [(date: String, weight: Double)] {
         getStoredWeightsForPeriod(days: 7)
     }
     
-    var formattedData: [(label: String, weight: Double)] {
+    /// For each day in the past week, compute the BMR using the separated BMRCalculator.
+    var formattedData: [(label: String, bmr: Double)] {
         let calendar = Calendar.current
         let today = Date()
         return (0..<7).compactMap { offset -> (String, Double)? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             let dateString = ChartDataHelper.dateToString(date)
-            let weight = weightData.first(where: { $0.date == dateString })?.weight ?? 70.0
+            // Use stored weight if available; otherwise, fall back on current weight.
+            let weight = weightData.first(where: { $0.date == dateString })?.weight ?? viewModel.currentWeight
+            let bmr = BMRCalculator.computeBMR(
+                forWeight: weight,
+                age: Double(viewModel.age),
+                height: Double(viewModel.height),
+                gender: viewModel.gender
+            )
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.dateFormat = "EEE"
-            return (weekdayFormatter.string(from: date), weight)
+            return (weekdayFormatter.string(from: date), bmr)
         }.reversed()
     }
     
-    func maxWeightValue() -> Double {
-        let maxValue = formattedData.map { $0.weight }.max() ?? 100
-        return maxValue + 1
+
+    /// Calculate dynamic Y-axis maximum.
+    func maxBMRValue() -> Double {
+        let maxValue = formattedData.map { $0.bmr }.max() ?? 1500
+        return maxValue + 50
     }
     
-    func minWeightValue() -> Double {
-        let minValue = formattedData.map { $0.weight }.min() ?? 50
-        return minValue - 1
+    /// Calculate dynamic Y-axis minimum.
+    func minBMRValue() -> Double {
+        let minValue = formattedData.map { $0.bmr }.min() ?? 1200
+        return minValue - 50
     }
     
     var body: some View {
-        ChartCardPinkView {
+        ChartCardYellowView {
             VStack {
-                Text("Weight")
+                Text("BMR")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -49,15 +75,17 @@ struct WeeklyWeightChartView: View {
                     ForEach(formattedData, id: \.label) { entry in
                         LineMark(
                             x: .value("Date", entry.label),
-                            y: .value("Weight", entry.weight)
+                            y: .value("BMR", entry.bmr)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.purple, .pink]),
-                                           startPoint: .top,
-                                           endPoint: .bottom)
+                            LinearGradient(
+                                gradient: Gradient(colors: [.orange, .yellow]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
                     }
                 }
@@ -70,7 +98,7 @@ struct WeeklyWeightChartView: View {
                 }
                 .overlay(
                     ZStack {
-                        let positions: [CGFloat] = [0, 36, 72, 108, 145, 180, 216, 253]
+                        let positions: [CGFloat] = [0, 36, 71, 106, 141, 175, 210, 244]
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 3, height: 21)
@@ -80,15 +108,19 @@ struct WeeklyWeightChartView: View {
                         }
                     }
                 )
-                .chartYScale(domain: minWeightValue()...maxWeightValue())
+                .chartYScale(domain: minBMRValue()...maxBMRValue())
+
                 .frame(height: 250)
                 .padding()
             }
         }
     }
-    
-    private func getStoredWeightsForPeriod(days: Int) -> [(date: String, weight: Double)] {
-        let allWeights = weightHistoryManager.weightForPeriod(days: days)
-        return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date)), $0.weight) }
+}
+
+struct WeeklyBMRChartView_Previews: PreviewProvider {
+    static var previews: some View {
+        WeeklyBMRChartView(viewModel: UserProfileViewModel())
+            .preferredColorScheme(.dark)
     }
 }
+

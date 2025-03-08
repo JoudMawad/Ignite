@@ -5,9 +5,7 @@ struct MonthlyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
     private let historyManager = CalorieHistoryManager()
     
-    // Add a mutable state for the overlay selection.
-    @State private var selectedOverlay: OverlayData? = nil
-    
+
     var calorieData: [(date: String, calories: Int)] {
         historyManager.totalCaloriesForPeriod(days: 30)
     }
@@ -16,10 +14,6 @@ struct MonthlyCalorieChartView: View {
         ChartDataHelper.groupData(from: calorieData, days: 30, interval: 5, dateFormat: "MMM d")
     }
     
-    // Map to overlay data.
-    var overlayData: [OverlayData] {
-        formattedData.map { OverlayData(label: $0.0, value: Double($0.1)) }
-    }
     
     func maxCalorieValue() -> Int {
         return (formattedData.map { $0.calories }.max() ?? 100) + 50
@@ -75,15 +69,7 @@ struct MonthlyCalorieChartView: View {
                     }
                 )
                 .chartYScale(domain: 0...Double(maxCalorieValue()))
-                .chartOverlay { proxy in
-                    InteractiveChartOverlay(
-                        proxy: proxy,
-                        formattedData: overlayData,
-                        selectedEntry: $selectedOverlay, // Use the mutable binding here.
-                        markerColor: .cyan,               // Set your desired marker color.
-                        labelColor: .black                // Set your desired label color.
-                    )
-                }
+
                 .frame(height: 250)
                 .padding()
             }

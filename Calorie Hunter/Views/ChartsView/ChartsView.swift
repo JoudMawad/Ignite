@@ -7,7 +7,7 @@ struct ChartsView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack {
+                LazyVStack {
                     Text("Charts")
                         .font(.title2)
                         .fontWeight(.bold)
@@ -28,7 +28,17 @@ struct ChartsView: View {
                         // ✅ Weight Charts
                         AnyView(WeeklyWeightChartView()),
                         AnyView(MonthlyWeightChartView()),
-                        AnyView(YearlyWeightChartView()) // ❌ Removed `viewModel`
+                        AnyView(YearlyWeightChartView())
+                    ])
+                    
+                    Spacer()
+                    
+                    ChartCarouselView(charts: [
+                        
+                        // ✅ Weight Charts
+                        AnyView(WeeklyBMRChartView(viewModel: userProfileViewModel)),
+                        AnyView(MonthlyBMRChartView(viewModel: userProfileViewModel)),
+                        AnyView(YearlyBMRChartView(viewModel: userProfileViewModel))
                     ])
                 }
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))

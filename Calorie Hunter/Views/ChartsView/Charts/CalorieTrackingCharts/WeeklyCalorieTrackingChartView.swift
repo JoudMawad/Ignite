@@ -5,8 +5,6 @@ struct WeeklyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
     private let historyManager = CalorieHistoryManager()
     
-    // State for interactive overlay.
-    @State private var selectedOverlay: OverlayData?
     
     var calorieData: [(date: String, calories: Int)] {
         historyManager.totalCaloriesForPeriod(days: 7)
@@ -27,10 +25,6 @@ struct WeeklyCalorieChartView: View {
         }.reversed()
     }
     
-    // Map formatted data to overlay data.
-    var overlayData: [OverlayData] {
-        formattedData.map { OverlayData(label: $0.0, value: Double($0.1)) }
-    }
     
     func maxCalorieValue() -> Int {
         return (formattedData.map { $0.calories }.max() ?? 100) + 50
@@ -87,15 +81,7 @@ struct WeeklyCalorieChartView: View {
                 )
                 .chartYScale(domain: 0...maxCalorieValue())
                 // Use the reusable interactive overlay.
-                .chartOverlay { proxy in
-                    InteractiveChartOverlay(
-                        proxy: proxy,
-                        formattedData: overlayData,
-                        selectedEntry: $selectedOverlay,
-                        markerColor: .cyan,   // Set your marker color here.
-                        labelColor: .black     // Set your label text color here.
-                    )
-                }
+                
                 .frame(height: 250)
                 .padding()
             }

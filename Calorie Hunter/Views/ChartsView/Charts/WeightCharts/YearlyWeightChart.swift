@@ -3,7 +3,6 @@ import Charts
 
 struct YearlyWeightChartView: View {
     private let weightHistoryManager = WeightHistoryManager()
-    @State private var selectedOverlay: OverlayData?
     
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 365)
@@ -13,9 +12,6 @@ struct YearlyWeightChartView: View {
         ChartDataHelper.groupWeightData(from: weightData, days: 365, interval: 90, dateFormat: "MMM yy")
     }
     
-    var overlayData: [OverlayData] {
-        formattedData.map { OverlayData(label: $0.label, value: $0.weight) }
-    }
     
     func maxWeightValue() -> Double {
         return (formattedData.map { $0.weight }.max() ?? 100) + 2
@@ -55,23 +51,7 @@ struct YearlyWeightChartView: View {
                         )
                     }
                 }
-                .chartOverlay { proxy in
-                    GeometryReader { geo in
-                        if let plotAnchor = proxy.plotFrame {
-                            let _ = geo[plotAnchor]
-                            // Use the helper overlay.
-                            InteractiveChartOverlay(
-                                proxy: proxy,
-                                formattedData: overlayData,
-                                selectedEntry: $selectedOverlay,
-                                markerColor: .pink,             // Customize as needed.
-                                labelColor: .black.opacity(0.8)    // Customize as needed.
-                            )
-                        } else {
-                            EmptyView()
-                        }
-                    }
-                }
+                
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
                         AxisGridLine().foregroundStyle(Color.black)

@@ -1,27 +1,54 @@
+//
+//  YearlyBmrChart.swift
+//  Calorie Hunter
+//
+//  Created by Jude Mawad on 08.03.25.
+//
+
 import SwiftUI
 import Charts
 
-struct YearlyCalorieChartView: View {
-    @ObservedObject var viewModel: FoodViewModel
-    private let historyManager = CalorieHistoryManager()
-    
-    var calorieData: [(date: String, calories: Int)] {
-        historyManager.totalCaloriesForPeriod(days: 365)
+struct YearlyBMRChartView: View {
+    @ObservedObject var viewModel: UserProfileViewModel
+    private let weightHistoryManager = WeightHistoryManager()
+
+    var weightData: [(date: String, weight: Double)] {
+        weightHistoryManager.weightForPeriod(days: 365)
     }
     
-    var formattedData: [(label: String, calories: Int)] {
-        ChartDataHelper.groupData(from: calorieData, days: 365, interval: 90, dateFormat: "MMM yy")
+    // Group the weight data for the year.
+    var formattedData: [(label: String, avgWeight: Double)] {
+        ChartDataHelper.groupWeightData(from: weightData, days: 365, interval: 90, dateFormat: "MMM yy")
+    }
+    
+    // Compute BMR for each group using the average weight.
+    var bmrData: [(label: String, bmr: Double)] {
+        formattedData.map { group in
+            let bmr = BMRCalculator.computeBMR(
+                forWeight: group.avgWeight,
+                age: Double(viewModel.age),
+                height: Double(viewModel.height),
+                gender: viewModel.gender
+            )
+            return (group.label, bmr)
+        }
     }
     
     
-    func maxCalorieValue() -> Int {
-        return (formattedData.map { $0.calories }.max() ?? 100) + 50
+    func maxBMRValue() -> Double {
+        let maxBMR = bmrData.map { $0.bmr }.max() ?? 1500
+        return maxBMR + 50
+    }
+    
+    func minBMRValue() -> Double {
+        let minBMR = bmrData.map { $0.bmr }.min() ?? 1200
+        return minBMR - 50
     }
     
     var body: some View {
-        ChartCardCyanView {
+        ChartCardYellowView {
             VStack {
-                Text("Calories")
+                Text("BMR")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -33,18 +60,20 @@ struct YearlyCalorieChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.label) { entry in
+                    ForEach(bmrData, id: \.label) { entry in
                         LineMark(
                             x: .value("Date", entry.label),
-                            y: .value("Calories", entry.calories)
+                            y: .value("BMR", entry.bmr)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.blue, .cyan]),
-                                           startPoint: .top,
-                                           endPoint: .bottom)
+                            LinearGradient(
+                                gradient: Gradient(colors: [.orange, .yellow]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
                     }
                 }
@@ -60,16 +89,14 @@ struct YearlyCalorieChartView: View {
                         let positions: [CGFloat] = [0, 51, 101, 151, 202, 252]
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
-                                .frame(width: 3, height: 21)
+                                .frame(width: 4, height: 21)
                                 .foregroundColor(.black)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }
                     }
                 )
-                .chartYScale(domain: 0...maxCalorieValue())
-                // Use the reusable interactive overlay.
-               
+                .chartYScale(domain: minBMRValue()...maxBMRValue())
                 .frame(height: 250)
                 .padding()
             }
@@ -77,9 +104,9 @@ struct YearlyCalorieChartView: View {
     }
 }
 
-struct YearlyCalorieChartView_Previews: PreviewProvider {
+struct YearlyBMRChartView_Previews: PreviewProvider {
     static var previews: some View {
-        YearlyCalorieChartView(viewModel: FoodViewModel())
+        YearlyBMRChartView(viewModel: UserProfileViewModel())
             .preferredColorScheme(.dark)
     }
 }

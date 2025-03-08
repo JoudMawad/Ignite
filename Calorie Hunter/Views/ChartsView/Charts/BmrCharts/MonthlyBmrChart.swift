@@ -1,33 +1,55 @@
+//
+//  MonthlyBmrChart.swift
+//  Calorie Hunter
+//
+//  Created by Jude Mawad on 08.03.25.
+//
+
 import SwiftUI
 import Charts
 
-struct MonthlyWeightChartView: View {
+struct MonthlyBMRChartView: View {
+    @ObservedObject var viewModel: UserProfileViewModel
     private let weightHistoryManager = WeightHistoryManager()
     
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 30)
     }
     
-    var formattedData: [(label: String, weight: Double)] {
+    // Group the weight data for the month.
+    var formattedData: [(label: String, avgWeight: Double)] {
         ChartDataHelper.groupWeightData(from: weightData, days: 30, interval: 5, dateFormat: "MMM d")
     }
     
+    // Compute the monthly BMR using the average weight of each group.
+    var bmrData: [(label: String, bmr: Double)] {
+        formattedData.map { group in
+            let bmr = BMRCalculator.computeBMR(
+                forWeight: group.avgWeight, // use avgWeight here
+                age: Double(viewModel.age),
+                height: Double(viewModel.height),
+                gender: viewModel.gender
+            )
+            return (group.label, bmr)
+        }
+    }
+
     
-    // Dynamic Y-axis scaling.
-    func maxWeightValue() -> Double {
-        let maxWeight = formattedData.map { $0.weight }.filter { $0 > 0.0 }.max() ?? 100
-        return maxWeight + 2
+
+    func maxBMRValue() -> Double {
+        let maxBMR = bmrData.map { $0.bmr }.max() ?? 1500
+        return maxBMR + 50
     }
     
-    func minWeightValue() -> Double {
-        let minWeight = formattedData.map { $0.weight }.filter { $0 > 0.0 }.min() ?? 50
-        return minWeight - 2
+    func minBMRValue() -> Double {
+        let minBMR = bmrData.map { $0.bmr }.min() ?? 1200
+        return minBMR - 50
     }
     
     var body: some View {
-        ChartCardPinkView {
+        ChartCardYellowView {
             VStack {
-                Text("Weight")
+                Text("BMR")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -39,18 +61,20 @@ struct MonthlyWeightChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.label) { entry in
+                    ForEach(bmrData, id: \.label) { entry in
                         LineMark(
                             x: .value("Date", entry.label),
-                            y: .value("Weight", entry.weight)
+                            y: .value("BMR", entry.bmr)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.purple, .pink]),
-                                           startPoint: .top,
-                                           endPoint: .bottom)
+                            LinearGradient(
+                                gradient: Gradient(colors: [.orange, .yellow]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
                     }
                 }
@@ -61,7 +85,6 @@ struct MonthlyWeightChartView: View {
                         AxisValueLabel()
                     }
                 }
-                // Example overlay for vertical grid lines.
                 .overlay(
                     ZStack {
                         let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252]
@@ -74,8 +97,7 @@ struct MonthlyWeightChartView: View {
                         }
                     }
                 )
-                .chartYScale(domain: minWeightValue()...maxWeightValue())
-                // Use the reusable interactive overlay.
+                .chartYScale(domain: minBMRValue()...maxBMRValue())
                 
                 .frame(height: 250)
                 .padding()
@@ -83,3 +105,11 @@ struct MonthlyWeightChartView: View {
         }
     }
 }
+
+struct MonthlyBMRChartView_Previews: PreviewProvider {
+    static var previews: some View {
+        MonthlyBMRChartView(viewModel: UserProfileViewModel())
+            .preferredColorScheme(.dark)
+    }
+}
+
