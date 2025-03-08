@@ -26,7 +26,7 @@ struct WeeklyStepsChartView: View {
     }
     
     var body: some View {
-        ChartCardCyanView {
+        ChartCardRedView {
             VStack {
                 Text("Steps")
                     .font(.system(size: 18, weight: .bold, design: .rounded))

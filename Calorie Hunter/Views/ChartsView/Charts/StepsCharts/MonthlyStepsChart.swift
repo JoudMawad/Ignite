@@ -24,7 +24,7 @@ struct MonthlyStepsChartView: View {
     }
     
     var body: some View {
-        ChartCardCyanView {
+        ChartCardRedView {
             VStack {
                 Text("Steps")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -62,19 +62,6 @@ struct MonthlyStepsChartView: View {
                         AxisValueLabel()
                     }
                 }
-                .overlay(
-                    ZStack {
-                        // Adjusted positions for ~6 data points in a 250pt wide chart
-                        let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252]
-                        ForEach(positions, id: \.self) { x in
-                            Rectangle()
-                                .frame(width: 3, height: 21)
-                                .foregroundColor(.black)
-                                .blendMode(.normal)
-                                .position(x: x, y: 242)
-                        }
-                    }
-                )
                 .chartYScale(domain: 0...Double(maxStepValue()))
                 .frame(height: 250)
                 .padding()
