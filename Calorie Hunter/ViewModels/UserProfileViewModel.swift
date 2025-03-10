@@ -106,3 +106,21 @@ class UserProfileViewModel: ObservableObject {
         }
     }
 }
+
+extension UserProfileViewModel {
+    /// Constructs a `UserProfile` from the current view model properties.
+    var userProfile: UserProfile {
+        UserProfile(
+            name: self.name,
+            Gender: self.gender,
+            age: self.age,
+            height: self.height,
+            dailyCalorieGoal: self.dailyCalorieGoal,
+            startWeight: self.startWeight,
+            currentWeight: self.currentWeight,
+            goalWeight: self.goalWeight,
+            profileImageData: nil  // Adjust if you store image data elsewhere
+        )
+    }
+}
+

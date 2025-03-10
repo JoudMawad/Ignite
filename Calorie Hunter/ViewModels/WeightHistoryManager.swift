@@ -29,7 +29,7 @@ class WeightHistoryManager: ObservableObject {
         localHistory = history
     }
     
-    /// Imports historical weights from HealthKit (merging without overwriting existing entries).
+    // Imports historical weights from HealthKit (merging without overwriting existing entries).
     func importHistoricalWeights(_ weights: [(date: String, weight: Double)]) {
         var history = localHistory
         for entry in weights {
@@ -38,16 +38,6 @@ class WeightHistoryManager: ObservableObject {
             }
         }
         localHistory = history
-    }
-    
-    /// Exports the local history as CSV text.
-    func exportWeightHistoryToCSV() -> String {
-        let history = localHistory
-        var csvString = "Date,Weight (kg)\n"
-        for (date, weight) in history.sorted(by: { $0.key < $1.key }) {
-            csvString += "\(date),\(weight)\n"
-        }
-        return csvString
     }
     
     /// Returns weight entries for the past 'days' days.
@@ -63,6 +53,12 @@ class WeightHistoryManager: ObservableObject {
         }
         return result.reversed()
     }
+    
+    func weightupdate() {
+        
+        
+    }
+    
     
     /// Formats a Date as "yyyy-MM-dd".
     private func formatDate(_ date: Date) -> String {

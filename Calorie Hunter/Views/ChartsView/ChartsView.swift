@@ -1,50 +1,55 @@
 import SwiftUI
 
+// MARK: - ChartsView
+/// A view that displays various chart carousels including calorie, weight, BMR, and steps charts.
 struct ChartsView: View {
+    // Observed view model for food-related data.
     @ObservedObject var foodViewModel: FoodViewModel
+    // Observed view model for user profile data.
     @ObservedObject var userProfileViewModel: UserProfileViewModel
 
     var body: some View {
         NavigationView {
             ScrollView {
                 LazyVStack {
-
+                    // Header text for the charts screen.
                     Text("Charts")
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.top, 10)
                     
+                    // MARK: Calorie Charts Carousel
                     ChartCarouselView(charts: [
-                        // ✅ Calorie Charts
+                        // Weekly calorie chart.
                         AnyView(WeeklyCalorieChartView(viewModel: foodViewModel)),
+                        // Monthly calorie chart.
                         AnyView(MonthlyCalorieChartView(viewModel: foodViewModel)),
-                        AnyView(YearlyCalorieChartView(viewModel: foodViewModel)),
+                        // Yearly calorie chart.
+                        AnyView(YearlyCalorieChartView(viewModel: foodViewModel))
                     ])
-                    
                     
                     Spacer()
                     
+                    // MARK: Weight Charts Carousel
                     ChartCarouselView(charts: [
-                        
-                        // ✅ Weight Charts
-                        AnyView(WeeklyWeightChartView()),
+                        // Weekly weight chart.
+                        // Use the computed userProfile value from the view model.
+                        AnyView(WeeklyWeightChartView(userProfile: userProfileViewModel.userProfile)),
                         AnyView(MonthlyWeightChartView()),
                         AnyView(YearlyWeightChartView())
                     ])
                     
                     Spacer()
                     
+                    // MARK: BMR Charts Carousel
                     ChartCarouselView(charts: [
-                        
-                        // ✅ Weight Charts
                         AnyView(WeeklyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(MonthlyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(YearlyBMRChartView(viewModel: userProfileViewModel))
                     ])
                     
+                    // MARK: Steps Charts Carousel
                     ChartCarouselView(charts: [
-                        
-                        // ✅ Weight Charts
                         AnyView(WeeklyStepsChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(MonthlyStepsChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(YearlyStepsChartView(stepsManager: StepsHistoryManager.shared))
@@ -52,6 +57,7 @@ struct ChartsView: View {
                     
                     Spacer()
                 }
+                // Set the background to the system's background color and extend it to safe areas.
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
             }
         }
