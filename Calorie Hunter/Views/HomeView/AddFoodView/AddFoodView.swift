@@ -50,11 +50,17 @@ struct AddFoodView: View {
                         VStack(spacing: 0) {
                             ForEach(filteredFoods, id: \.id) { food in
                                 FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
+                                Divider()
+                                    .background(Color.black)
                             }
                         }
+                        .background(Color.black) // Makes the entire list area black.
+                        .padding(.horizontal, 20)
                     }
                     .frame(maxHeight: 460)
+
                 }
+
                 
                 Spacer()
                 

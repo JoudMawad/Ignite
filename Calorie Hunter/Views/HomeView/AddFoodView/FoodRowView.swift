@@ -14,6 +14,8 @@ struct FoodRowView: View {
             HStack {
                 Text(food.name)
                     .foregroundColor(.white)
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+
                 Spacer()
                 Button {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.1)) {
@@ -22,6 +24,7 @@ struct FoodRowView: View {
                 } label: {
                     Image(systemName: isExpanded ? "chevron.up" : "plus.circle")
                         .foregroundColor(.white)
+                        .font(.system(size: 22))
                 }
             }
             .padding(.horizontal)
@@ -60,5 +63,6 @@ struct FoodRowView: View {
             Divider().background(Color.black)
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.1), value: isExpanded)
+        .padding(.horizontal)
     }
 }

@@ -15,11 +15,8 @@ struct FoodChartView: View {
     var totalFat: Double
     
     var body: some View {
-        let isEmpty = (totalProtein == 0 && totalCarbs == 0 && totalFat == 0)
         
-        let nutrients: [Nutrient] = isEmpty ? [
-            Nutrient(name: "Empty", amount: 1, color: .gray.opacity(0.3))
-        ] : [
+        let nutrients: [Nutrient] = [
             Nutrient(name: "Protein", amount: totalProtein, color: .blue.opacity(0.9)),
             Nutrient(name: "Carbs", amount: totalCarbs, color: .green.opacity(0.9)),
             Nutrient(name: "Fat", amount: totalFat, color: .cyan.opacity(0.9))
@@ -63,9 +60,7 @@ struct FoodChartView: View {
             // Macro Breakdown
             VStack(spacing: 6) {
                 ForEach(nutrients) { nutrient in
-                    if nutrient.name != "Empty" {
                         MacroRowView(title: nutrient.name, value: nutrient.amount, percentage: (nutrient.amount / totalAmount) * 100)
-                    }
                 }
             }
             .font(.headline)
