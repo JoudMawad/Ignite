@@ -2,10 +2,22 @@ import SwiftUI
 
 struct AddFoodView: View {
     @ObservedObject var viewModel: FoodViewModel
+    var preselectedMealType: String  // New property for meal type
+
     @Environment(\.dismiss) var dismiss
 
     @State private var searchText: String = ""
-    @State private var isManualEntryPresented: Bool = false  // State to control sheet presentation
+    @State private var isManualEntryPresented: Bool = false  // Controls sheet presentation
+    
+    // Optional: If you want to track the selected meal type in this view,
+    // you can use a state variable that is initialized with preselectedMealType.
+    @State private var selectedMealType: String
+
+    init(viewModel: FoodViewModel, preselectedMealType: String) {
+        self.viewModel = viewModel
+        self.preselectedMealType = preselectedMealType
+        _selectedMealType = State(initialValue: preselectedMealType)
+    }
     
     private var combinedFoods: [FoodItem] {
         PredefinedFoods.foods + PredefinedUserFoods.shared.foods
@@ -18,6 +30,7 @@ struct AddFoodView: View {
     var body: some View {
         NavigationView {
             VStack {
+                
                 // Search Bar
                 TextField("Search food...", text: $searchText)
                     .padding(10)
@@ -36,7 +49,7 @@ struct AddFoodView: View {
                     ScrollView {
                         VStack(spacing: 0) {
                             ForEach(filteredFoods, id: \.id) { food in
-                                FoodRowView(food: food, viewModel: viewModel)
+                                FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
                             }
                         }
                     }
@@ -62,5 +75,5 @@ struct AddFoodView: View {
 }
 
 #Preview {
-    AddFoodView(viewModel: FoodViewModel())
+    AddFoodView(viewModel: FoodViewModel(), preselectedMealType: "Breakfast")
 }

@@ -3,15 +3,14 @@ import SwiftUI
 struct FoodRowView: View {
     var food: FoodItem
     @ObservedObject var viewModel: FoodViewModel
-    
+    let mealType: String  // Meal type passed from parent
+
     @State private var isExpanded: Bool = false
     @State private var gramsInput: String = ""
-    @State private var mealType: String = "Breakfast"
-    
-    private let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) { // Ensures proper stacking
+        VStack(alignment: .leading, spacing: 0) {
+            // Main row with food name and expand button
             HStack {
                 Text(food.name)
                     .foregroundColor(.white)
@@ -28,8 +27,8 @@ struct FoodRowView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
             .background(Color.black)
-
-            // Expanded Section (Already present but collapsed)
+            
+            // Expanded section for entering grams
             VStack(spacing: 8) {
                 TextField("Grams Consumed", text: $gramsInput)
                     .keyboardType(.decimalPad)
@@ -37,35 +36,27 @@ struct FoodRowView: View {
                     .padding(5)
                     .background(Color(UIColor.black))
                     .cornerRadius(8)
-
-                Picker("Meal Type", selection: $mealType) {
-                    ForEach(mealTypes, id: \.self) { meal in
-                        Text(meal).tag(meal)
-                    }
-                }
-                .pickerStyle(MenuPickerStyle())
-                .tint(.gray)
-
+                
                 ExpandingButton(title: "Add") {
                     guard let gramsValue = Double(gramsInput.replacingOccurrences(of: ",", with: ".")) else {
                         return
                     }
+                    // Use the preset mealType passed from the parent
                     viewModel.addPredefinedFood(food: food, gramsConsumed: gramsValue, mealType: mealType)
                     
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.1)) {
                         isExpanded = false
                     }
                     gramsInput = ""
-                    mealType = "Breakfast"
                 }
             }
             .padding()
             .background(Color.black)
             .cornerRadius(8)
-            .frame(maxHeight: isExpanded ? nil : 0) // Prevents appearing from nowhere
-            .opacity(isExpanded ? 1 : 0) // Prevents flickering
-            .clipped() // Hides content when collapsed
-
+            .frame(maxHeight: isExpanded ? nil : 0) // Expand/collapse the section
+            .opacity(isExpanded ? 1 : 0)
+            .clipped()
+            
             Divider().background(Color.black)
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.1), value: isExpanded)

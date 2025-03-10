@@ -3,6 +3,7 @@ import SwiftUI
 struct UserProfileView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
     @StateObject var imageVM = ProfileImageViewModel()
     @State private var isShowingImagePicker = false
 
@@ -129,6 +130,16 @@ struct UserProfileView: View {
                             viewModel.saveProfile()
                         }
                     )
+                    
+                    WeightProgressView(
+                        startWeight: userProfileViewModel.startWeight,
+                        viewModel: userProfileViewModel,
+                        onWeightChange: {
+                            userProfileViewModel.saveProfile()
+                        }
+                    )
+                    .padding(.vertical, 20)
+                    
                 }
                 .background(Color.black)
                 .padding(.top, 35)
@@ -229,8 +240,4 @@ extension View {
                                         from: nil,
                                         for: nil)
     }
-}
-
-#Preview {
-    UserProfileView(viewModel: UserProfileViewModel())
 }

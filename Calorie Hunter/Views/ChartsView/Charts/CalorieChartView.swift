@@ -16,7 +16,7 @@ struct CalorieChartView: View {
         let progress = Double(totalCalories) / Double(viewModel.dailyCalorieGoal)
         let gradientColors: [Color] = progress > 1
             ? [Color.red, Color.red]  // Overeating -> Full red
-            : [Color.green, Color.yellow, Color.orange, Color.green]  // Gradual transition
+        : [Color.yellow, Color.orange, Color.yellow]  // Gradual transition
 
         ZStack {
             Circle()

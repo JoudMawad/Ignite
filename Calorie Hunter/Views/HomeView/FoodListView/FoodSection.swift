@@ -5,6 +5,9 @@ struct FoodSection: View {
     @Environment(\.colorScheme) var colorScheme
     let mealType: String
     @Binding var expandedSections: Set<String>
+    
+    // New closure property that will be triggered when the plus icon is tapped.
+    var addFoodAction: (String) -> Void
 
     @State private var isEditing = false // Track edit mode
 
@@ -19,24 +22,25 @@ struct FoodSection: View {
     }
     
     private func isFoodFromToday(_ date: Date) -> Bool {
-        return Calendar.current.isDateInToday(date)
+        Calendar.current.isDateInToday(date)
     }
     
     var totalCalories: Int {
         viewModel.totalCaloriesForMealType(mealType)
     }
 
-
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            // Header with meal name, total calories, and "Edit" button
+            // Header with meal name, total calories, plus icon, and "Edit" button
             HStack {
-                Image(systemName: isExpanded ? "minus.circle.fill" : "plus.circle.fill")
+                // Plus Icon Button to open add food view with preselected meal type
+                
+
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
 
                 Text(mealType)
-                    .font(.title2)
-                    .bold()
+                    .font(.system(size: 25, weight: .bold, design: .rounded))
 
                 Spacer()
 
@@ -52,9 +56,20 @@ struct FoodSection: View {
                         }
                     }
                     .foregroundColor(.primary)
+                    
+                    
                 }
+                
+                Button(action: {
+                    addFoodAction(mealType)
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.system(size: 20))
+                }
+                .padding(.trailing, 5)
             }
-            .padding()
+            .padding(.vertical, 10)
             .background(Color.clear)
             .onTapGesture {
                 withAnimation {
@@ -101,4 +116,16 @@ struct FoodSection: View {
         .background(Color.clear)
         .padding(.horizontal)
     }
+    
+    private func openAddFoodView(for mealType: String) {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
+            // Initialize AddFoodView with the mealType already set.
+            let addFoodView = AddFoodView(viewModel: viewModel, preselectedMealType: mealType)
+            let hostingController = UIHostingController(rootView: addFoodView)
+            keyWindow.rootViewController?.present(hostingController, animated: true, completion: nil)
+        }
+    }
+
 }
+

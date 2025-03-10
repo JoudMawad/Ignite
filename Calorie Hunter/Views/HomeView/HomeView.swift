@@ -4,13 +4,15 @@ struct HomeView: View {
     @ObservedObject var viewModel: FoodViewModel
     @ObservedObject var userProfileViewModel: UserProfileViewModel
     
+    // Instantiate WaterViewModel locally (adjust the container as needed)
+    @StateObject private var waterViewModel = WaterViewModel(container: PersistenceController.shared.container)
+    
     @State private var showSettings = false
     
-    // 1) A computed property that returns today's date as a string.
+    // Computed property for today's date string.
     private var todayString: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium    // e.g. "Mar 10, 2025"
-        // or use .long for "March 10, 2025" or a custom "EEEE, MMM d"
         return formatter.string(from: Date())
     }
     
@@ -35,28 +37,24 @@ struct HomeView: View {
                     .frame(height: 330)
                     .padding(.top, 10)
                     
-                    // Add Food Button
-                    ExpandingButton(title: "Add Food") {
-                        openAddFoodView()
-                    }
                     
-                    // Food List
-                    FoodListView(viewModel: viewModel)
+                    WaterProgressView(waterViewModel: waterViewModel, dailyGoal: 2.8)
+                    .padding(.vertical, 10)
                     
-                    // Weight Progress Chart
-                    WeightChartView(
-                        startWeight: userProfileViewModel.startWeight,
-                        viewModel: userProfileViewModel,
-                        onWeightChange: {
-                            userProfileViewModel.saveProfile()
+                    // Food List with addFoodAction closure passed in
+                    FoodListView(
+                        viewModel: viewModel,
+                        addFoodAction: { mealType in
+                            openAddFoodView(for: mealType)
                         }
                     )
-                    .padding(.vertical, 20)
+                    
+                    // Weight Progress Chart
+                   
                 }
                 .padding(.horizontal, 16)
             }
             .background(Color.clear)
-            // 2) Use the computed todayString instead of "Home"
             .navigationBarTitle(todayString, displayMode: .inline)
             .navigationBarItems(
                 leading: Button(action: {
@@ -83,11 +81,12 @@ struct HomeView: View {
             })
         }
     }
-
-    private func openAddFoodView() {
+    
+    // Function to open AddFoodView with a preselected meal type
+    private func openAddFoodView(for mealType: String) {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
-            let addFoodView = AddFoodView(viewModel: viewModel)
+            let addFoodView = AddFoodView(viewModel: viewModel, preselectedMealType: mealType)
             let hostingController = UIHostingController(rootView: addFoodView)
             keyWindow.rootViewController?.present(hostingController, animated: true, completion: nil)
         }

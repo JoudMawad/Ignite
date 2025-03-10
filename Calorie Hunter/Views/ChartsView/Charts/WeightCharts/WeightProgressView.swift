@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct WeightChartView: View {
+struct WeightProgressView: View {
     var startWeight: Double
     @ObservedObject var viewModel: UserProfileViewModel
     var onWeightChange: () -> Void
@@ -25,24 +25,19 @@ struct WeightChartView: View {
                     ZStack(alignment: .leading) {
                         // Background Progress Bar
                         RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.gray.opacity(0.3))
                             .frame(height: 10)
-                            .foregroundColor(Color.gray.opacity(0.3))
 
-                        // Gradient Progress Bar
+                        // Optimized Gradient Progress Bar (direct fill & clip)
                         RoundedRectangle(cornerRadius: 10)
-                            .frame(width: max(geometry.size.width * progress, 5), height: 10)
-                            .overlay(
+                            .fill(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color.red, Color.orange, Color.yellow, Color.green]),
+                                    gradient: Gradient(colors: [Color.cyan, Color.blue]),
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .mask(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .frame(width: max(geometry.size.width * progress, 5), height: 10)
-                            )
-                            .animation(.easeInOut(duration: 0.3), value: progress)
+                            .frame(width: max(geometry.size.width * progress, 5), height: 10)
                     }
                 }
                 .frame(height: 10)
@@ -53,12 +48,12 @@ struct WeightChartView: View {
                     .font(.caption)
                     .foregroundColor(.gray)
             }
-
-            HStack {
+            
+           /* HStack {
                 Button(action: {
                     withAnimation {
                         viewModel.currentWeight -= 0.1
-                        viewModel.updateCurrentWeight(viewModel.currentWeight) // ✅ Ensures it persists
+                        viewModel.updateCurrentWeight(viewModel.currentWeight)
                         onWeightChange()
                     }
                 }) {
@@ -74,7 +69,7 @@ struct WeightChartView: View {
                 Button(action: {
                     withAnimation {
                         viewModel.currentWeight += 0.1
-                        viewModel.updateCurrentWeight(viewModel.currentWeight) // ✅ Ensures it persists
+                        viewModel.updateCurrentWeight(viewModel.currentWeight)
                         onWeightChange()
                     }
                 }) {
@@ -83,8 +78,10 @@ struct WeightChartView: View {
                         .font(.title2)
                 }
             }
-            .padding(.top, 5)
+            .padding(.top, 5)*/
         }
         .padding()
+        // Uncomment the next line if you want to render the chart offscreen for further performance gains.
+        // .drawingGroup()
     }
 }

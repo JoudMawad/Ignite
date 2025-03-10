@@ -6,7 +6,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             TabView {
-                UserProfileView(viewModel: userProfileViewModel)
+                UserProfileView(viewModel: userProfileViewModel, userProfileViewModel: userProfileViewModel)
                     .tabItem {
                         Label("Profile", systemImage: "person.fill")
                     }
