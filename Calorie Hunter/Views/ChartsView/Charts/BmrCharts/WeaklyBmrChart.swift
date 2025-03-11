@@ -10,6 +10,7 @@ import Charts
 
 struct WeeklyBMRChartView: View {
     @ObservedObject var viewModel: UserProfileViewModel
+    @Environment(\.colorScheme) var colorScheme
     private let weightHistoryManager = WeightHistoryManager()
     
     /// Retrieve stored weight data for the last 7 days.
@@ -91,7 +92,7 @@ struct WeeklyBMRChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -102,7 +103,7 @@ struct WeeklyBMRChartView: View {
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 3, height: 21)
-                                .foregroundColor(.black)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

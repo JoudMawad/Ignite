@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 struct MonthlyWeightChartView: View {
+    @Environment(\.colorScheme) var colorScheme
     private let weightHistoryManager = WeightHistoryManager()
     
     var weightData: [(date: String, weight: Double)] {
@@ -56,7 +57,7 @@ struct MonthlyWeightChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -68,7 +69,7 @@ struct MonthlyWeightChartView: View {
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 3.5, height: 21)
-                                .foregroundColor(.black)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

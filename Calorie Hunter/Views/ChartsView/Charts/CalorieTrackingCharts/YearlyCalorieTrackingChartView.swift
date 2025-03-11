@@ -3,6 +3,7 @@ import Charts
 
 struct YearlyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
+    @Environment(\.colorScheme) var colorScheme
     private let historyManager = CalorieHistoryManager()
     
     var calorieData: [(date: String, calories: Int)] {
@@ -50,7 +51,7 @@ struct YearlyCalorieChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -61,7 +62,7 @@ struct YearlyCalorieChartView: View {
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 3, height: 21)
-                                .foregroundColor(.black)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

@@ -8,7 +8,7 @@ struct ContentView: View {
         // Fully remove the default tab bar shadow and blur
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.black
+        appearance.backgroundColor = UIColor.systemBackground
         
         // Removes the thin grey line (tab bar separator)
         appearance.shadowColor = .clear
@@ -21,8 +21,6 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea() // Ensures background is black
-
             TabView {
                 // Home Page
                 HomeView(viewModel: viewModel, userProfileViewModel: userProfileViewModel)
@@ -36,8 +34,9 @@ struct ContentView: View {
                         Label("", systemImage: "chart.line.uptrend.xyaxis")
                     }
             }
-            .background(Color.black.edgesIgnoringSafeArea(.all)) // Ensures no white separator
-            .tint(.white) // Ensures tab icons/text stay visible
+            .background(Color.primary.edgesIgnoringSafeArea(.all)) // Ensures no white separator
+            .tint(.primary
+               ) // Ensures tab icons/text stay visible
         }
     }
 }

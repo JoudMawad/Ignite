@@ -10,6 +10,7 @@ import Charts
 
 struct YearlyBMRChartView: View {
     @ObservedObject var viewModel: UserProfileViewModel
+    @Environment(\.colorScheme) var colorScheme
     private let weightHistoryManager = WeightHistoryManager()
 
     var weightData: [(date: String, weight: Double)] {
@@ -79,7 +80,7 @@ struct YearlyBMRChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -90,7 +91,7 @@ struct YearlyBMRChartView: View {
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 4, height: 21)
-                                .foregroundColor(.black)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

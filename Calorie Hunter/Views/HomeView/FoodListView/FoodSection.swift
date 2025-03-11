@@ -64,7 +64,7 @@ struct FoodSection: View {
                     addFoodAction(mealType)
                 }) {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.white)
+                        .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
                         .font(.system(size: 20))
                 }
                 .padding(.trailing, 5)

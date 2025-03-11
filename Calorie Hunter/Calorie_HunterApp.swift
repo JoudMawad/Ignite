@@ -16,7 +16,6 @@ struct Calorie_HunterApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .preferredColorScheme(.dark)
         }
     }
 }

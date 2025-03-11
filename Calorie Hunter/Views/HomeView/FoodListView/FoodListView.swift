@@ -21,7 +21,6 @@ struct FoodListView: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.clear)
                 .cornerRadius(10)
-                .shadow(radius: 2)
                 .padding(.horizontal, 8)
                 .animation(.easeInOut(duration: 0.3), value: expandedSections)
             }

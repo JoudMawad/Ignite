@@ -3,6 +3,7 @@ import Charts
 
 struct WeeklyStepsChartView: View {
     @ObservedObject var stepsManager: StepsHistoryManager
+    @Environment(\.colorScheme) var colorScheme
     
     /// Grab the last 7 days of raw step data as (date: "yyyy-MM-dd", steps: Int).
     private var rawStepsData: [(date: String, steps: Int)] {
@@ -60,7 +61,7 @@ struct WeeklyStepsChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }

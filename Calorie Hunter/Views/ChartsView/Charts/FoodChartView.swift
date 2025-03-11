@@ -64,7 +64,7 @@ struct FoodChartView: View {
                 }
             }
             .font(.headline)
-            .foregroundColor(.primary)
+            .foregroundColor(Color.white)
             .padding()
         }
         .animation(.easeInOut(duration: 0.5), value: totalAmount)

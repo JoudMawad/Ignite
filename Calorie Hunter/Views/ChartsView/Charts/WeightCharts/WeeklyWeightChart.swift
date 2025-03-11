@@ -5,6 +5,9 @@ import Charts
 // A SwiftUI view that displays a chart of the user's weight over the past week.
 // It uses the provided UserProfile instance to always display today's weight as the user's current weight.
 struct WeeklyWeightChartView: View {
+    
+    @Environment(\.colorScheme) var colorScheme
+    
     // Instance of WeightHistoryManager that handles retrieving stored weight data.
     private let weightHistoryManager = WeightHistoryManager()
     
@@ -101,7 +104,7 @@ struct WeeklyWeightChartView: View {
                 // Customize the x-axis with grid lines, ticks, and labels.
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -114,7 +117,7 @@ struct WeeklyWeightChartView: View {
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 3, height: 21)
-                                .foregroundColor(.black)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

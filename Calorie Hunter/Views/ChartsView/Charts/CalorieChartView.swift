@@ -3,6 +3,7 @@ import Charts
 
 struct CalorieChartView: View {
     @ObservedObject var viewModel: UserProfileViewModel
+    @Environment(\.colorScheme) var colorScheme
     var totalCalories: Int
 
     var body: some View {
@@ -42,6 +43,7 @@ struct CalorieChartView: View {
                     Text("\(caloriesLeft) kcal left")
                         .font(.title)
                         .bold()
+                        .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                     Text("Goal: \(dailyGoal) kcal")
                         .font(.subheadline)
                         .foregroundColor(.gray)

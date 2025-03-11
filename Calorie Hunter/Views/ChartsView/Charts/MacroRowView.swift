@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MacroRowView: View {
+    @Environment(\.colorScheme) var colorScheme
     let title: String
     let value: Double
     let percentage: Double
@@ -55,7 +56,7 @@ struct MacroRowView: View {
             )
 
             Text("\(title): \(Int(value))g ")
-                .foregroundColor(.primary)
+                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
         }
     }
 }

@@ -3,6 +3,7 @@ import Charts
 
 struct YearlyWeightChartView: View {
     @ObservedObject private var weightHistoryManager = WeightHistoryManager.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 365)
@@ -52,7 +53,7 @@ struct YearlyWeightChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -63,7 +64,7 @@ struct YearlyWeightChartView: View {
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
                                 .frame(width: 4, height: 21)
-                                .foregroundColor(.black)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct UserPreDefinedFoodsView: View {
+    @Environment(\.colorScheme) var colorScheme
     @StateObject private var viewModel = UserPreDefinedFoodsViewModel()
     @State private var searchText = "" // Search text state
 

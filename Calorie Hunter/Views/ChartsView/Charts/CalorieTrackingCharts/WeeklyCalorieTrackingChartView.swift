@@ -3,6 +3,7 @@ import Charts
 
 struct WeeklyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
+    @Environment(\.colorScheme) var colorScheme
     private let historyManager = CalorieHistoryManager()
     
     
@@ -62,7 +63,7 @@ struct WeeklyCalorieChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
@@ -72,8 +73,8 @@ struct WeeklyCalorieChartView: View {
                         let positions: [CGFloat] = [0, 36, 72, 108, 145, 180, 216, 253]
                         ForEach(positions, id: \.self) { x in
                             Rectangle()
-                                .frame(width: 2, height: 21)
-                                .foregroundColor(.black)
+                                .frame(width: 3, height: 21)
+                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                                 .blendMode(.normal)
                                 .position(x: x, y: 242)
                         }

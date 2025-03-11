@@ -2,11 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var userProfileViewModel = UserProfileViewModel()
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationStack {
             TabView {
-                UserProfileView(viewModel: userProfileViewModel, userProfileViewModel: userProfileViewModel)
+                UserProfileView(viewModel: userProfileViewModel)
                     .tabItem {
                         Label("Profile", systemImage: "person.fill")
                     }
@@ -16,11 +17,11 @@ struct SettingsView: View {
                         Label("Food Storage", systemImage: "list.bullet")
                     }
             }
-            .background(Color.black.edgesIgnoringSafeArea(.all)) //Black background
-            .toolbarBackground(Color.black, for: .automatic) //Black toolbar
-            .tint(.white) //White tint for tab bar
+            .background(colorScheme == .dark ? Color.black : Color.white) //Black background
+            .toolbarBackground(colorScheme == .dark ? Color.black : Color.white) //Black toolbar
+            .tint(colorScheme == .dark ? Color.white : Color.black) //White tint for tab bar
         }
-        .background(Color.black.edgesIgnoringSafeArea(.all)) //Ensures background is fully black
+        .background(colorScheme == .dark ? Color.black : Color.white) //Ensures background is fully black
     }
 }
 

@@ -3,6 +3,7 @@ import Charts
 
 struct MonthlyStepsChartView: View {
     @ObservedObject var stepsManager: StepsHistoryManager
+    @Environment(\.colorScheme) var colorScheme
     
     /// Raw step data for the past 30 days (now guaranteed to be 30 entries).
     private var stepData: [(date: String, steps: Int)] {
@@ -57,7 +58,7 @@ struct MonthlyStepsChartView: View {
                 }
                 .chartXAxis {
                     AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(Color.black)
+                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                         AxisTick()
                         AxisValueLabel()
                     }
