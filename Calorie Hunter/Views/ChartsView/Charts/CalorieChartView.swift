@@ -7,81 +7,78 @@ struct CalorieChartView: View {
     var totalCalories: Int
 
     var body: some View {
-        let dailyGoal = viewModel.dailyCalorieGoal
-        
-        if totalCalories <= dailyGoal {
-            // Normal mode: show calories left.
-            let caloriesLeft = dailyGoal - totalCalories
-            let progress = Double(caloriesLeft) / Double(dailyGoal)
-            let gradientColors: [Color] = {
-                if progress > 0 {
-                    return [Color.pink, Color.purple, Color.pink]
+        GeometryReader { geometry in
+            let size = min(geometry.size.width, geometry.size.height)
+            let dailyGoal = viewModel.dailyCalorieGoal
+
+            ZStack {
+                // Outer glow effect
+                Circle()
+                    .stroke(Color.gray.opacity(0.45), lineWidth: size * 0.024)
+                    .frame(width: size, height: size)
+                    .blur(radius: size * 0.03)
+
+                if totalCalories <= dailyGoal {
+                    let caloriesLeft = dailyGoal - totalCalories
+                    let progress = Double(caloriesLeft) / Double(dailyGoal)
+                    let gradientColors: [Color] = [Color.pink, Color.purple, Color.pink]
+
+                    // Progress arc
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progress))
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: gradientColors),
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: size * 0.03, lineCap: .round)
+                        )
+                        .frame(width: size, height: size)
+                        .rotationEffect(.degrees(-90))
+                    
+                    // Center text overlay
+                    VStack(spacing: size * 0.05) {
+                        Text("\(caloriesLeft) kcal left")
+                            .font(.system(size: size * 0.1))
+                            .bold()
+                            .foregroundColor(colorScheme == .dark ? .black : .white)
+                        Text("Goal: \(dailyGoal) kcal")
+                            .font(.system(size: size * 0.07))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(size * 0.05)
                 } else {
-                    return [Color.pink, Color.purple, Color.pink]
-                }
-            }()
-            
-            ZStack {
-                Circle()
-                    .stroke(Color.gray.opacity(0.45), lineWidth: 10)
-                    .frame(width: 290, height: 290)
-                    .blur(radius: 8)
-                
-                Circle()
-                    .trim(from: 0, to: CGFloat(progress))
-                    .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: gradientColors),
-                            center: .center
-                        ),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                    )
-                    .frame(width: 290, height: 290)
-                    .rotationEffect(.degrees(-90))
-                
-                VStack {
-                    Text("\(caloriesLeft) kcal left")
-                        .font(.title)
-                        .bold()
-                        .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
-                    Text("Goal: \(dailyGoal) kcal")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    let over = totalCalories - dailyGoal
+                    let progress = min(Double(over) / Double(dailyGoal), 1.0)
+
+                    // "Over" arc
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progress))
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [Color.red, Color.red]),
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: size * 0.03, lineCap: .round)
+                        )
+                        .frame(width: size, height: size)
+                        .rotationEffect(.degrees(-90))
+                    
+                    // Center text overlay
+                    VStack(spacing: size * 0.05) {
+                        Text("\(over) kcal")
+                            .font(.system(size: size * 0.1))
+                            .bold()
+                        Text("Over")
+                            .font(.system(size: size * 0.07))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(size * 0.05)
                 }
             }
-        } else {
-            // Over goal: show the overflow consumption.
-            let over = -(dailyGoal - totalCalories)
-            // Calculate progress for the overflow relative to the goal (capped at 1 full circle).
-            let progress = min(Double(over) / Double(dailyGoal), 1.0)
-            
-            ZStack {
-                Circle()
-                    .stroke(Color.gray.opacity(0.45), lineWidth: 10)
-                    .frame(width: 290, height: 290)
-                    .blur(radius: 8)
-                
-                Circle()
-                    .trim(from: 0, to: CGFloat(progress))
-                    .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [Color.red, Color.red]),
-                            center: .center
-                        ),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                    )
-                    .frame(width: 290, height: 290)
-                    .rotationEffect(.degrees(-90))
-                
-                VStack {
-                    Text("\(over) kcal")
-                        .font(.title)
-                        .bold()
-                    Text("Over")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-            }
+            // Force the ZStack to fill the entire GeometryReader and center its content.
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
+            .animation(.easeInOut(duration: 0.5), value: totalCalories)
         }
     }
 }

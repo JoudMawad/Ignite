@@ -1,17 +1,21 @@
 import SwiftUI
+import Combine
 
 class StepsViewModel: ObservableObject {
     private let healthKitManager = HealthKitManager.shared
     private let stepsManager = StepsHistoryManager.shared
+    private var timerCancellable: AnyCancellable?
+    
+    @Published var currentSteps: Int = 0
     
     init() {
         requestAuthorization()
+        startStepUpdates()
     }
     
     private func requestAuthorization() {
         healthKitManager.requestAuthorization { success, error in
             if success {
-                // After authorization, import historical steps
                 self.importHistoricalStepsFromHealthKit()
             } else {
                 print("HealthKit authorization failed: \(String(describing: error))")
@@ -19,30 +23,28 @@ class StepsViewModel: ObservableObject {
         }
     }
     
-    /// Example: fetch the last year of data.
-    /// For debugging, consider fetching a smaller range (like 7 days).
     func importHistoricalStepsFromHealthKit() {
-        // Start and end date for your fetch. Adjust as needed:
+        // Example: fetch the last year of data.
         let startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
         let endDate = Date()
         
         healthKitManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
-            
-            // 1. Print the raw data from HealthKit (debug):
-            print("=== RAW DATA FROM HEALTHKIT ===")
-            for (dateStr, steps) in stepsData {
-                print("\(dateStr): \(steps)")
-            }
-            
-            // 2. Save them locally
             self.stepsManager.importHistoricalSteps(stepsData)
-            
-            // 3. Read them back & print so you know they're stored:
-            let localDict = UserDefaults.standard.dictionary(forKey: "dailyStepsHistory") as? [String: Int] ?? [:]
-            print("=== AFTER IMPORT, localDict has \(localDict.count) entries ===")
-            for (date, count) in localDict {
-                print("Stored: \(date) -> \(count)")
-            }
         }
+    }
+    
+    /// This function sets up a timer to update the current steps every 1 second.
+    private func startStepUpdates() {
+        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                // Fetch today's steps (using days: 1 returns an array with today's entry)
+                self.currentSteps = self.stepsManager.stepsForPeriod(days: 1).first?.steps ?? 0
+            }
+    }
+    
+    deinit {
+        timerCancellable?.cancel()
     }
 }

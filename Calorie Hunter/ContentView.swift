@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject var viewModel = FoodViewModel()
+    @StateObject var stepsviewModel = StepsViewModel()  // Create it here as a StateObject
     @StateObject var userProfileViewModel = UserProfileViewModel()
     
     init() {
@@ -23,20 +24,26 @@ struct ContentView: View {
         ZStack {
             TabView {
                 // Home Page
-                HomeView(viewModel: viewModel, userProfileViewModel: userProfileViewModel)
-                    .tabItem {
-                        Label("", systemImage: "house.fill")
-                    }
+                HomeView(
+                    viewModel: viewModel,
+                    stepsviewModel: stepsviewModel,
+                    userProfileViewModel: userProfileViewModel
+                )
+                .tabItem {
+                    Label("", systemImage: "house.fill")
+                }
 
                 // Charts Page
-                ChartsView(foodViewModel: FoodViewModel(), userProfileViewModel: UserProfileViewModel())
-                    .tabItem {
-                        Label("", systemImage: "chart.line.uptrend.xyaxis")
-                    }
+                ChartsView(
+                    foodViewModel: FoodViewModel(),
+                    userProfileViewModel: UserProfileViewModel()
+                )
+                .tabItem {
+                    Label("", systemImage: "chart.line.uptrend.xyaxis")
+                }
             }
             .background(Color.primary.edgesIgnoringSafeArea(.all)) // Ensures no white separator
-            .tint(.primary
-               ) // Ensures tab icons/text stay visible
+            .tint(.primary) // Ensures tab icons/text stay visible
         }
     }
 }
