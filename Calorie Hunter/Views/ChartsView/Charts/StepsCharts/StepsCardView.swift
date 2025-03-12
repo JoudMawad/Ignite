@@ -1,5 +1,6 @@
 import SwiftUI
 
+
 struct StepsCardView: View {
     @ObservedObject var stepsViewModel: StepsViewModel
     @Environment(\.colorScheme) var colorScheme
@@ -12,13 +13,13 @@ struct StepsCardView: View {
                     .foregroundColor(colorScheme == .dark ? .black : .white)
                 
                 Text("Steps")
-                    .font(.headline)
+                   
                     .foregroundColor(colorScheme == .dark ? .black : .white)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             Text("\(stepsViewModel.currentSteps)")
-                .font(.largeTitle)
+                .font(.system(size: 26, weight: .bold, design: .rounded))
                 .bold()
                 .foregroundColor(colorScheme == .dark ? .black : .white)
             Spacer()

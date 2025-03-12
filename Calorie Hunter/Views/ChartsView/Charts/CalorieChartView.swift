@@ -21,8 +21,7 @@ struct CalorieChartView: View {
                 if totalCalories <= dailyGoal {
                     let caloriesLeft = dailyGoal - totalCalories
                     let progress = Double(caloriesLeft) / Double(dailyGoal)
-                    let gradientColors: [Color] = [Color.pink, Color.purple, Color.pink]
-
+                    let gradientColors: [Color] = colorScheme == .light ? [Color.white, Color.red, Color.white] : [Color.black, Color.red, Color.black]
                     // Progress arc
                     Circle()
                         .trim(from: 0, to: CGFloat(progress))

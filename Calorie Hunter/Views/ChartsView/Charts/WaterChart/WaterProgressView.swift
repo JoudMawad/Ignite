@@ -77,7 +77,7 @@ struct WaterProgressView: View {
                     .font(.caption)
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 10)
         }
     }
 }

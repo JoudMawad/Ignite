@@ -35,7 +35,7 @@ class StepsViewModel: ObservableObject {
     
     /// This function sets up a timer to update the current steps every 1 second.
     private func startStepUpdates() {
-        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+        timerCancellable = Timer.publish(every: 20, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }

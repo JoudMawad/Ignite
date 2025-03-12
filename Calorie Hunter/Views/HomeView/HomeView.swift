@@ -69,7 +69,7 @@ struct HomeView: View {
     // MARK: - Welcome Section
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Welcome.")
+            Text("Welcome, Jude.")
                 .font(.largeTitle)
                 .fontWeight(.bold)
         }
