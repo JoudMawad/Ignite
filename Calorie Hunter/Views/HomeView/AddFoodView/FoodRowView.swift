@@ -3,6 +3,7 @@ import SwiftUI
 struct FoodRowView: View {
     var food: FoodItem
     @ObservedObject var viewModel: FoodViewModel
+    @Environment(\.colorScheme) var colorScheme
     let mealType: String  // Meal type passed from parent
 
     @State private var isExpanded: Bool = false
@@ -29,7 +30,7 @@ struct FoodRowView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(Color.black)
+            .background(colorScheme == .dark ? Color.black : Color.white)
             
             // Expanded section for entering grams
             VStack(spacing: 8) {
@@ -37,7 +38,7 @@ struct FoodRowView: View {
                     .keyboardType(.decimalPad)
                     .foregroundColor(.white)
                     .padding(5)
-                    .background(Color(UIColor.black))
+                    .background(colorScheme == .dark ? Color.black : Color.white)
                     .cornerRadius(8)
                 
                 ExpandingButton(title: "Add") {
@@ -54,13 +55,13 @@ struct FoodRowView: View {
                 }
             }
             .padding()
-            .background(Color.black)
+            .background(colorScheme == .dark ? Color.black : Color.white)
             .cornerRadius(8)
             .frame(maxHeight: isExpanded ? nil : 0) // Expand/collapse the section
             .opacity(isExpanded ? 1 : 0)
             .clipped()
             
-            Divider().background(Color.black)
+            Divider().background(colorScheme == .dark ? Color.black : Color.white)
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.1), value: isExpanded)
         .padding(.horizontal)

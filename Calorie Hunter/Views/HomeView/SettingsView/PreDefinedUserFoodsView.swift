@@ -24,7 +24,7 @@ struct UserPreDefinedFoodsView: View {
                     .padding(.horizontal, 30)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(UIColor.black))
+                            .fill(colorScheme == .dark ? Color.black : Color.white)
                             .shadow(color: Color.cyan.opacity(0.25), radius: 8, x: 0, y: 0)
                             .padding(.horizontal, 30)
                       )
@@ -50,18 +50,18 @@ struct UserPreDefinedFoodsView: View {
                                     .foregroundColor(.red)
                             }
                         }
-                        .listRowBackground(Color.black)
+                        .listRowBackground(colorScheme == .dark ? Color.black : Color.white)
                     }
                     .onDelete(perform: viewModel.deleteFood)
                 }
                 .listStyle(PlainListStyle())
                 .padding(.horizontal, 5)
                 .scrollContentBackground(.hidden)
-                .background(Color.black)
+                .background(colorScheme == .dark ? Color.black : Color.white)
             }
             .navigationTitle("Storage")
             
-            .background(Color.black.edgesIgnoringSafeArea(.all)) // Ensures full black background
+            .background(colorScheme == .dark ? Color.black : Color.white) // Ensures full black background
         }
     }
 }

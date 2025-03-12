@@ -2,6 +2,9 @@ import SwiftUI
 
 struct AddFoodView: View {
     @ObservedObject var viewModel: FoodViewModel
+    
+    @Environment(\.colorScheme) var colorScheme
+    
     var preselectedMealType: String  // New property for meal type
 
     @Environment(\.dismiss) var dismiss
@@ -37,7 +40,7 @@ struct AddFoodView: View {
                     .foregroundColor(.white)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(UIColor.black))
+                            .fill(colorScheme == .dark ? Color.black : Color.white)
                             .shadow(color: Color.cyan.opacity(0.25), radius: 8)
                     )
                     .padding(.horizontal, 30)
@@ -51,10 +54,10 @@ struct AddFoodView: View {
                             ForEach(filteredFoods, id: \.id) { food in
                                 FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
                                 Divider()
-                                    .background(Color.black)
+                                    .background(colorScheme == .dark ? Color.black : Color.white)
                             }
                         }
-                        .background(Color.black) // Makes the entire list area black.
+                        .background(colorScheme == .dark ? Color.black : Color.white) // Makes the entire list area black.
                         .padding(.horizontal, 20)
                     }
                     .frame(maxHeight: 460)
@@ -72,7 +75,7 @@ struct AddFoodView: View {
                 
             }
             .navigationTitle("Add Food")
-            .background(Color.black.edgesIgnoringSafeArea(.all))
+            .background(colorScheme == .dark ? Color.black : Color.white)
             .sheet(isPresented: $isManualEntryPresented) {
                 ManualEntryView(viewModel: viewModel)
             }
