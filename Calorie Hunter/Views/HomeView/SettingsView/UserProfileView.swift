@@ -81,7 +81,7 @@ struct UserProfileView: View {
             }
             // Display the user's name below the profile image.
             Text(viewModel.name)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .font(.system(size: 40, weight: .bold))
         }
         .padding(.top, 40)

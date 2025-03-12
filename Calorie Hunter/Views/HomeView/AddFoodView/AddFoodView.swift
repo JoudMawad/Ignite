@@ -37,7 +37,7 @@ struct AddFoodView: View {
                 // Search Bar
                 TextField("Search food...", text: $searchText)
                     .padding(10)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
                             .fill(colorScheme == .dark ? Color.black : Color.white)

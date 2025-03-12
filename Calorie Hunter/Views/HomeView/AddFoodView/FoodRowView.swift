@@ -14,7 +14,7 @@ struct FoodRowView: View {
             // Main row with food name and expand button
             HStack {
                 Text(food.name)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .font(.system(size: 22, weight: .semibold, design: .rounded))
 
                 Spacer()
@@ -24,7 +24,7 @@ struct FoodRowView: View {
                     }
                 } label: {
                     Image(systemName: isExpanded ? "chevron.up" : "plus.circle")
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .font(.system(size: 22))
                 }
             }
@@ -36,7 +36,7 @@ struct FoodRowView: View {
             VStack(spacing: 8) {
                 TextField("Grams Consumed", text: $gramsInput)
                     .keyboardType(.decimalPad)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .padding(5)
                     .background(colorScheme == .dark ? Color.black : Color.white)
                     .cornerRadius(8)

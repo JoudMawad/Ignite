@@ -19,7 +19,7 @@ struct UserPreDefinedFoodsView: View {
                 // Search Bar
                 TextField("Search food...", text: $searchText)
                     .padding(10)
-                    .foregroundColor(.white) // White text
+                    .foregroundColor(.primary) // White text
                     .cornerRadius(10)
                     .padding(.horizontal, 30)
                     .background(
@@ -37,7 +37,7 @@ struct UserPreDefinedFoodsView: View {
                             VStack(alignment: .leading) {
                                 Text(food.name)
                                     .font(.headline)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                                 Text("Calories: \(food.calories)")
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
