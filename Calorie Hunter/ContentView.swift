@@ -2,7 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject var viewModel = FoodViewModel()
-    @StateObject var stepsviewModel = StepsViewModel()  // Create it here as a StateObject
+    @StateObject var stepsviewModel = StepsViewModel()  // Use lower-case 'v' as expected by HomeView
+    @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()  // Instantiate BurnedCaloriesViewModel
     @StateObject var userProfileViewModel = UserProfileViewModel()
     
     init() {
@@ -26,13 +27,14 @@ struct ContentView: View {
                 // Home Page
                 HomeView(
                     viewModel: viewModel,
-                    stepsviewModel: stepsviewModel,
+                    stepsviewModel: stepsviewModel,  // Correct parameter label
+                    burnedCaloriesViewModel: burnedCaloriesViewModel,
                     userProfileViewModel: userProfileViewModel
                 )
                 .tabItem {
                     Label("", systemImage: "house.fill")
                 }
-
+                
                 // Charts Page
                 ChartsView(
                     foodViewModel: FoodViewModel(),

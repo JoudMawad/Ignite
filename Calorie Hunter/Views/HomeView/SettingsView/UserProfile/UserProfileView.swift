@@ -9,6 +9,7 @@ struct UserProfileView: View {
     @StateObject var imageVM = ProfileImageViewModel()
     @State private var isShowingImagePicker = false
     
+    
     // Extract first and last names from the Core Data–backed profile.
     var firstName: String {
         let fullName = viewModel.name

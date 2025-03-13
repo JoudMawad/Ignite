@@ -3,6 +3,7 @@ import Foundation
 
 extension Notification.Name {
     static let healthKitWeightDataChanged = Notification.Name("healthKitWeightDataChanged")
+    static let healthKitBurnedCaloriesDataChanged = Notification.Name("healthKitBurnedCaloriesDataChanged")
 }
 
 class HealthKitManager {
@@ -10,20 +11,23 @@ class HealthKitManager {
     let healthStore = HKHealthStore()
     
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        // 1) Define the types we want to read from HealthKit
+        // Define the types we want to read: body mass, step count, and active energy burned.
         guard let bodyMassType = HKObjectType.quantityType(forIdentifier: .bodyMass),
-              let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
+              let stepType = HKObjectType.quantityType(forIdentifier: .stepCount),
+              let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
             completion(false, nil)
             return
         }
         
-        let typesToRead: Set<HKObjectType> = [bodyMassType, stepType]
+        let typesToRead: Set<HKObjectType> = [bodyMassType, stepType, activeEnergyType]
         
-        // 2) Request authorization for these read types
+        // Request authorization for these read types.
         healthStore.requestAuthorization(toShare: [], read: typesToRead) { success, error in
             completion(success, error)
         }
     }
+    
+    // MARK: - Weight Functions
     
     func fetchLatestWeight(completion: @escaping (Double?) -> Void) {
         guard let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
@@ -90,6 +94,8 @@ class HealthKitManager {
         healthStore.execute(query)
     }
     
+    // MARK: - Steps Functions
+    
     func fetchHistoricalDailySteps(startDate: Date,
                                    endDate: Date,
                                    completion: @escaping ([(date: String, steps: Int)]) -> Void)
@@ -123,7 +129,6 @@ class HealthKitManager {
             var dailySteps: [(date: String, steps: Int)] = []
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
-            // Set the formatter time zone to current so that keys match later.
             formatter.timeZone = TimeZone.current
             
             // Enumerate over each day from startDate to endDate.
@@ -146,6 +151,60 @@ class HealthKitManager {
         
         healthStore.execute(query)
     }
-
-
+    
+    // MARK: - Burned Calories Functions
+    
+    func fetchHistoricalDailyBurnedCalories(startDate: Date,
+                                            endDate: Date,
+                                            completion: @escaping ([(date: String, burnedCalories: Double)]) -> Void)
+    {
+        guard let burnedCaloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else {
+            completion([])
+            return
+        }
+        
+        let interval = DateComponents(day: 1)
+        let anchorDate = Calendar.current.startOfDay(for: startDate)
+        
+        let query = HKStatisticsCollectionQuery(quantityType: burnedCaloriesType,
+                                                quantitySamplePredicate: nil,
+                                                options: .cumulativeSum,
+                                                anchorDate: anchorDate,
+                                                intervalComponents: interval)
+        
+        query.initialResultsHandler = { _, results, error in
+            guard error == nil else {
+                completion([])
+                return
+            }
+            
+            var dailyBurnedCalories: [(date: String, burnedCalories: Double)] = []
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone.current
+            
+            results?.enumerateStatistics(from: startDate, to: endDate) { statistics, _ in
+                let dateStr = formatter.string(from: statistics.startDate)
+                if let sumQuantity = statistics.sumQuantity() {
+                    let burnedCalories = sumQuantity.doubleValue(for: HKUnit.kilocalorie())
+                    dailyBurnedCalories.append((date: dateStr, burnedCalories: burnedCalories))
+                } else {
+                    dailyBurnedCalories.append((date: dateStr, burnedCalories: 0))
+                }
+            }
+            
+            completion(dailyBurnedCalories)
+        }
+        
+        healthStore.execute(query)
+    }
+    
+    func startObservingBurnedCaloriesChanges() {
+        guard let burnedCaloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
+        let query = HKObserverQuery(sampleType: burnedCaloriesType, predicate: nil) { _, completionHandler, _ in
+            NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged, object: nil)
+            completionHandler()
+        }
+        healthStore.execute(query)
+    }
 }

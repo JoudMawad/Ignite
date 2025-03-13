@@ -1,10 +1,3 @@
-//
-//  ChartDataHelper.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 05.03.25.
-//
-
 import Foundation
 
 struct ChartDataHelper {
@@ -20,7 +13,6 @@ struct ChartDataHelper {
             return (formatter.string(from: firstDate), avgCalories)
         }
     }
-    
     
     static func groupWeightData(from weightData: [(date: String, weight: Double)],
                                 days: Int,
@@ -93,17 +85,30 @@ struct ChartDataHelper {
                                 dateFormat: dateFormat)
         return grouped
     }
-
-
-
-
+    
+    // New: Group burned calories data.
+    static func groupBurnedCaloriesData(from burnedCaloriesData: [(date: String, burnedCalories: Double)],
+                                          days: Int,
+                                          interval: Int,
+                                          dateFormat: String) -> [(String, Double)]
+    {
+        return stride(from: 0, to: days, by: interval).compactMap { offset -> (String, Double)? in
+            let subrange = burnedCaloriesData.suffix(days).dropFirst(offset).prefix(interval)
+            guard !subrange.isEmpty else { return nil }
+            let totalBurnedCalories = subrange.reduce(0.0) { $0 + $1.burnedCalories }
+            let avgBurnedCalories = totalBurnedCalories / Double(subrange.count)
+            let firstDate = stringToDate(subrange.first!.date)
+            let formatter = DateFormatter()
+            formatter.dateFormat = dateFormat
+            return (formatter.string(from: firstDate), avgBurnedCalories)
+        }
+    }
     
     static func dateToString(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
-
     
     static func stringToDate(_ dateString: String) -> Date {
         let formatter = DateFormatter()

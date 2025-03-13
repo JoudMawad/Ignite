@@ -120,6 +120,11 @@ class UserProfileViewModel: ObservableObject {
         }
     }
     
+    var firstName: String {
+            let parts = name.split(separator: " ")
+            return parts.first.map(String.init) ?? ""
+        }
+    
     var age: Int {
         get { Int(profile?.age ?? 25) }
         set {

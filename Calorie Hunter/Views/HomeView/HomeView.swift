@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @ObservedObject var viewModel: FoodViewModel
     @ObservedObject var stepsviewModel: StepsViewModel
+    @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
     @ObservedObject var userProfileViewModel: UserProfileViewModel
     @Environment(\.colorScheme) var colorScheme
 
@@ -11,9 +12,10 @@ struct HomeView: View {
     
     @State private var showSettings = false
     
-    init(viewModel: FoodViewModel, stepsviewModel: StepsViewModel, userProfileViewModel: UserProfileViewModel) {
+    init(viewModel: FoodViewModel, stepsviewModel: StepsViewModel, burnedCaloriesViewModel: BurnedCaloriesViewModel, userProfileViewModel: UserProfileViewModel) {
         self.viewModel = viewModel
         self.stepsviewModel = stepsviewModel
+        self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.userProfileViewModel = userProfileViewModel
         
         // Configure navigation bar appearance to be transparent with no shadow.
@@ -35,8 +37,11 @@ struct HomeView: View {
                     HStack(alignment: .top, spacing: 11) {
                         // This is the card that contains the header text and charts.
                         chartsCardSection
-                        
-                        StepsCardView(stepsViewModel: stepsviewModel)
+                        VStack{
+                            StepsCardView(stepsViewModel: stepsviewModel)
+                            
+                            BurnedCaloriesCardView(viewModel: burnedCaloriesViewModel)
+                        }
                     }
                     // Water Intake View placed to the right.
                     waterSection
@@ -69,7 +74,7 @@ struct HomeView: View {
     // MARK: - Welcome Section
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            TypingText(fullText: "Welcome, Jude.")
+            TypingText(fullText: "Welcome, \(userProfileViewModel.firstName)")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                     }

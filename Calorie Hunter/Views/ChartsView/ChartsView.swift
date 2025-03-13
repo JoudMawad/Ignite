@@ -19,7 +19,7 @@ extension UserProfile {
 }
 
 // MARK: - ChartsView
-/// A view that displays various chart carousels including calorie, weight, BMR, and steps charts.
+/// A view that displays various chart carousels including calorie, weight, BMR, steps, and burned calories charts.
 struct ChartsView: View {
     // Observed view model for food-related data.
     @ObservedObject var foodViewModel: FoodViewModel
@@ -48,10 +48,21 @@ struct ChartsView: View {
                     
                     Spacer()
                     
+                    // MARK: Burned Calories Charts Carousel
+                    ChartCarouselView(charts: [
+                        // Weekly burned calories chart.
+                        AnyView(WeeklyBurnedCaloriesChartView(burnedCaloriesManager: BurnedCaloriesHistoryManager.shared)),
+                        // Monthly burned calories chart.
+                        AnyView(MonthlyBurnedCaloriesChartView(burnedCaloriesManager: BurnedCaloriesHistoryManager.shared)),
+                        // Yearly burned calories chart.
+                        AnyView(YearlyBurnedCaloriesChartView(burnedCaloriesManager: BurnedCaloriesHistoryManager.shared))
+                    ])
+                    
+                    Spacer()
+                    
                     // MARK: Weight Charts Carousel
                     ChartCarouselView(charts: [
                         // Weekly weight chart.
-                        // Use the loaded Core Data profile or a default if it's nil.
                         AnyView(WeeklyWeightChartView(viewModel: userProfileViewModel)),
                         AnyView(MonthlyWeightChartView()),
                         AnyView(YearlyWeightChartView())
