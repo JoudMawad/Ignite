@@ -1,10 +1,3 @@
-//
-//  YearlyBmrChart.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 08.03.25.
-//
-
 import SwiftUI
 import Charts
 
@@ -13,6 +6,7 @@ struct YearlyBMRChartView: View {
     @Environment(\.colorScheme) var colorScheme
     private let weightHistoryManager = WeightHistoryManager()
 
+    // Retrieve stored weight data for the past 365 days.
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 365)
     }
@@ -27,14 +21,13 @@ struct YearlyBMRChartView: View {
         formattedData.map { group in
             let bmr = BMRCalculator.computeBMR(
                 forWeight: group.avgWeight,
-                age: Double(viewModel.age),
-                height: Double(viewModel.height),
-                gender: viewModel.gender
+                age: Double(viewModel.profile?.age ?? 25),
+                height: Double(viewModel.profile?.height ?? 170),
+                gender: viewModel.profile?.gender ?? "M"
             )
             return (group.label, bmr)
         }
     }
-    
     
     func maxBMRValue() -> Double {
         let maxBMR = bmrData.map { $0.bmr }.max() ?? 1500

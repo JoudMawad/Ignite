@@ -1,37 +1,55 @@
 import SwiftUI
+import CoreData
 
 class ProfileImageViewModel: ObservableObject {
-    @Published var profileImage: UIImage? = nil {
+    @Published var profileImage: UIImage? {
         didSet {
             saveProfileImage()
         }
     }
     
-    init() {
+    private var context: NSManagedObjectContext
+    
+    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+        self.context = context
         loadProfileImage()
     }
     
     func updateImage(_ image: UIImage?) {
         profileImage = image
-        // Additional logic (e.g., upload to server) can be added here if needed.
     }
     
     private func saveProfileImage() {
-        guard let image = profileImage else {
-            // Remove saved data if image is nil
-            UserDefaults.standard.removeObject(forKey: "profileImage")
+        guard let image = profileImage, let imageData = image.jpegData(compressionQuality: 0.8) else {
+            // If the image is nil, remove stored image data.
+            if let profile = fetchUserProfile() {
+                profile.profileImageData = nil
+                try? context.save()
+            }
             return
         }
-        // Convert image to JPEG data with a reasonable compression quality.
-        if let data = image.jpegData(compressionQuality: 0.8) {
-            UserDefaults.standard.set(data, forKey: "profileImage")
+        if let profile = fetchUserProfile() {
+            profile.profileImageData = imageData
+            try? context.save()
         }
     }
     
     private func loadProfileImage() {
-        if let data = UserDefaults.standard.data(forKey: "profileImage"),
+        if let profile = fetchUserProfile(),
+           let data = profile.profileImageData,
            let image = UIImage(data: data) {
             profileImage = image
+        }
+    }
+    
+    private func fetchUserProfile() -> UserProfile? {
+        let request: NSFetchRequest<UserProfile> = UserProfile.fetchRequest()
+        do {
+            let profiles = try context.fetch(request)
+            return profiles.first
+        } catch {
+            print("Error fetching profile image: \(error)")
+            return nil
         }
     }
 }

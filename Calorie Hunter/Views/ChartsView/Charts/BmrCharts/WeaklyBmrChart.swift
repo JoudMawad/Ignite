@@ -1,10 +1,3 @@
-//
-//  WeaklyBmrChart.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 08.03.25.
-//
-
 import SwiftUI
 import Charts
 
@@ -24,20 +17,20 @@ struct WeeklyBMRChartView: View {
         getStoredWeightsForPeriod(days: 7)
     }
     
-    /// For each day in the past week, compute the BMR using the separated BMRCalculator.
+    /// For each day in the past week, compute the BMR.
     var formattedData: [(label: String, bmr: Double)] {
         let calendar = Calendar.current
         let today = Date()
         return (0..<7).compactMap { offset -> (String, Double)? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             let dateString = ChartDataHelper.dateToString(date)
-            // Use stored weight if available; otherwise, fall back on current weight.
-            let weight = weightData.first(where: { $0.date == dateString })?.weight ?? viewModel.currentWeight
+            // Use stored weight if available; otherwise, fall back on current weight from the user profile.
+            let weight = weightData.first(where: { $0.date == dateString })?.weight ?? (viewModel.profile?.currentWeight ?? 70.0)
             let bmr = BMRCalculator.computeBMR(
                 forWeight: weight,
-                age: Double(viewModel.age),
-                height: Double(viewModel.height),
-                gender: viewModel.gender
+                age: Double(viewModel.profile?.age ?? 25),
+                height: Double(viewModel.profile?.height ?? 170),
+                gender: viewModel.profile?.gender ?? "M"
             )
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.dateFormat = "EEE"
@@ -45,7 +38,6 @@ struct WeeklyBMRChartView: View {
         }.reversed()
     }
     
-
     /// Calculate dynamic Y-axis maximum.
     func maxBMRValue() -> Double {
         let maxValue = formattedData.map { $0.bmr }.max() ?? 1500
@@ -110,7 +102,6 @@ struct WeeklyBMRChartView: View {
                     }
                 )
                 .chartYScale(domain: minBMRValue()...maxBMRValue())
-
                 .frame(height: 250)
                 .padding()
             }
@@ -124,4 +115,3 @@ struct WeeklyBMRChartView_Previews: PreviewProvider {
             .preferredColorScheme(.dark)
     }
 }
-

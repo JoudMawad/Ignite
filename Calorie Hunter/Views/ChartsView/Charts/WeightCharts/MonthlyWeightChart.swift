@@ -5,14 +5,15 @@ struct MonthlyWeightChartView: View {
     @Environment(\.colorScheme) var colorScheme
     private let weightHistoryManager = WeightHistoryManager()
     
+    // Retrieve stored weight data for the past 30 days.
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 30)
     }
     
+    // Group the weight data for display.
     var formattedData: [(label: String, weight: Double)] {
         ChartDataHelper.groupWeightData(from: weightData, days: 30, interval: 5, dateFormat: "MMM d")
     }
-    
     
     // Dynamic Y-axis scaling.
     func maxWeightValue() -> Double {
@@ -49,9 +50,10 @@ struct MonthlyWeightChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.purple, .pink]),
-                                           startPoint: .top,
-                                           endPoint: .bottom)
+                            LinearGradient(
+                                gradient: Gradient(colors: [.purple, .pink]),
+                                startPoint: .top,
+                                endPoint: .bottom)
                         )
                     }
                 }
@@ -62,7 +64,7 @@ struct MonthlyWeightChartView: View {
                         AxisValueLabel()
                     }
                 }
-                // Example overlay for vertical grid lines.
+                // Overlay vertical grid lines.
                 .overlay(
                     ZStack {
                         let positions: [CGFloat] = [0, 42, 84, 126, 168, 210, 252]
@@ -76,8 +78,6 @@ struct MonthlyWeightChartView: View {
                     }
                 )
                 .chartYScale(domain: minWeightValue()...maxWeightValue())
-                // Use the reusable interactive overlay.
-                
                 .frame(height: 250)
                 .padding()
             }

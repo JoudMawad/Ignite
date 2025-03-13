@@ -1,30 +1,24 @@
-//
-//  UserProfileView.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 12.03.25.
-//
-
-import Foundation
 import SwiftUI
 
+// MARK: - UserProfileView
 struct UserProfileView: View {
-    // Environment & Observed properties
+    // Environment & Observed properties.
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject var viewModel: UserProfileViewModel
     @StateObject var imageVM = ProfileImageViewModel()
-    @StateObject var userProfileVM = UserProfileViewModel()
     @State private var isShowingImagePicker = false
     
-    // Compute firstName and lastName from viewModel.name.
+    // Extract first and last names from the Core Data–backed profile.
     var firstName: String {
-        let parts = viewModel.name.split(separator: " ")
+        let fullName = viewModel.name
+        let parts = fullName.split(separator: " ")
         return parts.first.map(String.init) ?? ""
     }
     
     var lastName: String {
-        let parts = viewModel.name.split(separator: " ")
+        let fullName = viewModel.name
+        let parts = fullName.split(separator: " ")
         return parts.dropFirst().joined(separator: " ")
     }
     
@@ -39,9 +33,12 @@ struct UserProfileView: View {
     
     // Goal Achievement Percentage calculation.
     private var goalAchievementPercentage: Double {
-        let totalChangeNeeded = viewModel.startWeight - viewModel.goalWeight
+        let startWeight = viewModel.startWeight
+        let goalWeight = viewModel.goalWeight
+        let currentWeight = viewModel.currentWeight
+        let totalChangeNeeded = startWeight - goalWeight
         if totalChangeNeeded == 0 { return 0 }
-        let changeAchieved = viewModel.startWeight - viewModel.currentWeight
+        let changeAchieved = startWeight - currentWeight
         return (changeAchieved / totalChangeNeeded) * 100
     }
     
@@ -146,8 +143,7 @@ struct UserProfileView: View {
             
             // Weight progress view.
             WeightProgressView(
-                startWeight: userProfileVM.startWeight,
-                viewModel: userProfileVM,
+                viewModel: viewModel,
                 onWeightChange: { }
             )
             .padding(.top, -10)
@@ -172,7 +168,7 @@ struct UserProfileView: View {
         .shadow(color: Color.black.opacity(0.8), radius: 30, x: 0, y: 0)
     }
     
-    // MARK: - Reusable Stat View for the Stats Row
+    // MARK: - Reusable Stat View
     private func statView(title: String, value: String) -> some View {
         VStack {
             Text(title)
@@ -202,47 +198,64 @@ struct UserProfileView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 12) {
                     // Name field.
-                    TextField("Enter name", text: $viewModel.name)
-                        .onChange(of: viewModel.name) { _, _ in viewModel.saveProfile() }
-                        .font(.system(size: 19, weight: .semibold, design: .default))
+                    TextField("Enter name", text: Binding(
+                        get: { viewModel.name },
+                        set: { newValue in
+                            viewModel.name = newValue
+                        }
+                    ))
+                    .font(.system(size: 19, weight: .semibold, design: .default))
                     
-                    // Age field (Int).
-                    HStack {
-                        Text("Age:")
-                            .font(.system(size: 18, weight: .semibold, design: .default))
-                            .foregroundColor(.primary)
-                        TextField("", value: $viewModel.age, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 18, weight: .semibold, design: .default))
-                            .frame(width: 80)
-                            .onSubmit { viewModel.saveProfile() }
-                    }
+                    // Age field.
+                    TextField("Age", text: Binding<String>(
+                        get: { "\(viewModel.age)" },
+                        set: { newValue in
+                            if let intValue = Int(newValue) {
+                                viewModel.age = intValue
+                            }
+                        }
+                    ))
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .font(.system(size: 18, weight: .semibold, design: .default))
+                    .frame(width: 80)
+
+
+
+
                     
-                    // Height field (Int).
+                    // Height field.
                     HStack {
                         Text("Height:")
                             .font(.system(size: 18, weight: .semibold, design: .default))
                             .foregroundColor(.primary)
-                        TextField("", value: $viewModel.height, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 18, weight: .semibold, design: .default))
-                            .frame(width: 80)
-                            .onSubmit { viewModel.saveProfile() }
+                        TextField("", value: Binding(
+                            get: { viewModel.height },
+                            set: { newValue in
+                                viewModel.height = newValue
+                            }
+                        ), format: .number)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .font(.system(size: 18, weight: .semibold, design: .default))
+                        .frame(width: 80)
                     }
                     
-                    // Weight field (Double) with one decimal precision.
+                    // Weight field.
                     HStack {
                         Text("Weight:")
                             .font(.system(size: 18, weight: .semibold, design: .default))
                             .foregroundColor(.primary)
-                        TextField("", value: $viewModel.currentWeight, format: .number.precision(.fractionLength(1)))
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 18, weight: .semibold, design: .default))
-                            .frame(width: 80)
-                            .onSubmit { viewModel.saveProfile() }
+                        TextField("", value: Binding(
+                            get: { viewModel.currentWeight },
+                            set: { newValue in
+                                viewModel.currentWeight = newValue
+                            }
+                        ), format: .number.precision(.fractionLength(1)))
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .font(.system(size: 18, weight: .semibold, design: .default))
+                        .frame(width: 80)
                     }
                     
                     // Button to update profile image.
@@ -257,17 +270,21 @@ struct UserProfileView: View {
                     .padding(10)
                 }
                 VStack {
-                    // Gender field using a segmented picker.
+                    // Gender field.
                     Text("Gender")
                         .font(.system(size: 19, weight: .semibold, design: .default))
                         .foregroundColor(.primary)
-                    Picker("", selection: $viewModel.gender) {
+                    Picker("", selection: Binding(
+                        get: { viewModel.gender },
+                        set: { newValue in
+                            viewModel.gender = newValue
+                        }
+                    )) {
                         Text("Male").tag("Male")
                         Text("Female").tag("Female")
                     }
                     .pickerStyle(SegmentedPickerStyle())
                     .frame(width: 180)
-                    .onChange(of: viewModel.gender) { _, _ in viewModel.saveProfile() }
                 }
             }
         }
@@ -277,41 +294,53 @@ struct UserProfileView: View {
     // MARK: - Health Goals Section
     private var healthGoalsSection: some View {
         VStack(spacing: 12) {
-            // Start Weight field (Double).
+            // Start Weight field.
             HStack {
                 Text("Start Weight:")
                     .font(.system(size: 18, weight: .semibold, design: .default))
                     .foregroundColor(.primary)
-                TextField("", value: $viewModel.startWeight, format: .number.precision(.fractionLength(1)))
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .font(.system(size: 18, weight: .semibold, design: .default))
-                    .frame(width: 80)
-                    .onSubmit { viewModel.saveProfile() }
+                TextField("", value: Binding(
+                    get: { viewModel.startWeight },
+                    set: { newValue in
+                        viewModel.startWeight = newValue
+                    }
+                ), format: .number.precision(.fractionLength(1)))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .font(.system(size: 18, weight: .semibold, design: .default))
+                .frame(width: 80)
             }
-            // Goal Weight field (Double).
+            // Goal Weight field.
             HStack {
                 Text("Goal Weight:")
                     .font(.system(size: 18, weight: .semibold, design: .default))
                     .foregroundColor(.primary)
-                TextField("", value: $viewModel.goalWeight, format: .number.precision(.fractionLength(1)))
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .font(.system(size: 18, weight: .semibold, design: .default))
-                    .frame(width: 80)
-                    .onSubmit { viewModel.saveProfile() }
+                TextField("", value: Binding(
+                    get: { viewModel.goalWeight },
+                    set: { newValue in
+                        viewModel.goalWeight = newValue
+                    }
+                ), format: .number.precision(.fractionLength(1)))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .font(.system(size: 18, weight: .semibold, design: .default))
+                .frame(width: 80)
             }
-            // Calorie Goal field (Int).
+            // Calorie Goal field.
             HStack {
                 Text("Calorie Goal:")
                     .font(.system(size: 18, weight: .semibold, design: .default))
                     .foregroundColor(.primary)
-                TextField("", value: $viewModel.dailyCalorieGoal, format: .number)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .font(.system(size: 18, weight: .semibold, design: .default))
-                    .frame(width: 80)
-                    .onSubmit { viewModel.saveProfile() }
+                TextField("", value: Binding(
+                    get: { viewModel.dailyCalorieGoal },
+                    set: { newValue in
+                        viewModel.dailyCalorieGoal = newValue
+                    }
+                ), format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.trailing)
+                .font(.system(size: 18, weight: .semibold, design: .default))
+                .frame(width: 80)
             }
         }
         .padding(.horizontal)
@@ -320,13 +349,11 @@ struct UserProfileView: View {
 
 // MARK: - Rounded Corner Modifier for Specific Corners
 extension View {
-    /// Applies a corner radius to specified corners.
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
     }
 }
 
-/// Shape that rounds only specified corners.
 struct RoundedCorner: Shape {
     var radius: CGFloat = .infinity
     var corners: UIRectCorner = .allCorners

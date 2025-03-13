@@ -1,22 +1,19 @@
 import SwiftUI
+import CoreData
 
 class UserProfileViewModel: ObservableObject {
-    @AppStorage("userProfile") private var userData: Data?
+    @Published var profile: UserProfile?
     
-    @Published var name: String = ""
-    @Published var gender: String = ""
-    @Published var age: Int = 25
-    @Published var height: Int = 170
-    @Published var dailyCalorieGoal: Int = 1500
-    @Published var startWeight: Double = 70.0
-    @Published var currentWeight: Double = 70.0
-    @Published var goalWeight: Double = 65.0
-
+    // Existing managers.
     private let weightHistoryManager = WeightHistoryManager.shared
     private let healthKitManager = HealthKitManager.shared
     private var reimportWorkItem: DispatchWorkItem?
     
-    init() {
+    // Using the shared context from your PersistenceController.
+    private var context: NSManagedObjectContext
+    
+    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+        self.context = context
         loadProfile()
         healthKitManager.requestAuthorization { [weak self] success, _ in
             if success {
@@ -45,52 +42,59 @@ class UserProfileViewModel: ObservableObject {
     }
     
     func loadProfile() {
-        if let savedData = userData,
-           let decodedProfile = try? JSONDecoder().decode(UserProfile.self, from: savedData) {
-            DispatchQueue.main.async {
-                self.name = decodedProfile.name
-                self.gender = decodedProfile.Gender
-                self.age = decodedProfile.age
-                self.height = decodedProfile.height
-                self.dailyCalorieGoal = decodedProfile.dailyCalorieGoal
-                self.startWeight = decodedProfile.startWeight
-                self.currentWeight = decodedProfile.currentWeight
-                self.goalWeight = decodedProfile.goalWeight
+        let request: NSFetchRequest<UserProfile> = UserProfile.fetchRequest()
+        do {
+            let profiles = try context.fetch(request)
+            if let existingProfile = profiles.first {
+                DispatchQueue.main.async {
+                    self.profile = existingProfile
+                }
+            } else {
+                // Create a new profile with default values.
+                let newProfile = UserProfile(context: context)
+                newProfile.name = ""
+                newProfile.gender = "Male"
+                newProfile.age = 25
+                newProfile.height = 170
+                newProfile.dailyCalorieGoal = 1500
+                newProfile.startWeight = 70.0
+                newProfile.currentWeight = 70.0
+                newProfile.goalWeight = 65.0
+                newProfile.profileImageData = nil
+                try context.save()
+                DispatchQueue.main.async {
+                    self.profile = newProfile
+                }
             }
+        } catch {
+            print("Error loading profile: \(error)")
         }
     }
     
     func saveProfile() {
-        let profile = UserProfile(
-            name: self.name,
-            Gender: self.gender,
-            age: self.age,
-            height: self.height,
-            dailyCalorieGoal: self.dailyCalorieGoal,
-            startWeight: self.startWeight,
-            currentWeight: self.currentWeight,
-            goalWeight: self.goalWeight,
-            profileImageData: nil
-        )
-        if let encodedData = try? JSONEncoder().encode(profile) {
-            userData = encodedData
+        do {
+            try context.save()
+        } catch {
+            print("Error saving profile: \(error)")
         }
     }
     
     func updateCurrentWeight(_ newWeight: Double) {
         DispatchQueue.main.async {
-            self.currentWeight = newWeight
-            self.saveProfile()
-            self.weightHistoryManager.saveDailyWeight(currentWeight: newWeight)
+            if let profile = self.profile {
+                profile.currentWeight = newWeight
+                self.saveProfile()
+                self.weightHistoryManager.saveDailyWeight(currentWeight: newWeight)
+            }
         }
     }
     
-    // Update only if the difference is greater than 0.5 kg.
+    // Update weight only if the difference is greater than 0.5 kg.
     func updateWeightFromHealthKit() {
         healthKitManager.fetchLatestWeight { [weak self] fetchedWeight in
             guard let self = self, let newWeight = fetchedWeight else { return }
             DispatchQueue.main.async {
-                if abs(newWeight - self.currentWeight) > 0.5 {
+                if let currentWeight = self.profile?.currentWeight, abs(newWeight - currentWeight) > 0.5 {
                     self.updateCurrentWeight(newWeight)
                 }
             }
@@ -105,22 +109,70 @@ class UserProfileViewModel: ObservableObject {
             }
         }
     }
-}
-
-extension UserProfileViewModel {
-    /// Constructs a `UserProfile` from the current view model properties.
-    var userProfile: UserProfile {
-        UserProfile(
-            name: self.name,
-            Gender: self.gender,
-            age: self.age,
-            height: self.height,
-            dailyCalorieGoal: self.dailyCalorieGoal,
-            startWeight: self.startWeight,
-            currentWeight: self.currentWeight,
-            goalWeight: self.goalWeight,
-            profileImageData: nil  // Adjust if you store image data elsewhere
-        )
+    
+    // MARK: - Computed Properties for Binding
+    
+    var name: String {
+        get { profile?.name ?? "" }
+        set {
+            profile?.name = newValue
+            saveProfile()
+        }
+    }
+    
+    var age: Int {
+        get { Int(profile?.age ?? 25) }
+        set {
+            profile?.age = Int32(newValue)
+            saveProfile()
+        }
+    }
+    
+    var height: Int {
+        get { Int(profile?.height ?? 170) }
+        set {
+            profile?.height = Int32(newValue)
+            saveProfile()
+        }
+    }
+    
+    var currentWeight: Double {
+        get { profile?.currentWeight ?? 70.0 }
+        set {
+            profile?.currentWeight = newValue
+            saveProfile()
+        }
+    }
+    
+    var startWeight: Double {
+        get { profile?.startWeight ?? 70.0 }
+        set {
+            profile?.startWeight = newValue
+            saveProfile()
+        }
+    }
+    
+    var goalWeight: Double {
+        get { profile?.goalWeight ?? 65.0 }
+        set {
+            profile?.goalWeight = newValue
+            saveProfile()
+        }
+    }
+    
+    var dailyCalorieGoal: Int {
+        get { Int(profile?.dailyCalorieGoal ?? 1500) }
+        set {
+            profile?.dailyCalorieGoal = Int32(newValue)
+            saveProfile()
+        }
+    }
+    
+    var gender: String {
+        get { profile?.gender ?? "Male" }
+        set {
+            profile?.gender = newValue
+            saveProfile()
+        }
     }
 }
-

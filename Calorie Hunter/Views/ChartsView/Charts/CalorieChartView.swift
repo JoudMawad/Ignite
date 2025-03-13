@@ -9,7 +9,7 @@ struct CalorieChartView: View {
     var body: some View {
         GeometryReader { geometry in
             let size = min(geometry.size.width, geometry.size.height)
-            let dailyGoal = viewModel.dailyCalorieGoal
+            let dailyGoal = Int(viewModel.profile?.dailyCalorieGoal ?? 1500)
 
             ZStack {
                 // Outer glow effect

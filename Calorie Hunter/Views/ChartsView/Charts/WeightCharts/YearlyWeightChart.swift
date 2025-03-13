@@ -45,9 +45,10 @@ struct YearlyWeightChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.purple, .pink]),
-                                           startPoint: .top,
-                                           endPoint: .bottom)
+                            LinearGradient(
+                                gradient: Gradient(colors: [.purple, .pink]),
+                                startPoint: .top,
+                                endPoint: .bottom)
                         )
                     }
                 }

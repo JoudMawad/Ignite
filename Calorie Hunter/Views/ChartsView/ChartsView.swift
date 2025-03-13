@@ -1,5 +1,23 @@
 import SwiftUI
 
+// MARK: - Default Profile Extension
+extension UserProfile {
+    static var defaultProfile: UserProfile {
+        let context = PersistenceController.shared.container.viewContext
+        let profile = UserProfile(context: context)
+        profile.name = "Default User"
+        profile.gender = "M"
+        profile.age = 25
+        profile.height = 170
+        profile.dailyCalorieGoal = 1500
+        profile.startWeight = 70.0
+        profile.currentWeight = 70.0
+        profile.goalWeight = 65.0
+        profile.profileImageData = nil
+        return profile
+    }
+}
+
 // MARK: - ChartsView
 /// A view that displays various chart carousels including calorie, weight, BMR, and steps charts.
 struct ChartsView: View {
@@ -33,8 +51,8 @@ struct ChartsView: View {
                     // MARK: Weight Charts Carousel
                     ChartCarouselView(charts: [
                         // Weekly weight chart.
-                        // Use the computed userProfile value from the view model.
-                        AnyView(WeeklyWeightChartView(userProfile: userProfileViewModel.userProfile)),
+                        // Use the loaded Core Data profile or a default if it's nil.
+                        AnyView(WeeklyWeightChartView(viewModel: userProfileViewModel)),
                         AnyView(MonthlyWeightChartView()),
                         AnyView(YearlyWeightChartView())
                     ])
@@ -57,7 +75,6 @@ struct ChartsView: View {
                     
                     Spacer()
                 }
-                // Set the background to the system's background color and extend it to safe areas.
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
             }
         }
