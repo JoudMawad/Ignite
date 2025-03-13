@@ -12,7 +12,10 @@ struct HomeView: View {
     
     @State private var showSettings = false
     
-    init(viewModel: FoodViewModel, stepsviewModel: StepsViewModel, burnedCaloriesViewModel: BurnedCaloriesViewModel, userProfileViewModel: UserProfileViewModel) {
+    init(viewModel: FoodViewModel,
+         stepsviewModel: StepsViewModel,
+         burnedCaloriesViewModel: BurnedCaloriesViewModel,
+         userProfileViewModel: UserProfileViewModel) {
         self.viewModel = viewModel
         self.stepsviewModel = stepsviewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
@@ -20,12 +23,12 @@ struct HomeView: View {
         
         // Configure navigation bar appearance to be transparent with no shadow.
         let appearance = UINavigationBarAppearance()
-        appearance.configureWithTransparentBackground()  // Makes background transparent.
-        appearance.shadowColor = .clear                // Removes the line.
+        appearance.configureWithTransparentBackground()
+        appearance.shadowColor = .clear
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
-
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -35,11 +38,10 @@ struct HomeView: View {
                     
                     // MARK: - Charts & Water Intake Section
                     HStack(alignment: .top, spacing: 11) {
-                        // This is the card that contains the header text and charts.
+                        // Card containing header text and charts.
                         chartsCardSection
-                        VStack{
+                        VStack {
                             StepsCardView(stepsViewModel: stepsviewModel)
-                            
                             BurnedCaloriesCardView(viewModel: burnedCaloriesViewModel)
                         }
                     }
@@ -75,10 +77,10 @@ struct HomeView: View {
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             TypingText(fullText: "Welcome, \(userProfileViewModel.firstName)")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - Charts Card Section
@@ -104,12 +106,15 @@ struct HomeView: View {
                     .padding(.top, 4)
                     
                     TabView {
+                        // Calorie Chart now shows both consumed and burned calories.
                         CalorieChartView(
                             viewModel: userProfileViewModel,
-                            totalCalories: viewModel.totalCalories
+                            totalCalories: viewModel.totalCalories,
+                            burnedCalories: Int(burnedCaloriesViewModel.currentBurnedCalories)
                         )
                         .padding(6)
                         .padding(.horizontal, 8)
+
                         
                         FoodChartView(
                             totalProtein: viewModel.totalProtein,
