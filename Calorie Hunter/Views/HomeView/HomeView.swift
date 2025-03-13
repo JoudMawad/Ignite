@@ -69,11 +69,11 @@ struct HomeView: View {
     // MARK: - Welcome Section
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Welcome, Jude.")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+            TypingText(fullText: "Welcome, Jude.")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - Charts Card Section
