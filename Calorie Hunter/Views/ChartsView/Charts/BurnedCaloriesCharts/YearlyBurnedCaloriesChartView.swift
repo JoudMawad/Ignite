@@ -23,7 +23,7 @@ struct YearlyBurnedCaloriesChartView: View {
             from: rawBurnedCaloriesData,
             days: 365,
             interval: 90,
-            dateFormat: "MMM yy"
+            outputDateFormat: "MMM yy"
         )
     }
     

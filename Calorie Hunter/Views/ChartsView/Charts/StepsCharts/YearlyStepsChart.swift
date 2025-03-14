@@ -16,7 +16,7 @@ struct YearlyStepsChartView: View {
             from: rawStepsData,
             days: 365,
             interval: 90,
-            dateFormat: "MMM yy"
+            outputDateFormat: "MMM yy"
         )
     }
     

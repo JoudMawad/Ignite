@@ -11,8 +11,15 @@ struct YearlyCalorieChartView: View {
     }
     
     var formattedData: [(label: String, calories: Int)] {
-        ChartDataHelper.groupData(from: calorieData, days: 365, interval: 90, dateFormat: "MMM yy")
+        ChartDataHelper.groupData(
+            from: calorieData.map { (date: $0.date, value: Double($0.calories)) },
+            days: 365,
+            interval: 90,
+            outputDateFormat: "MMM yy"
+        )
+        .map { (label: $0.label, calories: Int($0.aggregatedValue)) }
     }
+
     
     
     func maxCalorieValue() -> Int {

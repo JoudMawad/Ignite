@@ -16,7 +16,7 @@ struct WeeklyBurnedCaloriesChartView: View {
             from: burnedCaloriesData,
             days: 7,
             interval: 1,
-            dateFormat: "EEE"
+            outputDateFormat: "EEE"
         )
     }
     

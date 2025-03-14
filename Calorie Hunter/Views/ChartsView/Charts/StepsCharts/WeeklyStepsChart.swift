@@ -2,10 +2,14 @@ import SwiftUI
 import Charts
 
 struct WeeklyStepsChartView: View {
+    // This view uses the shared StepsHistoryManager as its data source.
     @ObservedObject var stepsManager: StepsHistoryManager
     @Environment(\.colorScheme) var colorScheme
-    
-    /// Grab the last 7 days of raw step data as (date: "yyyy-MM-dd", steps: Int).
+
+    // Create a local HealthKit steps manager.
+    private let hkStepsManager = StepsManager()
+
+    /// Grab the last 7 days of raw step data as (date: "yyyy-MM-dd", steps: Int) from the persistent history.
     private var rawStepsData: [(date: String, steps: Int)] {
         stepsManager.stepsForPeriod(days: 7)
     }
@@ -17,11 +21,11 @@ struct WeeklyStepsChartView: View {
             from: rawStepsData,
             days: 7,
             interval: 1,
-            dateFormat: "EEE"  // e.g. "Mon"
+            outputDateFormat: "EEE"  // e.g. "Mon"
         )
     }
     
-    /// A little headroom above the highest step count
+    /// A little headroom above the highest step count.
     private func maxStepValue() -> Int {
         (formattedData.map { $0.steps }.max() ?? 0) + 50
     }
@@ -69,6 +73,16 @@ struct WeeklyStepsChartView: View {
                 .chartYScale(domain: 0...Double(maxStepValue()))
                 .frame(height: 250)
                 .padding()
+            }
+        }
+        // When the view appears, fetch and update the steps history.
+        .onAppear {
+            let calendar = Calendar.current
+            if let startDate = calendar.date(byAdding: .day, value: -7, to: Date()) {
+                hkStepsManager.updateHistoricalSteps(startDate: startDate, endDate: Date()) {
+                    print("DEBUG: StepsHistoryManager has been updated.")
+                    // The shared StepsHistoryManager will notify observers when its data changes.
+                }
             }
         }
     }

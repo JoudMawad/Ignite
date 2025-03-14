@@ -16,7 +16,7 @@ struct MonthlyBurnedCaloriesChartView: View {
             from: burnedCaloriesData,
             days: 30,
             interval: 5,
-            dateFormat: "MMM d"
+            outputDateFormat: "MMM d"
         )
     }
     

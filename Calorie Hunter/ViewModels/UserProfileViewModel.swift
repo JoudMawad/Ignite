@@ -87,7 +87,8 @@ class UserProfileViewModel: ObservableObject {
             if let profile = self.profile {
                 profile.currentWeight = newWeight
                 self.saveProfile()
-                self.weightHistoryManager.saveDailyWeight(currentWeight: newWeight)
+                // Save the weight for today's date in Core Data
+                WeightHistoryManager.shared.saveWeight(for: Date(), weight: newWeight)
             }
         }
     }

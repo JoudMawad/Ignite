@@ -22,8 +22,11 @@ final class WeightManager {
                                   predicate: nil,
                                   limit: 1,
                                   sortDescriptors: [sortDescriptor]) { _, samples, error in
-            guard error == nil,
-                  let sample = samples?.first as? HKQuantitySample else {
+            if let error = error {
+                completion(nil)
+                return
+            }
+            guard let sample = samples?.first as? HKQuantitySample else {
                 completion(nil)
                 return
             }
@@ -49,7 +52,7 @@ final class WeightManager {
                                                 anchorDate: anchorDate,
                                                 intervalComponents: interval)
         query.initialResultsHandler = { _, results, error in
-            guard error == nil else {
+            if error != nil {
                 completion([])
                 return
             }

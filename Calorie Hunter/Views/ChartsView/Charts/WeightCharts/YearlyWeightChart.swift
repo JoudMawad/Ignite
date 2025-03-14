@@ -5,12 +5,17 @@ struct YearlyWeightChartView: View {
     @ObservedObject private var weightHistoryManager = WeightHistoryManager.shared
     @Environment(\.colorScheme) var colorScheme
     
+    // Retrieve stored weight data for the past 365 days.
     var weightData: [(date: String, weight: Double)] {
         weightHistoryManager.weightForPeriod(days: 365)
     }
     
+    // Group the weight data into 90-day intervals.
     var formattedData: [(label: String, weight: Double)] {
-        ChartDataHelper.groupWeightData(from: weightData, days: 365, interval: 90, dateFormat: "MMM yy")
+        ChartDataHelper.groupWeightData(from: weightData,
+                                        days: 365,
+                                        interval: 90,
+                                        outputDateFormat: "MMM yy")
     }
     
     func maxWeightValue() -> Double {
@@ -36,10 +41,10 @@ struct YearlyWeightChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.0) { entry in
+                    ForEach(formattedData, id: \.label) { entry in
                         LineMark(
-                            x: .value("Date", entry.0),
-                            y: .value("Weight", entry.1)
+                            x: .value("Date", entry.label),
+                            y: .value("Weight", entry.weight)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))

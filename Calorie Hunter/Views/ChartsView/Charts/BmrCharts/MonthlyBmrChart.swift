@@ -13,7 +13,13 @@ struct MonthlyBMRChartView: View {
     
     // Group the weight data for the month.
     var formattedData: [(label: String, avgWeight: Double)] {
-        ChartDataHelper.groupWeightData(from: weightData, days: 30, interval: 5, dateFormat: "MMM d")
+        ChartDataHelper.groupWeightData(
+            from: weightData,
+            days: 30,
+            interval: 5,
+            outputDateFormat: "MMM d"
+        )
+        .map { (label: $0.label, avgWeight: $0.weight) }
     }
     
     // Compute the monthly BMR using the average weight of each group.

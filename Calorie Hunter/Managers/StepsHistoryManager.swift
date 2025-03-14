@@ -6,7 +6,7 @@ class StepsHistoryManager: ObservableObject {
     
     private let dailyStepsKey = "dailyStepsHistory"
     
-    /// Local storage of steps keyed by date string "yyyy-MM-dd"
+    /// Local storage: a dictionary where the key is a date string ("yyyy-MM-dd") and the value is the step count.
     private var localHistory: [String: Int] {
         get {
             UserDefaults.standard.dictionary(forKey: dailyStepsKey) as? [String: Int] ?? [:]
@@ -17,7 +17,8 @@ class StepsHistoryManager: ObservableObject {
         }
     }
     
-    /// Imports historical step counts.
+    /// Imports the fetched steps data into local storage.
+    /// - Parameter stepsData: An array of (date, steps) tuples.
     func importHistoricalSteps(_ stepsData: [(date: String, steps: Int)]) {
         var history = localHistory
         for entry in stepsData {
@@ -27,15 +28,14 @@ class StepsHistoryManager: ObservableObject {
     }
     
     /// Returns step counts for the last `days` days.
-    /// This method now uses a date formatter with an explicit time zone.
+    /// - Parameter days: Number of days to retrieve.
+    /// - Returns: An array of (date, steps) tuples in chronological order.
     func stepsForPeriod(days: Int) -> [(date: String, steps: Int)] {
         var results: [(String, Int)] = []
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        // Ensure both storing and retrieval use the same time zone.
         formatter.timeZone = TimeZone.current
         
-        // Loop through each day in the past `days`.
         for i in 0..<days {
             if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
                 let dateString = formatter.string(from: date)
@@ -46,7 +46,7 @@ class StepsHistoryManager: ObservableObject {
         return results.reversed()
     }
     
-    /// Optional: method to clear stored data for testing.
+    /// Clears the locally stored steps data.
     func clearData() {
         localHistory = [:]
     }

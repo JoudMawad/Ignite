@@ -1,69 +1,96 @@
 import Foundation
+import CoreData
 import Combine
 
 class WeightHistoryManager: ObservableObject {
     static let shared = WeightHistoryManager()
     
-    // UserDefaults keys.
-    private let lastSavedDateKey = "lastWeightSavedDate"
-    private let dailyWeightKey = "dailyWeightHistory"
+    private let context: NSManagedObjectContext
     
-    // Local history is stored as a dictionary [String: Double].
-    private var localHistory: [String: Double] {
-        get {
-            UserDefaults.standard.dictionary(forKey: dailyWeightKey) as? [String: Double] ?? [:]
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: dailyWeightKey)
+    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+        self.context = context
+    }
+    
+    // Save or update a weight entry for a specific date.
+    func saveWeight(for date: Date, weight: Double) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return }
+        
+        let fetchRequest: NSFetchRequest<WeightEntry> = WeightEntry.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            if let entry = results.first {
+                entry.weight = weight
+            } else {
+                let newEntry = WeightEntry(context: context)
+                newEntry.date = startOfDay
+                newEntry.weight = weight
+            }
+            try context.save()
+            
             DispatchQueue.main.async {
                 self.objectWillChange.send()
             }
+        } catch {
+            print("Failed to save weight: \(error)")
         }
     }
     
-    /// Saves the current weight for today.
-    func saveDailyWeight(currentWeight: Double) {
-        let today = formatDate(Date())
-        var history = localHistory
-        history[today] = currentWeight
-        localHistory = history
-    }
-    
-    // Imports historical weights from HealthKit (merging without overwriting existing entries).
+    // Import historical weights from HealthKit.
     func importHistoricalWeights(_ weights: [(date: String, weight: Double)]) {
-        var history = localHistory
-        for entry in weights {
-            if history[entry.date] == nil {
-                history[entry.date] = entry.weight
-            }
-        }
-        localHistory = history
-    }
-    
-    /// Returns weight entries for the past 'days' days.
-    func weightForPeriod(days: Int) -> [(date: String, weight: Double)] {
-        var result: [(String, Double)] = []
-        for i in 0..<days {
-            if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
-                let dateString = formatDate(date)
-                if let weight = localHistory[dateString] {
-                    result.append((date: dateString, weight: weight))
-                }
-            }
-        }
-        return result.reversed()
-    }
-    
-    func weightupdate() {
-        
-        
-    }
-    
-    
-    /// Formats a Date as "yyyy-MM-dd".
-    private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        for entry in weights {
+            if let date = formatter.date(from: entry.date) {
+                self.saveWeight(for: date, weight: entry.weight)
+            }
+        }
+    }
+    
+    // Fetch weight entries for the past `days` days.
+    func weightForPeriod(days: Int) -> [(date: String, weight: Double)] {
+        let calendar = Calendar.current
+        guard let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: calendar.startOfDay(for: Date())) else { return [] }
+        
+        let fetchRequest: NSFetchRequest<WeightEntry> = WeightEntry.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "date >= %@", startDate as NSDate)
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: true)]
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            return results.map { (date: formatter.string(from: $0.date ?? Date()), weight: $0.weight) }
+        } catch {
+            print("Failed to fetch weight entries: \(error)")
+            return []
+        }
+    }
+    
+    // Update weight data by fetching from HealthKit and saving into Core Data.
+    func weightupdate() {
+        let weightManager = WeightManager()
+        
+        // Fetch the latest weight and update today's entry.
+        weightManager.fetchLatestWeight { [weak self] latestWeight in
+            guard let self = self, let weight = latestWeight else { return }
+            DispatchQueue.main.async {
+                self.saveWeight(for: Date(), weight: weight)
+            }
+        }
+        
+        // Define the range for historical data (e.g., last 7 days).
+        let endDate = Date()
+        guard let startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate) else { return }
+        
+        weightManager.fetchHistoricalDailyWeights(startDate: startDate, endDate: endDate) { [weak self] historicalWeights in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.importHistoricalWeights(historicalWeights)
+            }
+        }
     }
 }

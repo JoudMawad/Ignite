@@ -4,7 +4,7 @@ import Combine
 class StepsViewModel: ObservableObject {
     // Use the shared HealthKitManager for authorization.
     private let healthKitManager = HealthKitManager.shared
-    // Dedicated manager for step-related operations.
+    // Use a dedicated StepsManager for fetching HealthKit data.
     private let stepsManager = StepsManager()
     private var timerCancellable: AnyCancellable?
     
@@ -33,7 +33,9 @@ class StepsViewModel: ObservableObject {
         let endDate = Date()
         
         stepsManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
-            self.stepsManager.importHistoricalSteps(stepsData)
+            // Update the shared StepsHistoryManager so the charts and view model have up-to-date data.
+            StepsHistoryManager.shared.importHistoricalSteps(stepsData)
+            print("DEBUG: Imported historical steps from HealthKit into StepsHistoryManager.")
         }
     }
     
@@ -46,14 +48,14 @@ class StepsViewModel: ObservableObject {
         }
     }
     
-    /// Periodically fetch today's steps and update the view model.
+    /// Periodically fetch today's steps from the shared StepsHistoryManager and update the view model.
     private func startStepUpdates() {
         timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                // Fetch today's steps (using days: 1 returns an array with today's entry)
-                let steps = self.stepsManager.stepsForPeriod(days: 1).first?.steps ?? 0
+                // Use the shared StepsHistoryManager to retrieve today's steps.
+                let steps = StepsHistoryManager.shared.stepsForPeriod(days: 1).first?.steps ?? 0
                 self.updateSteps(with: steps)
             }
     }

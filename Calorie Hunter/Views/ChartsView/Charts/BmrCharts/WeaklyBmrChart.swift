@@ -9,8 +9,9 @@ struct WeeklyBMRChartView: View {
     /// Retrieve stored weight data for the last 7 days.
     private func getStoredWeightsForPeriod(days: Int) -> [(date: String, weight: Double)] {
         let allWeights = weightHistoryManager.weightForPeriod(days: days)
-        return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date)), $0.weight) }
+        return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date) ?? Date()), $0.weight) }
     }
+
     
     /// Weight data for the week.
     var weightData: [(date: String, weight: Double)] {

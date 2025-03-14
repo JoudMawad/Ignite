@@ -1,12 +1,12 @@
 import SwiftUI
 import Charts
 
-
 struct WeeklyWeightChartView: View {
     @Environment(\.colorScheme) var colorScheme
-    private let weightHistoryManager = WeightHistoryManager()
+    // Use the shared WeightHistoryManager for stored weight data.
+    @ObservedObject private var weightHistoryManager = WeightHistoryManager.shared
     
-    // Accept the user profile view model.
+    // Accept a user profile view model that contains the active user profile.
     @ObservedObject var viewModel: UserProfileViewModel
     
     // Computed property for the active user profile.
@@ -19,7 +19,9 @@ struct WeeklyWeightChartView: View {
         getStoredWeightsForPeriod(days: 7)
     }
     
-    // Format weight data for display.
+    // Format weight data for display:
+    // For each of the last 7 days, if it’s today, use the profile’s current weight;
+    // otherwise, use the stored weight (if available), falling back to the profile’s weight.
     var formattedData: [(label: String, weight: Double)] {
         let calendar = Calendar.current
         let today = Date()
@@ -28,7 +30,9 @@ struct WeeklyWeightChartView: View {
             let dateString = ChartDataHelper.dateToString(date)
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.dateFormat = "EEE"
-            let weight: Double = calendar.isDate(date, inSameDayAs: today) ? profile.currentWeight : (weightData.first(where: { $0.date == dateString })?.weight ?? profile.currentWeight)
+            let weight: Double = calendar.isDate(date, inSameDayAs: today)
+                ? profile.currentWeight
+                : (weightData.first(where: { $0.date == dateString })?.weight ?? profile.currentWeight)
             return (weekdayFormatter.string(from: date), weight)
         }
         .reversed()
@@ -60,10 +64,10 @@ struct WeeklyWeightChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.label) { entry in
+                    ForEach(formattedData, id: \.0) { entry in
                         LineMark(
-                            x: .value("Date", entry.label),
-                            y: .value("Weight", entry.weight)
+                            x: .value("Date", entry.0),
+                            y: .value("Weight", entry.1)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
@@ -102,9 +106,12 @@ struct WeeklyWeightChartView: View {
         }
     }
     
-    // Helper to retrieve stored weights.
+    // Helper: Retrieve stored weights from the shared WeightHistoryManager.
     private func getStoredWeightsForPeriod(days: Int) -> [(date: String, weight: Double)] {
         let allWeights = weightHistoryManager.weightForPeriod(days: days)
-        return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date)), $0.weight) }
+        return allWeights.map { entry in
+            let date = ChartDataHelper.stringToDate(entry.date) ?? Date()
+            return (ChartDataHelper.dateToString(date), entry.weight)
+        }
     }
 }

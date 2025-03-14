@@ -1,5 +1,5 @@
-import HealthKit
 import Foundation
+import HealthKit
 
 final class StepsManager {
     private let healthStore: HKHealthStore
@@ -9,29 +9,31 @@ final class StepsManager {
         self.healthStore = healthStore
     }
     
+    /// Fetch historical daily steps from HealthKit between startDate and endDate.
+    /// - Parameters:
+    ///   - startDate: The beginning of the period.
+    ///   - endDate: The end of the period.
+    ///   - completion: Closure returning an array of (date, steps) tuples.
     func fetchHistoricalDailySteps(startDate: Date,
                                    endDate: Date,
                                    completion: @escaping ([(date: String, steps: Int)]) -> Void)
     {
         guard let stepsType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
-            print("DEBUG: .stepCount is not available on this device. Returning empty.")
             completion([])
             return
         }
         
- 
         let interval = DateComponents(day: 1)
         let anchorDate = Calendar.current.startOfDay(for: startDate)
         
         let query = HKStatisticsCollectionQuery(quantityType: stepsType,
-                                                quantitySamplePredicate: nil,
-                                                options: .cumulativeSum,
-                                                anchorDate: anchorDate,
-                                                intervalComponents: interval)
+                                                  quantitySamplePredicate: nil,
+                                                  options: .cumulativeSum,
+                                                  anchorDate: anchorDate,
+                                                  intervalComponents: interval)
         
         query.initialResultsHandler = { _, results, error in
-            if let error = error {
-                print("DEBUG: fetch error: \(error.localizedDescription)")
+            if error != nil {
                 completion([])
                 return
             }
@@ -54,20 +56,19 @@ final class StepsManager {
             completion(dailySteps)
         }
         
-        healthStore.execute(query)
+        self.healthStore.execute(query)
     }
     
-    /// Imports and stores the historical steps data for later use.
-    func importHistoricalSteps(_ stepsData: [(date: String, steps: Int)]) {
-        importedSteps = stepsData
-    }
-    
-    /// Returns the steps for the last 'days' days.
-    /// For example, if days == 1, it returns the latest day's steps data.
-    func stepsForPeriod(days: Int) -> [(date: String, steps: Int)] {
-        // Sort the imported steps in descending order by date.
-        // (Assuming the date strings are formatted as "yyyy-MM-dd" so lexicographic sorting works.)
-        let sortedSteps = importedSteps.sorted { $0.date > $1.date }
-        return Array(sortedSteps.prefix(days))
+    /// Convenience method that fetches steps from HealthKit and then updates the shared StepsHistoryManager.
+    /// - Parameters:
+    ///   - startDate: Start of the period.
+    ///   - endDate: End of the period.
+    ///   - completion: Called when the update is complete.
+    func updateHistoricalSteps(startDate: Date, endDate: Date, completion: @escaping () -> Void) {
+        fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { fetchedSteps in
+            self.importedSteps = fetchedSteps
+            StepsHistoryManager.shared.importHistoricalSteps(fetchedSteps)
+            completion()
+        }
     }
 }

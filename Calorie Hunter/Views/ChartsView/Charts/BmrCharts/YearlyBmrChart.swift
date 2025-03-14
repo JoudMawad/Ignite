@@ -13,8 +13,15 @@ struct YearlyBMRChartView: View {
     
     // Group the weight data for the year.
     var formattedData: [(label: String, avgWeight: Double)] {
-        ChartDataHelper.groupWeightData(from: weightData, days: 365, interval: 90, dateFormat: "MMM yy")
+        ChartDataHelper.groupWeightData(
+            from: weightData,
+            days: 365,
+            interval: 90,
+            outputDateFormat: "MMM yy"
+        )
+        .map { (label: $0.label, avgWeight: $0.weight) }
     }
+
     
     // Compute BMR for each group using the average weight.
     var bmrData: [(label: String, bmr: Double)] {
