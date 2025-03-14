@@ -11,6 +11,8 @@ class StepsViewModel: ObservableObject {
     @Published var currentSteps: Int = 0
     
     init() {
+        // Load the stored value (or 0 if not yet stored)
+        self.currentSteps = UserDefaults.standard.integer(forKey: "steps")
         requestAuthorization()
         startStepUpdates()
     }
@@ -35,14 +37,24 @@ class StepsViewModel: ObservableObject {
         }
     }
     
-    /// This function sets up a timer to update the current steps every 20 seconds.
+    /// Updates the current steps value both in persistent storage and in the published property.
+    private func updateSteps(with newValue: Int) {
+        // Persist the new value.
+        UserDefaults.standard.set(newValue, forKey: "steps")
+        DispatchQueue.main.async {
+            self.currentSteps = newValue
+        }
+    }
+    
+    /// Periodically fetch today's steps and update the view model.
     private func startStepUpdates() {
         timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 // Fetch today's steps (using days: 1 returns an array with today's entry)
-                self.currentSteps = self.stepsManager.stepsForPeriod(days: 1).first?.steps ?? 0
+                let steps = self.stepsManager.stepsForPeriod(days: 1).first?.steps ?? 0
+                self.updateSteps(with: steps)
             }
     }
     

@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct BurnedCaloriesCardView: View {
-    @StateObject var viewModel = BurnedCaloriesViewModel() // Persist view model across updates
+    @StateObject var viewModel = BurnedCaloriesViewModel()
+    @State private var animatedCalories: Double = 0
     @Environment(\.colorScheme) var colorScheme
+    
+    // Static flag to ensure the launch animation only plays once per app session.
+    private static var hasAnimatedBurnedCalories = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -21,8 +25,8 @@ struct BurnedCaloriesCardView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
-            Text("\(Int(viewModel.currentBurnedCalories))")
-                .font(.system(size: 26, weight: .bold, design: .rounded))
+            // The custom animatable view to show the calories.
+            CountingNumberText(number: animatedCalories)
                 .foregroundColor(colorScheme == .dark ? .black : .white)
             Spacer()
         }
@@ -33,5 +37,24 @@ struct BurnedCaloriesCardView: View {
                 .fill(colorScheme == .dark ? .white : .black)
                 .shadow(radius: 3)
         )
+        .onAppear {
+            if Self.hasAnimatedBurnedCalories {
+                // If the animation has already played, immediately update without animating.
+                animatedCalories = viewModel.currentBurnedCalories
+            } else {
+                // First-time launch: animate from 0 to the current value.
+                animatedCalories = 0
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    animatedCalories = viewModel.currentBurnedCalories
+                }
+                Self.hasAnimatedBurnedCalories = true
+            }
+        }
+        .onReceive(viewModel.$currentBurnedCalories) { newValue in
+            // Animate any new updates to the burned calories.
+            withAnimation(.easeInOut(duration: 0.5)) {
+                animatedCalories = newValue
+            }
+        }
     }
 }

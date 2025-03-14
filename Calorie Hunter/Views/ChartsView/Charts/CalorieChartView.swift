@@ -55,8 +55,13 @@ struct CalorieChartView: View {
                 // Draw the base remaining arc from 0 to baseFraction.
                 // Use your gradient for the base segment.
                 let baseGradient: [Color] = colorScheme == .light ?
-                    [Color.white, Color.red, Color.white] :
-                    [Color.black, Color.red, Color.black]
+                    [Color.white, Color.blue, Color.white] :
+                    [Color.black, Color.blue, Color.black]
+                
+                let burnedGradient: [Color] = colorScheme == .light ?
+                    [Color.red, Color.white, Color.red] :
+                    [Color.red, Color.black, Color.red]
+                
                 Circle()
                     .trim(from: 0, to: CGFloat(baseFraction))
                     .stroke(
@@ -76,7 +81,7 @@ struct CalorieChartView: View {
                     .trim(from: CGFloat(baseFraction), to: CGFloat(baseFraction + burnedFraction))
                     .stroke(
                         AngularGradient(
-                            gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.7), Color.blue]),
+                            gradient: Gradient(colors: burnedGradient),
                             center: .center
                         ),
                         style: StrokeStyle(lineWidth: size * 0.035, lineCap: .round)

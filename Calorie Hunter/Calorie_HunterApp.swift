@@ -3,6 +3,7 @@ import HealthKit
 
 @main
 struct Calorie_HunterApp: App {
+    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
 
     init() {
@@ -10,7 +11,6 @@ struct Calorie_HunterApp: App {
             if success {
                 print("✅ HealthKit authorization successful in App initializer.")
                 HealthKitManager.shared.enableBackgroundDeliveryForAll()
-                // Instead of creating a new view model, post a notification that the app is ready.
             } else {
                 print("❌ HealthKit authorization failed in App initializer: \(error?.localizedDescription ?? "Unknown error")")
             }
@@ -21,6 +21,14 @@ struct Calorie_HunterApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(burnedCaloriesViewModel)
+                .fullScreenCover(isPresented: Binding(
+                    get: { !hasCompletedOnboarding },
+                    set: { _ in }
+                )) {
+                    NavigationStack {  // Use NavigationStack instead of NavigationView
+                        OnboardingStep1View(viewModel: UserProfileViewModel())
+                    }
+                }
         }
     }
 }

@@ -41,7 +41,7 @@ struct AddFoodView: View {
                     .background(
                         RoundedRectangle(cornerRadius: 20)
                             .fill(colorScheme == .dark ? Color.black : Color.white)
-                            .shadow(color: Color.cyan.opacity(0.25), radius: 8)
+                            .shadow(color: Color.primary.opacity(0.25), radius: 8)
                     )
                     .padding(.horizontal, 30)
                     .padding(.top, 25)

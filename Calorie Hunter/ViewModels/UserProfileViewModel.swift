@@ -53,16 +53,16 @@ class UserProfileViewModel: ObservableObject {
                     self.profile = existingProfile
                 }
             } else {
-                // Create a new profile with default values.
+                // Create a new profile with empty or zeroed values
                 let newProfile = UserProfile(context: context)
                 newProfile.name = ""
-                newProfile.gender = "Male"
-                newProfile.age = 25
-                newProfile.height = 170
-                newProfile.dailyCalorieGoal = 1500
-                newProfile.startWeight = 70.0
-                newProfile.currentWeight = 70.0
-                newProfile.goalWeight = 65.0
+                newProfile.gender = ""
+                newProfile.age = 0
+                newProfile.height = 0
+                newProfile.dailyCalorieGoal = 0
+                newProfile.startWeight = 0.0
+                newProfile.currentWeight = 0.0
+                newProfile.goalWeight = 0.0
                 newProfile.profileImageData = nil
                 try context.save()
                 DispatchQueue.main.async {

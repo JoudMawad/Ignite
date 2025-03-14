@@ -76,7 +76,7 @@ struct HomeView: View {
     // MARK: - Welcome Section
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            TypingText(fullText: "Welcome, \(userProfileViewModel.firstName)")
+            TypingText(fullText: "Welcome, \(userProfileViewModel.firstName).")
                 .font(.largeTitle)
                 .fontWeight(.bold)
         }
