@@ -12,7 +12,7 @@ struct MonthlyCalorieChartView: View {
     }
     
     var formattedData: [(label: String, calories: Int)] {
-        ChartDataHelper.groupData(
+        ChartDataHelper.groupDataIncludingZeros(
             from: calorieData.map { (date: $0.date, value: Double($0.calories)) },
             days: 30,
             interval: 5,
