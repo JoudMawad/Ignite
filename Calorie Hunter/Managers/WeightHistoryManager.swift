@@ -75,12 +75,13 @@ class WeightHistoryManager: ObservableObject {
         let weightManager = WeightManager()
         
         // Fetch the latest weight and update today's entry.
-        weightManager.fetchLatestWeight { [weak self] latestWeight in
-            guard let self = self, let weight = latestWeight else { return }
+        weightManager.fetchLatestWeight { [weak self] result in
+            guard let self = self, let latestData = result else { return }
             DispatchQueue.main.async {
-                self.saveWeight(for: Date(), weight: weight)
+                self.saveWeight(for: Date(), weight: latestData.weight)
             }
         }
+
         
         // Define the range for historical data (e.g., last 7 days).
         let endDate = Date()

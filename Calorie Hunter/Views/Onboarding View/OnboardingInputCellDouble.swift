@@ -33,8 +33,10 @@ struct OnboardingInputCellDouble: View {
                         return textValue
                     },
                     set: { newValue in
+                        // Replace any commas with dots.
+                        let normalized = newValue.replacingOccurrences(of: ",", with: ".")
                         textValue = newValue
-                        if let doubleValue = Double(newValue) {
+                        if let doubleValue = Double(normalized) {
                             value = doubleValue
                         } else {
                             value = 0.0

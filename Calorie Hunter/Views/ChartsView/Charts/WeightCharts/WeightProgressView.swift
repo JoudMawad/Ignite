@@ -63,7 +63,7 @@ struct WeightProgressView: View {
             }
             .padding()
             
-            /*
+            
             // Uncomment this section if you want to allow user weight adjustments.
             HStack {
                 Button(action: {
@@ -99,7 +99,7 @@ struct WeightProgressView: View {
                 }
             }
             .padding(.top, 5)
-            */
+            
         }
     }
 }

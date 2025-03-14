@@ -95,15 +95,31 @@ class UserProfileViewModel: ObservableObject {
     
     // Update weight only if the difference is greater than 0.5 kg.
     func updateWeightFromHealthKit() {
-        weightManager.fetchLatestWeight { [weak self] fetchedWeight in
-            guard let self = self, let newWeight = fetchedWeight else { return }
+        weightManager.fetchLatestWeight { [weak self] result in
+            guard let self = self, let newData = result else { return }
+            let newWeight = newData.weight
+            let newSampleDate = newData.date
+            
+            // Get the stored weight for today (if any) from WeightHistoryManager.
+            let todayEntries = self.weightHistoryManager.weightForPeriod(days: 1)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone.current
+            
+            var storedDate: Date? = nil
+            if let entry = todayEntries.first, let dateFromString = formatter.date(from: entry.date) {
+                storedDate = dateFromString
+            }
+            
             DispatchQueue.main.async {
-                if let currentWeight = self.profile?.currentWeight, abs(newWeight - currentWeight) > 0.5 {
+                // If there's no stored data, or if the new sample is from a later date, update.
+                if storedDate == nil || newSampleDate > storedDate! {
                     self.updateCurrentWeight(newWeight)
                 }
             }
         }
     }
+
     
     func importHistoricalWeightsFromHealthKit() {
         let oneYearAgo = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()

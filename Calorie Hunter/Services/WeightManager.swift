@@ -12,7 +12,8 @@ final class WeightManager {
         self.healthStore = healthStore
     }
     
-    func fetchLatestWeight(completion: @escaping (Double?) -> Void) {
+    // Now returns a tuple with weight and sample's endDate.
+    func fetchLatestWeight(completion: @escaping ((weight: Double, date: Date)?) -> Void) {
         guard let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
             completion(nil)
             return
@@ -23,15 +24,17 @@ final class WeightManager {
                                   limit: 1,
                                   sortDescriptors: [sortDescriptor]) { _, samples, error in
             if let error = error {
+                print("Error fetching latest weight: \(error)")
                 completion(nil)
                 return
             }
             guard let sample = samples?.first as? HKQuantitySample else {
+                print("No sample returned for latest weight")
                 completion(nil)
                 return
             }
             let weightInKg = sample.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo))
-            completion(weightInKg)
+            completion((weight: weightInKg, date: sample.endDate))
         }
         healthStore.execute(query)
     }
@@ -41,6 +44,7 @@ final class WeightManager {
                                      completion: @escaping ([(date: String, weight: Double)]) -> Void)
     {
         guard let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
+            print("Failed to create weightType for historical fetch")
             completion([])
             return
         }
@@ -52,7 +56,8 @@ final class WeightManager {
                                                 anchorDate: anchorDate,
                                                 intervalComponents: interval)
         query.initialResultsHandler = { _, results, error in
-            if error != nil {
+            if let error = error {
+                print("Error fetching historical weight: \(error)")
                 completion([])
                 return
             }
