@@ -65,7 +65,7 @@ struct WeightProgressView: View {
             
             
             // Uncomment this section if you want to allow user weight adjustments.
-            HStack {
+           /* HStack {
                 Button(action: {
                     withAnimation {
                         if let current = viewModel.profile?.currentWeight {
@@ -99,7 +99,7 @@ struct WeightProgressView: View {
                 }
             }
             .padding(.top, 5)
-            
+            */
         }
     }
 }
