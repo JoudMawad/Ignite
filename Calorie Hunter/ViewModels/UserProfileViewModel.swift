@@ -6,7 +6,8 @@ class UserProfileViewModel: ObservableObject {
     
     // Existing managers.
     private let weightHistoryManager = WeightHistoryManager.shared
-    private let healthKitManager = HealthKitManager.shared
+    // Replace healthKitManager with a dedicated WeightManager instance.
+    private let weightManager = WeightManager()
     private var reimportWorkItem: DispatchWorkItem?
     
     // Using the shared context from your PersistenceController.
@@ -15,9 +16,11 @@ class UserProfileViewModel: ObservableObject {
     init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
         self.context = context
         loadProfile()
-        healthKitManager.requestAuthorization { [weak self] success, _ in
+        // Request authorization using the shared HealthKitManager.
+        HealthKitManager.shared.requestAuthorization { [weak self] success, _ in
             if success {
-                self?.healthKitManager.startObservingWeightChanges()
+                // Use the dedicated weight manager to start observing weight changes.
+                self?.weightManager.startObservingWeightChanges()
                 NotificationCenter.default.addObserver(self!,
                                                        selector: #selector(self?.handleHealthKitDataChange),
                                                        name: .healthKitWeightDataChanged,
@@ -91,7 +94,7 @@ class UserProfileViewModel: ObservableObject {
     
     // Update weight only if the difference is greater than 0.5 kg.
     func updateWeightFromHealthKit() {
-        healthKitManager.fetchLatestWeight { [weak self] fetchedWeight in
+        weightManager.fetchLatestWeight { [weak self] fetchedWeight in
             guard let self = self, let newWeight = fetchedWeight else { return }
             DispatchQueue.main.async {
                 if let currentWeight = self.profile?.currentWeight, abs(newWeight - currentWeight) > 0.5 {
@@ -103,7 +106,7 @@ class UserProfileViewModel: ObservableObject {
     
     func importHistoricalWeightsFromHealthKit() {
         let oneYearAgo = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
-        healthKitManager.fetchHistoricalDailyWeights(startDate: oneYearAgo, endDate: Date()) { [weak self] dailyWeights in
+        weightManager.fetchHistoricalDailyWeights(startDate: oneYearAgo, endDate: Date()) { [weak self] dailyWeights in
             DispatchQueue.main.async {
                 self?.weightHistoryManager.importHistoricalWeights(dailyWeights)
             }
@@ -121,9 +124,9 @@ class UserProfileViewModel: ObservableObject {
     }
     
     var firstName: String {
-            let parts = name.split(separator: " ")
-            return parts.first.map(String.init) ?? ""
-        }
+        let parts = name.split(separator: " ")
+        return parts.first.map(String.init) ?? ""
+    }
     
     var age: Int {
         get { Int(profile?.age ?? 25) }

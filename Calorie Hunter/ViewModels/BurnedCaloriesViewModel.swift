@@ -17,7 +17,16 @@ class BurnedCaloriesViewModel: ObservableObject {
     
     init() {
         requestAuthorization()
-        startBurnedCaloriesUpdates()
+        startBurnedCaloriesUpdates() // If you still want a periodic refresh
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(handleHealthKitDataChanged),
+                                               name: .healthKitBurnedCaloriesDataChanged,
+                                               object: nil)
+    }
+
+    @objc private func handleHealthKitDataChanged() {
+        // Fetch the latest burned calories from historyManager
+        self.currentBurnedCalories = self.historyManager.burnedCaloriesForPeriod(days: 1).first?.burnedCalories ?? 0
     }
     
     private func requestAuthorization() {
@@ -41,7 +50,7 @@ class BurnedCaloriesViewModel: ObservableObject {
     
     /// Updates today's burned calories every 20 seconds.
     private func startBurnedCaloriesUpdates() {
-        timerCancellable = Timer.publish(every: 20, on: .main, in: .common)
+        timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
@@ -53,4 +62,3 @@ class BurnedCaloriesViewModel: ObservableObject {
         timerCancellable?.cancel()
     }
 }
-

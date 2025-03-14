@@ -2,8 +2,10 @@ import SwiftUI
 import Combine
 
 class StepsViewModel: ObservableObject {
+    // Use the shared HealthKitManager for authorization.
     private let healthKitManager = HealthKitManager.shared
-    private let stepsManager = StepsHistoryManager.shared
+    // Dedicated manager for step-related operations.
+    private let stepsManager = StepsManager()
     private var timerCancellable: AnyCancellable?
     
     @Published var currentSteps: Int = 0
@@ -28,14 +30,14 @@ class StepsViewModel: ObservableObject {
         let startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
         let endDate = Date()
         
-        healthKitManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
+        stepsManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
             self.stepsManager.importHistoricalSteps(stepsData)
         }
     }
     
-    /// This function sets up a timer to update the current steps every 1 second.
+    /// This function sets up a timer to update the current steps every 20 seconds.
     private func startStepUpdates() {
-        timerCancellable = Timer.publish(every: 20, on: .main, in: .common)
+        timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }

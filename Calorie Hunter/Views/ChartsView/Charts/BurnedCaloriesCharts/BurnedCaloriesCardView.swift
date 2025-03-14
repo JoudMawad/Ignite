@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct BurnedCaloriesCardView: View {
-    @ObservedObject var viewModel: BurnedCaloriesViewModel
+    @StateObject var viewModel = BurnedCaloriesViewModel() // Persist view model across updates
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {

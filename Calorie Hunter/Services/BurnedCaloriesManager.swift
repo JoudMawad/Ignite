@@ -1,17 +1,15 @@
-//
-//  BurnedCaloriesManager.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 13.03.25.
-//
-
 import HealthKit
 import Foundation
 
+extension Notification.Name {
+    static let healthKitBurnedCaloriesDataChanged = Notification.Name("healthKitBurnedCaloriesDataChanged")
+}
 
-class BurnedCaloriesManager {
+final class BurnedCaloriesManager {
     static let shared = BurnedCaloriesManager()
     let healthStore = HKHealthStore()
+    
+    private init() { }
     
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         guard let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
@@ -72,7 +70,7 @@ class BurnedCaloriesManager {
     }
     
     func startObservingBurnedCaloriesChanges() {
-        guard let caloriesType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
+        guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
         let query = HKObserverQuery(sampleType: caloriesType, predicate: nil) { _, completionHandler, _ in
             NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged, object: nil)
             completionHandler()
@@ -80,4 +78,3 @@ class BurnedCaloriesManager {
         healthStore.execute(query)
     }
 }
-

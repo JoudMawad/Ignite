@@ -24,6 +24,7 @@ class BurnedCaloriesHistoryManager: ObservableObject {
         }
     }
     
+    
     /// Imports historical burned calories data.
     func importHistoricalBurnedCalories(_ caloriesData: [(date: String, burnedCalories: Double)]) {
         var history = localHistory
@@ -55,4 +56,3 @@ class BurnedCaloriesHistoryManager: ObservableObject {
         localHistory = [:]
     }
 }
-
