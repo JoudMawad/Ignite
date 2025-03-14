@@ -97,6 +97,62 @@ struct ChartDataHelper {
         
         return groupedData
     }
+    
+    static func groupDataIncludingZeros(from rawData: [(date: String, value: Double)],
+                                        days: Int,
+                                        interval: Int,
+                                        inputDateFormat: String = "yyyy-MM-dd",
+                                        outputDateFormat: String) -> [(label: String, aggregatedValue: Double)] {
+        
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = inputDateFormat
+        inputFormatter.locale = Locale(identifier: "en_US_POSIX")
+        inputFormatter.timeZone = TimeZone.current
+        
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = outputDateFormat
+        outputFormatter.locale = Locale.current
+        outputFormatter.timeZone = TimeZone.current
+        
+        // Parse raw data into sorted (Date, value) pairs.
+        let dataPoints: [(date: Date, value: Double)] = rawData.compactMap { entry in
+            if let date = inputFormatter.date(from: entry.date) {
+                return (date: Calendar.current.startOfDay(for: date), value: entry.value)
+            }
+            return nil
+        }.sorted { $0.date < $1.date }
+        
+        let calendar = Calendar.current
+        // Calculate startDate as (days - 1) days ago from today.
+        guard let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: calendar.startOfDay(for: Date())) else {
+            return []
+        }
+        
+        var groupedData: [(label: String, aggregatedValue: Double)] = []
+        
+        // Process each bucket.
+        for offset in stride(from: 0, to: days, by: interval) {
+            guard let bucketStart = calendar.date(byAdding: .day, value: offset, to: startDate),
+                  let bucketEnd = calendar.date(byAdding: .day, value: interval, to: bucketStart) else { continue }
+            
+            // Now include zeros as valid values.
+            let bucketValues = dataPoints.filter { $0.date >= bucketStart && $0.date < bucketEnd }
+                                         .map { $0.value }
+            
+            let aggregatedValue: Double
+            if bucketValues.isEmpty {
+                aggregatedValue = 0.0
+            } else {
+                aggregatedValue = bucketValues.reduce(0.0, +) / Double(bucketValues.count)
+            }
+            
+            let label = outputFormatter.string(from: bucketStart)
+            groupedData.append((label: label, aggregatedValue: aggregatedValue))
+        }
+        
+        return groupedData
+    }
+
 
 
 
@@ -122,7 +178,7 @@ struct ChartDataHelper {
                                inputDateFormat: String = "yyyy-MM-dd",
                                outputDateFormat: String) -> [(label: String, steps: Int)] {
         let doubleData = stepsData.map { (date: $0.date, value: Double($0.steps)) }
-        let grouped = groupData(from: doubleData, days: days, interval: interval, inputDateFormat: inputDateFormat, outputDateFormat: outputDateFormat)
+        let grouped = groupDataIncludingZeros(from: doubleData, days: days, interval: interval, inputDateFormat: inputDateFormat, outputDateFormat: outputDateFormat)
         return grouped.map { (label: $0.label, steps: Int($0.aggregatedValue)) }
     }
     
@@ -131,7 +187,7 @@ struct ChartDataHelper {
                                         interval: Int,
                                         inputDateFormat: String = "yyyy-MM-dd",
                                         outputDateFormat: String) -> [(label: String, burnedCalories: Double)] {
-        return groupData(from: burnedCaloriesData.map { (date: $0.date, value: $0.burnedCalories) },
+        return groupDataIncludingZeros(from: burnedCaloriesData.map { (date: $0.date, value: $0.burnedCalories) },
                          days: days,
                          interval: interval,
                          inputDateFormat: inputDateFormat,
@@ -160,7 +216,7 @@ struct ChartDataHelper {
                                  inputDateFormat: String = "yyyy-MM-dd",
                                  outputDateFormat: String) -> [(label: String, calories: Int)] {
         let doubleData = calorieData.map { (date: $0.date, value: Double($0.calories)) }
-        let grouped = groupData(from: doubleData, days: days, interval: interval, inputDateFormat: inputDateFormat, outputDateFormat: outputDateFormat)
+        let grouped = groupDataIncludingZeros(from: doubleData, days: days, interval: interval, inputDateFormat: inputDateFormat, outputDateFormat: outputDateFormat)
         return grouped.map { (label: $0.label, calories: Int($0.aggregatedValue)) }
     }
 }
