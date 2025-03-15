@@ -55,7 +55,7 @@ struct WeeklyCalorieChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.blue, .cyan]),
+                            LinearGradient(gradient: Gradient(colors: [.cyan, colorScheme == .dark ? Color.white : Color.black]),
                                            startPoint: .top,
                                            endPoint: .bottom)
                         )

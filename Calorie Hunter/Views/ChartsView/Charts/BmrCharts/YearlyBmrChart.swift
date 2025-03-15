@@ -71,7 +71,7 @@ struct YearlyBMRChartView: View {
                         .symbol(.circle)
                         .foregroundStyle(
                             LinearGradient(
-                                gradient: Gradient(colors: [.orange, .yellow]),
+                                gradient: Gradient(colors: [.yellow, colorScheme == .dark ? Color.white : Color.black]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )

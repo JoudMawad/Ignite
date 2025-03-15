@@ -11,22 +11,28 @@ struct WeeklyBMRChartView: View {
         let allWeights = weightHistoryManager.weightForPeriod(days: days)
         return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date) ?? Date()), $0.weight) }
     }
-
     
     /// Weight data for the week.
     var weightData: [(date: String, weight: Double)] {
         getStoredWeightsForPeriod(days: 7)
     }
     
-    /// For each day in the past week, compute the BMR.
+    /// For each day in the past week (excluding today), compute the BMR.
+    /// Offsets run from 1 to 7 so that if today is Friday, you get:
+    /// - Offset 1: Thursday
+    /// - Offset 2: Wednesday
+    /// - …
+    /// - Offset 7: Previous Friday
+    /// The resulting array is then reversed for chronological order.
     var formattedData: [(label: String, bmr: Double)] {
         let calendar = Calendar.current
         let today = Date()
-        return (0..<7).compactMap { offset -> (String, Double)? in
+        return (1..<8).compactMap { offset -> (String, Double)? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             let dateString = ChartDataHelper.dateToString(date)
-            // Use stored weight if available; otherwise, fall back on current weight from the user profile.
-            let weight = weightData.first(where: { $0.date == dateString })?.weight ?? (viewModel.profile?.currentWeight ?? 70.0)
+            // Use stored weight if available; otherwise, use the profile's current weight.
+            let weight = weightData.first(where: { $0.date == dateString })?.weight
+                ?? (viewModel.profile?.currentWeight ?? 70.0)
             let bmr = BMRCalculator.computeBMR(
                 forWeight: weight,
                 age: Double(viewModel.profile?.age ?? 25),
@@ -36,7 +42,8 @@ struct WeeklyBMRChartView: View {
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.dateFormat = "EEE"
             return (weekdayFormatter.string(from: date), bmr)
-        }.reversed()
+        }
+        .reversed()
     }
     
     /// Calculate dynamic Y-axis maximum.
@@ -76,7 +83,7 @@ struct WeeklyBMRChartView: View {
                         .symbol(.circle)
                         .foregroundStyle(
                             LinearGradient(
-                                gradient: Gradient(colors: [.orange, .yellow]),
+                                gradient: Gradient(colors: [.yellow, colorScheme == .dark ? Color.white : Color.black]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )

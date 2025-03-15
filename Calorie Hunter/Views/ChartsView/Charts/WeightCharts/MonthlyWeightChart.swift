@@ -57,7 +57,7 @@ struct MonthlyWeightChartView: View {
                         .symbol(.circle)
                         .foregroundStyle(
                             LinearGradient(
-                                gradient: Gradient(colors: [.purple, .pink]),
+                                gradient: Gradient(colors: [.purple, colorScheme == .dark ? Color.white : Color.black]),
                                 startPoint: .top,
                                 endPoint: .bottom)
                         )

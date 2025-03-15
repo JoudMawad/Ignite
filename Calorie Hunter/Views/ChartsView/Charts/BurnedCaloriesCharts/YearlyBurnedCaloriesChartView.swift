@@ -56,7 +56,7 @@ struct YearlyBurnedCaloriesChartView: View {
                         .symbol(.circle)
                         .foregroundStyle(
                             LinearGradient(
-                                gradient: Gradient(colors: [.red, .pink]),
+                                gradient: Gradient(colors: [.red, colorScheme == .dark ? Color.white : Color.black]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )

@@ -20,19 +20,21 @@ struct WeeklyWeightChartView: View {
     }
     
     // Format weight data for display:
-    // For each of the last 7 days, if it’s today, use the profile’s current weight;
-    // otherwise, use the stored weight (if available), falling back to the profile’s weight.
+    // Now, we exclude today by iterating offsets from 1 to 7.
+    // This produces buckets for the past 7 days (yesterday through 7 days ago).
+    // For example, if today is Friday, it yields:
+    // Offset 1: Thursday, 2: Wednesday, ... , 7: Previous Friday.
+    // The array is reversed to show chronological order.
     var formattedData: [(label: String, weight: Double)] {
         let calendar = Calendar.current
         let today = Date()
-        return (0..<7).compactMap { offset -> (String, Double)? in
+        return (1..<8).compactMap { offset -> (String, Double)? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             let dateString = ChartDataHelper.dateToString(date)
             let weekdayFormatter = DateFormatter()
             weekdayFormatter.dateFormat = "EEE"
-            let weight: Double = calendar.isDate(date, inSameDayAs: today)
-                ? profile.currentWeight
-                : (weightData.first(where: { $0.date == dateString })?.weight ?? profile.currentWeight)
+            // Use stored weight if available; otherwise, fall back to the profile's current weight.
+            let weight: Double = weightData.first(where: { $0.date == dateString })?.weight ?? profile.currentWeight
             return (weekdayFormatter.string(from: date), weight)
         }
         .reversed()
@@ -64,17 +66,17 @@ struct WeeklyWeightChartView: View {
                     .padding(.horizontal)
                 
                 Chart {
-                    ForEach(formattedData, id: \.0) { entry in
+                    ForEach(formattedData, id: \.label) { entry in
                         LineMark(
-                            x: .value("Date", entry.0),
-                            y: .value("Weight", entry.1)
+                            x: .value("Date", entry.label),
+                            y: .value("Weight", entry.weight)
                         )
                         .interpolationMethod(.monotone)
                         .lineStyle(StrokeStyle(lineWidth: 3))
                         .symbol(.circle)
                         .foregroundStyle(
                             LinearGradient(
-                                gradient: Gradient(colors: [.purple, .pink]),
+                                gradient: Gradient(colors: [.purple, colorScheme == .dark ? Color.white : Color.black]),
                                 startPoint: .top,
                                 endPoint: .bottom)
                         )

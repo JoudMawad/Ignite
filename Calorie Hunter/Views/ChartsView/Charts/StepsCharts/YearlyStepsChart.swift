@@ -50,7 +50,7 @@ struct YearlyStepsChartView: View {
                         .symbol(.circle)
                         .foregroundStyle(
                             LinearGradient(
-                                gradient: Gradient(colors: [.red, .pink]),
+                                gradient: Gradient(colors: [.orange, colorScheme == .dark ? Color.white : Color.black]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
