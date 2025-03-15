@@ -6,7 +6,6 @@ final class HealthKitManager {
     let healthStore = HKHealthStore()
     
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        // Define the types we want to read: body mass, step count, and active energy burned.
         guard let bodyMassType = HKObjectType.quantityType(forIdentifier: .bodyMass),
               let stepType = HKObjectType.quantityType(forIdentifier: .stepCount),
               let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
@@ -21,22 +20,22 @@ final class HealthKitManager {
     }
     
     func enableBackgroundDeliveryForAll() {
-            enableBackgroundDelivery(for: .activeEnergyBurned)
-            enableBackgroundDelivery(for: .stepCount)
-        }
+        enableBackgroundDelivery(for: .activeEnergyBurned)
+        enableBackgroundDelivery(for: .stepCount)
+    }
     
     private func enableBackgroundDelivery(for identifier: HKQuantityTypeIdentifier) {
-            guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
-                print("DEBUG: Unable to create HKQuantityType for \(identifier)")
-                return
-            }
-            
-            healthStore.enableBackgroundDelivery(for: type, frequency: .immediate) { success, error in
-                if let error = error {
-                    print("Error enabling background delivery for \(identifier): \(error.localizedDescription)")
-                } else {
-                    print("Background delivery for \(identifier) enabled successfully.")
-                }
+        guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
+            print("DEBUG: Unable to create HKQuantityType for \(identifier)")
+            return
+        }
+        
+        healthStore.enableBackgroundDelivery(for: type, frequency: .immediate) { success, error in
+            if let error = error {
+                print("Error enabling background delivery for \(identifier): \(error.localizedDescription)")
+            } else {
+                print("Background delivery for \(identifier) enabled successfully.")
             }
         }
+    }
 }

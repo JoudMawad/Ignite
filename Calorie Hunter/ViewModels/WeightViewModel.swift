@@ -4,14 +4,18 @@ import Combine
 class WeightViewModel: ObservableObject {
     private let healthKitManager = HealthKitManager.shared
     private let weightManager = WeightManager()
-    private var timerCancellable: AnyCancellable?
     
     @Published var currentWeight: Double = 0.0
     
     init() {
         self.currentWeight = UserDefaults.standard.double(forKey: "weight")
         requestAuthorization()
-        startWeightUpdates()
+        // Listen for a significant time change (typically a day change)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(handleDayChange),
+                                               name: UIApplication.significantTimeChangeNotification,
+                                               object: nil)
+        updateWeightFromHistory() // Initial update
     }
     
     private func requestAuthorization() {
@@ -25,7 +29,7 @@ class WeightViewModel: ObservableObject {
     }
     
     func importHistoricalWeightsFromHealthKit() {
-        // Fetch all available weight data by setting the start date to distantPast.
+        // Fetch all available weight data.
         let startDate = Date.distantPast
         let endDate = Date()
         
@@ -42,17 +46,16 @@ class WeightViewModel: ObservableObject {
         }
     }
     
-    private func startWeightUpdates() {
-        timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let weight = WeightHistoryManager.shared.weightForPeriod(days: 1).first?.weight ?? 0.0
-                self.updateWeight(with: weight)
-            }
+    @objc private func handleDayChange() {
+        updateWeightFromHistory()
+    }
+    
+    private func updateWeightFromHistory() {
+        let weight = WeightHistoryManager.shared.weightForPeriod(days: 1).first?.weight ?? 0.0
+        updateWeight(with: weight)
     }
     
     deinit {
-        timerCancellable?.cancel()
+        NotificationCenter.default.removeObserver(self)
     }
 }

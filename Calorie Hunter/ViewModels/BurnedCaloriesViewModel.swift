@@ -4,24 +4,32 @@ import Combine
 class BurnedCaloriesViewModel: ObservableObject {
     private let healthKitManager = BurnedCaloriesManager.shared
     private let historyManager = BurnedCaloriesHistoryManager.shared
-    private var timerCancellable: AnyCancellable?
     
     @Published var currentBurnedCalories: Double = 0
 
     init() {
         requestAuthorization()
-        startBurnedCaloriesUpdates() // Periodic refresh to update the cumulative total
+        // Start observing immediate changes.
+        BurnedCaloriesManager.shared.startObservingBurnedCaloriesChanges()
+        
+        // Observe notifications with the latest calories.
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleHealthKitDataChanged),
+                                               selector: #selector(handleHealthKitDataChanged(notification:)),
                                                name: .healthKitBurnedCaloriesDataChanged,
                                                object: nil)
-        // Load any previously stored cumulative value at launch.
+        // Load any previously stored cumulative value.
         self.currentBurnedCalories = UserDefaults.standard.double(forKey: "cumulativeBurnedCalories")
     }
     
-    @objc private func handleHealthKitDataChanged() {
-        let todayCalories = self.historyManager.burnedCaloriesForPeriod(days: 1).first?.burnedCalories ?? 0
-        updateCumulativeCalories(with: todayCalories)
+    @objc private func handleHealthKitDataChanged(notification: Notification) {
+        if let userInfo = notification.userInfo,
+           let latestCalories = userInfo["latestCalories"] as? Double {
+            updateCumulativeCalories(with: latestCalories)
+        } else {
+            // Fallback in case no latest value is provided.
+            let todayCalories = self.historyManager.burnedCaloriesForPeriod(days: 1).first?.burnedCalories ?? 0
+            updateCumulativeCalories(with: todayCalories)
+        }
     }
     
     private func requestAuthorization() {
@@ -43,15 +51,12 @@ class BurnedCaloriesViewModel: ObservableObject {
         }
     }
     
-    /// Updates the cumulative calories using persistent storage.
-    /// - Parameter newValue: The current burned calories value for today.
+    // Update cumulative calories using the delta approach.
     private func updateCumulativeCalories(with newValue: Double) {
         let previousCumulative = UserDefaults.standard.double(forKey: "cumulativeBurnedCalories")
         let lastTodayValue = UserDefaults.standard.double(forKey: "lastTodayBurnedCalories")
         
         let delta = newValue - lastTodayValue
-        
-        // Update cumulative total with delta (can be positive or negative)
         let updatedTotal = previousCumulative + delta
         
         UserDefaults.standard.set(updatedTotal, forKey: "cumulativeBurnedCalories")
@@ -62,18 +67,7 @@ class BurnedCaloriesViewModel: ObservableObject {
         }
     }
     
-    /// Updates today's burned calories every 10 seconds.
-    private func startBurnedCaloriesUpdates() {
-        timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let todayCalories = self.historyManager.burnedCaloriesForPeriod(days: 1).first?.burnedCalories ?? 0
-                self.updateCumulativeCalories(with: todayCalories)
-            }
-    }
-    
     deinit {
-        timerCancellable?.cancel()
+        NotificationCenter.default.removeObserver(self)
     }
 }

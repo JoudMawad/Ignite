@@ -75,15 +75,5 @@ struct WeeklyStepsChartView: View {
                 .padding()
             }
         }
-        // When the view appears, fetch and update the steps history.
-        .onAppear {
-            let calendar = Calendar.current
-            if let startDate = calendar.date(byAdding: .day, value: -7, to: Date()) {
-                hkStepsManager.updateHistoricalSteps(startDate: startDate, endDate: Date()) {
-                    print("DEBUG: StepsHistoryManager has been updated.")
-                    // The shared StepsHistoryManager will notify observers when its data changes.
-                }
-            }
-        }
     }
 }

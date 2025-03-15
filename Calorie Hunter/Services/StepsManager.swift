@@ -1,5 +1,5 @@
-import Foundation
 import HealthKit
+import Foundation
 
 final class StepsManager {
     private let healthStore: HKHealthStore
@@ -9,11 +9,6 @@ final class StepsManager {
         self.healthStore = healthStore
     }
     
-    /// Fetch historical daily steps from HealthKit between startDate and endDate.
-    /// - Parameters:
-    ///   - startDate: The beginning of the period.
-    ///   - endDate: The end of the period.
-    ///   - completion: Closure returning an array of (date, steps) tuples.
     func fetchHistoricalDailySteps(startDate: Date,
                                    endDate: Date,
                                    completion: @escaping ([(date: String, steps: Int)]) -> Void)
@@ -59,11 +54,6 @@ final class StepsManager {
         self.healthStore.execute(query)
     }
     
-    /// Convenience method that fetches steps from HealthKit and then updates the shared StepsHistoryManager.
-    /// - Parameters:
-    ///   - startDate: Start of the period.
-    ///   - endDate: End of the period.
-    ///   - completion: Called when the update is complete.
     func updateHistoricalSteps(startDate: Date, endDate: Date, completion: @escaping () -> Void) {
         fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { fetchedSteps in
             self.importedSteps = fetchedSteps

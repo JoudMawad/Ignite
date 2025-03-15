@@ -69,11 +69,48 @@ final class BurnedCaloriesManager {
         healthStore.execute(query)
     }
     
+    // New: Fetch the latest burned calories from the start of today until now.
+    func fetchLatestBurnedCalories(completion: @escaping (Double) -> Void) {
+        guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else {
+            completion(0)
+            return
+        }
+        
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: Date(), options: .strictStartDate)
+        
+        let sampleQuery = HKSampleQuery(sampleType: caloriesType,
+                                        predicate: predicate,
+                                        limit: HKObjectQueryNoLimit,
+                                        sortDescriptors: nil) { _, samples, error in
+            guard let samples = samples as? [HKQuantitySample], error == nil else {
+                completion(0)
+                return
+            }
+            let totalCalories = samples.reduce(0.0) { sum, sample in
+                sum + sample.quantity.doubleValue(for: HKUnit.kilocalorie())
+            }
+            completion(totalCalories)
+        }
+        
+        healthStore.execute(sampleQuery)
+    }
+    
+    // Updated: Use an observer query to fetch the latest burned calories immediately.
     func startObservingBurnedCaloriesChanges() {
         guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
-        let query = HKObserverQuery(sampleType: caloriesType, predicate: nil) { _, completionHandler, _ in
-            NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged, object: nil)
-            completionHandler()
+        let query = HKObserverQuery(sampleType: caloriesType, predicate: nil) { [weak self] _, completionHandler, _ in
+            guard let self = self else {
+                completionHandler()
+                return
+            }
+            
+            self.fetchLatestBurnedCalories { latestCalories in
+                NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged,
+                                                object: nil,
+                                                userInfo: ["latestCalories": latestCalories])
+                completionHandler()
+            }
         }
         healthStore.execute(query)
     }

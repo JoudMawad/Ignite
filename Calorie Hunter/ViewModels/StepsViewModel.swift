@@ -1,20 +1,19 @@
 import SwiftUI
 import Combine
+import HealthKit
 
 class StepsViewModel: ObservableObject {
-    // Use the shared HealthKitManager for authorization.
     private let healthKitManager = HealthKitManager.shared
-    // Use a dedicated StepsManager for fetching HealthKit data.
     private let stepsManager = StepsManager()
-    private var timerCancellable: AnyCancellable?
+    private var observerQuery: HKObserverQuery?
     
     @Published var currentSteps: Int = 0
     
     init() {
-        // Load the stored value (or 0 if not yet stored)
+        // Load stored value or default to 0.
         self.currentSteps = UserDefaults.standard.integer(forKey: "steps")
         requestAuthorization()
-        startStepUpdates()
+        startObservingSteps()
     }
     
     private func requestAuthorization() {
@@ -33,34 +32,63 @@ class StepsViewModel: ObservableObject {
         let endDate = Date()
         
         stepsManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
-            // Update the shared StepsHistoryManager so the charts and view model have up-to-date data.
             StepsHistoryManager.shared.importHistoricalSteps(stepsData)
             print("DEBUG: Imported historical steps from HealthKit into StepsHistoryManager.")
         }
     }
     
-    /// Updates the current steps value both in persistent storage and in the published property.
     private func updateSteps(with newValue: Int) {
-        // Persist the new value.
         UserDefaults.standard.set(newValue, forKey: "steps")
         DispatchQueue.main.async {
             self.currentSteps = newValue
         }
     }
     
-    /// Periodically fetch today's steps from the shared StepsHistoryManager and update the view model.
-    private func startStepUpdates() {
-        timerCancellable = Timer.publish(every: 10, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                // Use the shared StepsHistoryManager to retrieve today's steps.
-                let steps = StepsHistoryManager.shared.stepsForPeriod(days: 1).first?.steps ?? 0
-                self.updateSteps(with: steps)
+    private func startObservingSteps() {
+        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
+            return
+        }
+        
+        observerQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completionHandler, error in
+            guard let self = self else { return }
+            if let error = error {
+                print("Error in steps observer query: \(error.localizedDescription)")
+                completionHandler()
+                return
             }
+            
+            // Fetch the latest steps immediately with an anchored query:
+            self.fetchLatestSteps { latestSteps in
+                self.updateSteps(with: latestSteps)
+                completionHandler()
+            }
+        }
+        
+        if let query = observerQuery {
+            healthKitManager.healthStore.execute(query)
+        }
     }
-    
-    deinit {
-        timerCancellable?.cancel()
+
+    private func fetchLatestSteps(completion: @escaping (Int) -> Void) {
+        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            completion(0)
+            return
+        }
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: Date(), options: .strictStartDate)
+        
+        let sampleQuery = HKSampleQuery(sampleType: stepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
+            guard let samples = samples as? [HKQuantitySample], error == nil else {
+                completion(0)
+                return
+            }
+            let steps = samples.reduce(0) { sum, sample in
+                sum + Int(sample.quantity.doubleValue(for: .count()))
+            }
+            completion(steps)
+        }
+        
+        healthKitManager.healthStore.execute(sampleQuery)
     }
+
 }

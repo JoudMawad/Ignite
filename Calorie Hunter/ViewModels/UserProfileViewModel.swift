@@ -3,20 +3,25 @@ import CoreData
 
 class UserProfileViewModel: ObservableObject {
     @Published var profile: UserProfile?
+    // Separate published property to force immediate UI updates for the calorie goal.
+    @Published var dailyCalorieGoalValue: Int = 1500
     
     // Existing managers.
     private let weightHistoryManager = WeightHistoryManager.shared
-    // Replace healthKitManager with a dedicated WeightManager instance.
     private let weightManager = WeightManager()
     private var reimportWorkItem: DispatchWorkItem?
     
-    // Using the shared context from your PersistenceController.
+    // Shared Core Data context.
     private var context: NSManagedObjectContext
-    
+
     init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
         self.context = context
         loadProfile()
-        // Request authorization using the shared HealthKitManager.
+        // Observe Core Data context changes.
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(contextObjectsDidChange(_:)),
+                                               name: NSNotification.Name.NSManagedObjectContextObjectsDidChange,
+                                               object: context)
         HealthKitManager.shared.requestAuthorization { [weak self] success, _ in
             guard let self = self else { return }
             if success {
@@ -32,7 +37,19 @@ class UserProfileViewModel: ObservableObject {
     }
     
     deinit {
-        NotificationCenter.default.removeObserver(self, name: .healthKitWeightDataChanged, object: nil)
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // Listen for Core Data changes and update our published goal if necessary.
+    @objc private func contextObjectsDidChange(_ notification: Notification) {
+        if let profile = profile {
+            let newGoal = Int(profile.dailyCalorieGoal)
+            if newGoal != dailyCalorieGoalValue {
+                DispatchQueue.main.async {
+                    self.dailyCalorieGoalValue = newGoal
+                }
+            }
+        }
     }
     
     @objc private func handleHealthKitDataChange() {
@@ -51,15 +68,16 @@ class UserProfileViewModel: ObservableObject {
             if let existingProfile = profiles.first {
                 DispatchQueue.main.async {
                     self.profile = existingProfile
+                    self.dailyCalorieGoalValue = Int(existingProfile.dailyCalorieGoal)
                 }
             } else {
-                // Create a new profile with empty or zeroed values
+                // Create a new profile with default values.
                 let newProfile = UserProfile(context: context)
                 newProfile.name = ""
                 newProfile.gender = ""
                 newProfile.age = 0
                 newProfile.height = 0
-                newProfile.dailyCalorieGoal = 0
+                newProfile.dailyCalorieGoal = 1500
                 newProfile.dailyStepsGoal = 0
                 newProfile.startWeight = 0.0
                 newProfile.currentWeight = 0.0
@@ -68,6 +86,7 @@ class UserProfileViewModel: ObservableObject {
                 try context.save()
                 DispatchQueue.main.async {
                     self.profile = newProfile
+                    self.dailyCalorieGoalValue = 1500
                 }
             }
         } catch {
@@ -88,39 +107,34 @@ class UserProfileViewModel: ObservableObject {
             if let profile = self.profile {
                 profile.currentWeight = newWeight
                 self.saveProfile()
-                // Save the weight for today's date in Core Data
+                // Save today's weight in Core Data.
                 WeightHistoryManager.shared.saveWeight(for: Date(), weight: newWeight)
             }
         }
     }
     
-    // Update weight only if the difference is greater than 0.5 kg.
     func updateWeightFromHealthKit() {
         weightManager.fetchLatestWeight { [weak self] result in
             guard let self = self, let newData = result else { return }
             let newWeight = newData.weight
             let newSampleDate = newData.date
-            
-            // Get the stored weight for today (if any) from WeightHistoryManager.
+
             let todayEntries = self.weightHistoryManager.weightForPeriod(days: 1)
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
             formatter.timeZone = TimeZone.current
-            
             var storedDate: Date? = nil
             if let entry = todayEntries.first, let dateFromString = formatter.date(from: entry.date) {
                 storedDate = dateFromString
             }
             
             DispatchQueue.main.async {
-                // If there's no stored data, or if the new sample is from a later date, update.
                 if storedDate == nil || newSampleDate > storedDate! {
                     self.updateCurrentWeight(newWeight)
                 }
             }
         }
     }
-
     
     func importHistoricalWeightsFromHealthKit() {
         let oneYearAgo = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
@@ -186,9 +200,12 @@ class UserProfileViewModel: ObservableObject {
         }
     }
     
+    // Use the separate published property to force immediate updates.
     var dailyCalorieGoal: Int {
-        get { Int(profile?.dailyCalorieGoal ?? 1500) }
+        get { dailyCalorieGoalValue }
         set {
+            objectWillChange.send()
+            dailyCalorieGoalValue = newValue
             profile?.dailyCalorieGoal = Int32(newValue)
             saveProfile()
         }
