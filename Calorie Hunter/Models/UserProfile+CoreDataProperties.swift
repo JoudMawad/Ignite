@@ -19,6 +19,8 @@ extension UserProfile {
     @NSManaged public var currentWeight: Double
     @NSManaged public var goalWeight: Double
     @NSManaged public var profileImageData: Data?
+    @NSManaged public var dailyStepsGoal: Int32
+    @NSManaged public var dailyBurnedCaloriesGoal: Int32
 }
 
 

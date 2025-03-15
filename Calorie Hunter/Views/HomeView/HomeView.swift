@@ -2,9 +2,10 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject var viewModel: FoodViewModel
-    @ObservedObject var stepsviewModel: StepsViewModel
+    @ObservedObject var stepsViewModel: StepsViewModel
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
-    @ObservedObject var userProfileViewModel: UserProfileViewModel
+    @ObservedObject var userProfileViewModel: UserProfileViewModel  // Single user view model
+
     @Environment(\.colorScheme) var colorScheme
 
     // Instantiate WaterViewModel locally.
@@ -13,11 +14,11 @@ struct HomeView: View {
     @State private var showSettings = false
     
     init(viewModel: FoodViewModel,
-         stepsviewModel: StepsViewModel,
+         stepsViewModel: StepsViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
          userProfileViewModel: UserProfileViewModel) {
         self.viewModel = viewModel
-        self.stepsviewModel = stepsviewModel
+        self.stepsViewModel = stepsViewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.userProfileViewModel = userProfileViewModel
         
@@ -41,8 +42,12 @@ struct HomeView: View {
                         // Card containing header text and charts.
                         chartsCardSection
                         VStack {
-                            StepsCardView(stepsViewModel: stepsviewModel)
-                            BurnedCaloriesCardView(viewModel: burnedCaloriesViewModel)
+                            
+                            StepsCardView(viewModel: userProfileViewModel,
+                                          stepsViewModel: stepsViewModel)
+                            
+                            BurnedCaloriesCardView(burnedCaloriesviewModel: burnedCaloriesViewModel,
+                                                   viewModel: userProfileViewModel)
                         }
                     }
                     // Water Intake View placed to the right.
@@ -63,7 +68,7 @@ struct HomeView: View {
                         Image(systemName: "gearshape.fill")
                             .resizable()
                             .frame(width: 30, height: 30)
-                            .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
                     }
                 }
             }
@@ -114,7 +119,6 @@ struct HomeView: View {
                         )
                         .padding(6)
                         .padding(.horizontal, 8)
-
                         
                         FoodChartView(
                             totalProtein: viewModel.totalProtein,

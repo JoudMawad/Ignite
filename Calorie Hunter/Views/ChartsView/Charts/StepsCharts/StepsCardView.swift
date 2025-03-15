@@ -1,9 +1,12 @@
 import SwiftUI
 
 struct StepsCardView: View {
+    @ObservedObject var viewModel: UserProfileViewModel
     @ObservedObject var stepsViewModel: StepsViewModel
     @Environment(\.colorScheme) var colorScheme
     @State private var animatedSteps: Double = 0
+    
+    var onStepsChange: () -> Void = {}
 
     /// A static flag that tracks whether the steps animation has already played this app session.
     private static var hasAnimatedSteps = false
@@ -20,12 +23,11 @@ struct StepsCardView: View {
                     .foregroundColor(colorScheme == .dark ? .black : .white)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer()
             CountingNumberText(number: animatedSteps)
                 .foregroundColor(colorScheme == .dark ? .black : .white)
-            Spacer()
+            StepsProgressView(viewModel: UserProfileViewModel(), stepsViewModel: stepsViewModel, onStepsChange: { })
         }
-        .padding()
+        .padding(.horizontal)
         .frame(width: 120, height: 120)
         .background(
             RoundedRectangle(cornerRadius: 20)

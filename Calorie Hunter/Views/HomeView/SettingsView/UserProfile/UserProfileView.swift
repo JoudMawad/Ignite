@@ -25,6 +25,9 @@ struct UserProfileView: View {
                         ScrollView(showsIndicators: false) {
                                 FormContainerView(viewModel: viewModel, isShowingImagePicker: $isShowingImagePicker)
                         }
+                        .onTapGesture {
+                            UIApplication.shared.endEditing()
+                        }
                     }
                     .edgesIgnoringSafeArea(.top)
                     .frame(width: geometry.size.width, height: geometry.size.height)

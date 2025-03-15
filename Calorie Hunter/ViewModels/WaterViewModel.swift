@@ -64,7 +64,6 @@ class WaterViewModel: ObservableObject {
     }
     
     func adjustWaterAmount(by delta: Double, for date: Date) {
-        // Create start and end dates for today.
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return }
@@ -81,7 +80,6 @@ class WaterViewModel: ObservableObject {
                     print("Existing entry found. Current water: \(entry.waterAmount)")
                 } else {
                     entry = DailyWaterIntakeEntity(context: self.container.viewContext)
-                    // Set the entry's date to a consistent value like startOfDay.
                     entry.date = startOfDay
                     entry.waterAmount = 0
                     print("No entry found. Creating new entry.")
@@ -99,7 +97,22 @@ class WaterViewModel: ObservableObject {
             }
         }
     }
-
-
-
+    
+    // New function to support the charts.
+    // It returns an array of (date: String, water: Double) tuples for the past `days` days.
+    func waterIntakesForPeriod(days: Int) -> [(date: String, water: Double)] {
+        var data: [(date: String, water: Double)] = []
+        let calendar = Calendar.current
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        for i in 0..<days {
+            if let date = calendar.date(byAdding: .day, value: -i, to: Date()) {
+                let formattedDate = dateFormatter.string(from: date)
+                let amount = waterAmount(for: date)
+                data.append((date: formattedDate, water: amount))
+            }
+        }
+        return data.reversed()
+    }
 }

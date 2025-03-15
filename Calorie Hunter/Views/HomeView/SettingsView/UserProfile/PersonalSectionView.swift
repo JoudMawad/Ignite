@@ -9,7 +9,7 @@ struct PersonalInfoSectionView: View {
             HStack {
                 OnboardingInputCellString(
                     title: "Name",
-                    placeholder: "....",
+                    placeholder: viewModel.name,
                     systemImageName: "person.fill",
                     value: $viewModel.name
                 )
@@ -17,7 +17,7 @@ struct PersonalInfoSectionView: View {
                 
                 OnboardingInputCellInt(
                     title: "Age",
-                    placeholder: "....",
+                    placeholder: String(viewModel.age),
                     systemImageName: "number.circle",
                     value: $viewModel.age
                 )
@@ -26,13 +26,13 @@ struct PersonalInfoSectionView: View {
             HStack {
                 OnboardingInputCellInt(
                     title: "Height (cm)",
-                    placeholder: "....",
+                    placeholder: String(viewModel.height),
                     systemImageName: "ruler.fill",
                     value: $viewModel.height
                 )
                 OnboardingInputCellDouble(
                     title: "Weight (kg)",
-                    placeholder: "....",
+                    placeholder:String(viewModel.currentWeight),
                     systemImageName: "scalemass",
                     value: $viewModel.currentWeight
                 )

@@ -41,6 +41,10 @@ struct OnboardingStep2View: View {
                             systemImageName: "scalemass",
                             value: $viewModel.currentWeight
                         )
+                        .onChange(of: viewModel.currentWeight) { newValue, _ in
+                            viewModel.startWeight = newValue
+                        }
+
                     }
                     .opacity(showContent ? 1 : 0)
                     .animation(.easeOut(duration: 1.0), value: showContent)

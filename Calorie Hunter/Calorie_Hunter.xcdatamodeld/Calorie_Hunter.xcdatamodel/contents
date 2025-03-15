@@ -10,7 +10,9 @@
     <entity name="UserProfile" representedClassName="UserProfile" syncable="YES">
         <attribute name="age" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="currentWeight" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="dailyBurnedCaloriesGoal" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="dailyCalorieGoal" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="dailyStepsGoal" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="gender" attributeType="String"/>
         <attribute name="goalWeight" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="height" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>

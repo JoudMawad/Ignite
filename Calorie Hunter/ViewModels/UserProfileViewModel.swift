@@ -18,15 +18,15 @@ class UserProfileViewModel: ObservableObject {
         loadProfile()
         // Request authorization using the shared HealthKitManager.
         HealthKitManager.shared.requestAuthorization { [weak self] success, _ in
+            guard let self = self else { return }
             if success {
-                // Use the dedicated weight manager to start observing weight changes.
-                self?.weightManager.startObservingWeightChanges()
-                NotificationCenter.default.addObserver(self!,
-                                                       selector: #selector(self?.handleHealthKitDataChange),
+                self.weightManager.startObservingWeightChanges()
+                NotificationCenter.default.addObserver(self,
+                                                       selector: #selector(self.handleHealthKitDataChange),
                                                        name: .healthKitWeightDataChanged,
                                                        object: nil)
-                self?.importHistoricalWeightsFromHealthKit()
-                self?.updateWeightFromHealthKit()
+                self.importHistoricalWeightsFromHealthKit()
+                self.updateWeightFromHealthKit()
             }
         }
     }
@@ -60,6 +60,7 @@ class UserProfileViewModel: ObservableObject {
                 newProfile.age = 0
                 newProfile.height = 0
                 newProfile.dailyCalorieGoal = 0
+                newProfile.dailyStepsGoal = 0
                 newProfile.startWeight = 0.0
                 newProfile.currentWeight = 0.0
                 newProfile.goalWeight = 0.0
@@ -189,6 +190,22 @@ class UserProfileViewModel: ObservableObject {
         get { Int(profile?.dailyCalorieGoal ?? 1500) }
         set {
             profile?.dailyCalorieGoal = Int32(newValue)
+            saveProfile()
+        }
+    }
+    
+    var dailyStepsGoal: Int {
+        get { Int(profile?.dailyStepsGoal ?? 10000) }
+        set {
+            profile?.dailyStepsGoal = Int32(newValue)
+            saveProfile()
+        }
+    }
+    
+    var dailyBurnedCaloriesGoal: Int {
+        get { Int(profile?.dailyBurnedCaloriesGoal ?? 500) }
+        set {
+            profile?.dailyBurnedCaloriesGoal = Int32(newValue)
             saveProfile()
         }
     }

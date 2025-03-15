@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct BurnedCaloriesCardView: View {
-    @StateObject var viewModel = BurnedCaloriesViewModel()
+    @StateObject var burnedCaloriesviewModel = BurnedCaloriesViewModel()
+    @ObservedObject var viewModel: UserProfileViewModel
     @State private var animatedCalories: Double = 0
     @Environment(\.colorScheme) var colorScheme
     
@@ -24,13 +25,12 @@ struct BurnedCaloriesCardView: View {
                     .layoutPriority(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer()
             // The custom animatable view to show the calories.
             CountingNumberText(number: animatedCalories)
                 .foregroundColor(colorScheme == .dark ? .black : .white)
-            Spacer()
+            BurnedCaloriesProgressView(viewModel: UserProfileViewModel(), burnedCaloriesViewModel: burnedCaloriesviewModel, onBurnedCaloriesChange: { })
         }
-        .padding()
+        .padding(.horizontal)
         .frame(width: 120, height: 120)
         .background(
             RoundedRectangle(cornerRadius: 20)
@@ -40,17 +40,17 @@ struct BurnedCaloriesCardView: View {
         .onAppear {
             if Self.hasAnimatedBurnedCalories {
                 // If the animation has already played, immediately update without animating.
-                animatedCalories = viewModel.currentBurnedCalories
+                animatedCalories = burnedCaloriesviewModel.currentBurnedCalories
             } else {
                 // First-time launch: animate from 0 to the current value.
                 animatedCalories = 0
                 withAnimation(.easeInOut(duration: 0.5)) {
-                    animatedCalories = viewModel.currentBurnedCalories
+                    animatedCalories = burnedCaloriesviewModel.currentBurnedCalories
                 }
                 Self.hasAnimatedBurnedCalories = true
             }
         }
-        .onReceive(viewModel.$currentBurnedCalories) { newValue in
+        .onReceive(burnedCaloriesviewModel.$currentBurnedCalories) { newValue in
             // Animate any new updates to the burned calories.
             withAnimation(.easeInOut(duration: 0.5)) {
                 animatedCalories = newValue

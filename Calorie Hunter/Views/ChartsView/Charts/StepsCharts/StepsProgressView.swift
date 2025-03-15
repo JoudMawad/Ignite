@@ -1,39 +1,34 @@
+//
+//  StepsProgressView.swift
+//  Calorie Hunter
+//
+//  Created by Jude Mawad on 15.03.25.
+//
+
 import SwiftUI
 
-struct WeightProgressView: View {
+struct StepsProgressView: View {
     @ObservedObject var viewModel: UserProfileViewModel
-    var onWeightChange: () -> Void = {}
+    @ObservedObject var stepsViewModel: StepsViewModel
+    var onStepsChange: () -> Void = {}
     
     // Computed properties that retrieve values from the Core Data profile.
-    private var startWeight: Double {
-        viewModel.profile?.startWeight ?? 70.0
+    private var dailyStepsGoal: Int32 {
+        viewModel.profile?.dailyStepsGoal ?? 10000
     }
     
-    private var currentWeight: Double {
-        viewModel.profile?.currentWeight ?? 70.0
-    }
-    
-    private var goalWeight: Double {
-        viewModel.profile?.goalWeight ?? 65.0
-    }
     
     // Calculate progress between start and goal weight.
     private var progress: CGFloat {
-        guard goalWeight != startWeight else { return 0 }
-        let weightRange = CGFloat(goalWeight - startWeight)
-        let currentOffset = CGFloat(currentWeight - startWeight)
-        return min(max(currentOffset / weightRange, 0), 1)
+        guard dailyStepsGoal != 0 else { return 0 }
+        let stepsRange = CGFloat(dailyStepsGoal - 0)
+        let currentOffset = CGFloat(stepsViewModel.currentSteps - 0)
+        return min(max(currentOffset / stepsRange, 0), 1)
     }
     
     var body: some View {
         VStack {
             HStack {
-                Text("\(String(format: "%.1f", startWeight)) kg")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                
-                Spacer()
-                
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         // Background progress bar
@@ -45,7 +40,7 @@ struct WeightProgressView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color.cyan, Color.blue]),
+                                    gradient: Gradient(colors: [Color.cyan, Color.green]),
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
@@ -57,12 +52,9 @@ struct WeightProgressView: View {
                 
                 Spacer()
                 
-                Text("\(String(format: "%.1f", goalWeight)) kg")
-                    .font(.caption)
-                    .foregroundColor(.gray)
             }
-            .padding()
             
         }
     }
 }
+

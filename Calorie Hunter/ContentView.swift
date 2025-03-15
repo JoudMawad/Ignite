@@ -27,7 +27,7 @@ struct ContentView: View {
                 // Home Page
                 HomeView(
                     viewModel: viewModel,
-                    stepsviewModel: stepsviewModel,  // Correct parameter label
+                    stepsViewModel: stepsviewModel,  // Correct parameter label
                     burnedCaloriesViewModel: burnedCaloriesViewModel,
                     userProfileViewModel: userProfileViewModel
                 )

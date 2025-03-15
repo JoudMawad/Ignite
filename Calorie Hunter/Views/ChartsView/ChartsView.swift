@@ -19,12 +19,14 @@ extension UserProfile {
 }
 
 // MARK: - ChartsView
-/// A view that displays various chart carousels including calorie, weight, BMR, steps, and burned calories charts.
+/// A view that displays various chart carousels including calorie, weight, BMR, water, steps, and burned calories charts.
 struct ChartsView: View {
     // Observed view model for food-related data.
     @ObservedObject var foodViewModel: FoodViewModel
     // Observed view model for user profile data.
     @ObservedObject var userProfileViewModel: UserProfileViewModel
+    // Create a water view model.
+    @StateObject var waterViewModel = WaterViewModel(container: PersistenceController.shared.container)
 
     var body: some View {
         NavigationView {
@@ -76,6 +78,17 @@ struct ChartsView: View {
                         AnyView(MonthlyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(YearlyBMRChartView(viewModel: userProfileViewModel))
                     ])
+                    
+                    Spacer()
+                    
+                    // MARK: Water Charts Carousel
+                    ChartCarouselView(charts: [
+                        AnyView(WeeklyWaterChartView(waterManager: waterViewModel)),
+                        AnyView(MonthlyWaterChartView(waterManager: waterViewModel)),
+                        AnyView(YearlyWaterChartView(waterManager: waterViewModel))
+                    ])
+                    
+                    Spacer()
                     
                     // MARK: Steps Charts Carousel
                     ChartCarouselView(charts: [

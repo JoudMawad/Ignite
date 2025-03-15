@@ -31,24 +31,32 @@ struct OnboardingStep3View: View {
                 if showContent {
                     VStack(spacing: 20) {
                         OnboardingInputCellDouble(
-                            title: "Weight",
-                            placeholder: "....",
-                            systemImageName: "scalemass",
-                            value: $viewModel.startWeight
-                        )
-                        
-                        OnboardingInputCellDouble(
-                            title: "Goal",
+                            title: "Weight Goal",
                             placeholder: "....",
                             systemImageName: "target",
                             value: $viewModel.goalWeight
                         )
                         
                         OnboardingInputCellInt(
-                            title: "Calories",
+                            title: "Calories Goal",
                             placeholder: "....",
                             systemImageName: "flame.fill",
                             value: $viewModel.dailyCalorieGoal
+                        )
+                        
+                        OnboardingInputCellInt(
+                            title: "Steps Goal",
+                            placeholder: "....",
+                            systemImageName: "figure.walk",
+                            value: $viewModel.dailyStepsGoal
+                        )
+                        
+                        
+                        OnboardingInputCellInt(
+                            title: "Activity Goal",
+                            placeholder: "....",
+                            systemImageName: "flame",
+                            value: $viewModel.dailyBurnedCaloriesGoal
                         )
                     }
                     .opacity(showContent ? 1 : 0)
