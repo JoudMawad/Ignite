@@ -16,6 +16,15 @@ struct UserPreDefinedFoodsView: View {
     var body: some View {
         NavigationView {
             VStack {
+                
+                Text("Storage")
+                    .font(.system(size: 35, weight: .bold, design: .default))
+                    .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
+                    .padding(.bottom, 5)
+                    .padding(.trailing, 200)
+                    .padding(.top, -50)
+                
+                    
                 // Search Bar
                 TextField("Search food...", text: $searchText)
                     .padding(10)
@@ -59,7 +68,6 @@ struct UserPreDefinedFoodsView: View {
                 .scrollContentBackground(.hidden)
                 .background(colorScheme == .dark ? Color.black : Color.white)
             }
-            .navigationTitle("Storage")
             
             .background(colorScheme == .dark ? Color.black : Color.white) // Ensures full black background
         }

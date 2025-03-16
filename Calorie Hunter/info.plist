@@ -12,6 +12,8 @@
     <string>2.1.1</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleDisplayName</key>
+    <string>Ignite</string>
 	<key>CFBundleName</key>
 	<string>Calorie Hunter</string>
 	<key>LSRequiresIPhoneOS</key>
