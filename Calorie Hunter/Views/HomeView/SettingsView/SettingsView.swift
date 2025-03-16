@@ -3,9 +3,23 @@ import SwiftUI
 struct SettingsView: View {
     @StateObject private var userProfileViewModel = UserProfileViewModel()
     @Environment(\.colorScheme) var colorScheme
-
+    
+    // Update UITabBar appearance based on current color scheme
+    private func updateTabBarAppearance(for scheme: ColorScheme) {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = (scheme == .dark) ? .black : .white
+        // Removes the thin grey line (tab bar separator)
+        appearance.shadowColor = .clear
+        appearance.shadowImage = UIImage()
+        appearance.backgroundImage = UIImage()
+        
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+    
     var body: some View {
-        NavigationStack {
+        ZStack {
             TabView {
                 UserProfileView(viewModel: userProfileViewModel)
                     .tabItem {
@@ -17,14 +31,17 @@ struct SettingsView: View {
                         Label("Food Storage", systemImage: "list.bullet")
                     }
             }
-            .background(colorScheme == .dark ? Color.black : Color.white) //Black background
-            .toolbarBackground(colorScheme == .dark ? Color.black : Color.white) //Black toolbar
-            .tint(colorScheme == .dark ? Color.white : Color.black) //White tint for tab bar
+            .background(Color.primary.edgesIgnoringSafeArea(.all))
+            .tint(.primary)
+            .onAppear {
+                updateTabBarAppearance(for: colorScheme)
+            }
+            .onChange(of: colorScheme) { newScheme, _ in
+                updateTabBarAppearance(for: newScheme)
+            }
         }
-        .background(colorScheme == .dark ? Color.black : Color.white) //Ensures background is fully black
     }
 }
-
 
 // MARK: - Preview
 struct SettingsView_Previews: PreviewProvider {

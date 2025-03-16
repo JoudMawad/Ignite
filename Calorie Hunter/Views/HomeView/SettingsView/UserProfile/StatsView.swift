@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct StatView: View {
+    @Environment(\.colorScheme) var colorScheme
+    
     let title: String
     let value: String
     
@@ -8,10 +10,10 @@ struct StatView: View {
         VStack {
             Text(title)
                 .font(.system(size: 15, weight: .regular))
-                .foregroundColor(.secondary)
+                .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
             Text(value)
                 .font(.system(size: 30, weight: .bold))
-                .foregroundColor(.primary)
+                .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
         }
         .frame(maxWidth: .infinity)
     }

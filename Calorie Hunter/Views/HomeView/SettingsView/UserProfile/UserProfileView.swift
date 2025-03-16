@@ -4,6 +4,7 @@ struct UserProfileView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: UserProfileViewModel
     @StateObject var imageVM = ProfileImageViewModel()
+    @Environment(\.colorScheme) var colorScheme
     @State private var isShowingImagePicker = false
     
     var body: some View {
@@ -24,16 +25,20 @@ struct UserProfileView: View {
 
                         ScrollView(showsIndicators: false) {
                                 FormContainerView(viewModel: viewModel, isShowingImagePicker: $isShowingImagePicker)
+                            
                         }
+                        
                         .onTapGesture {
                             UIApplication.shared.endEditing()
                         }
                     }
+                    
                     .edgesIgnoringSafeArea(.top)
                     .frame(width: geometry.size.width, height: geometry.size.height)
 
                 }
             }
+            .background(colorScheme == .dark ? Color.black : Color.white)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -50,6 +55,7 @@ struct UserProfileView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        
     }
 }
 

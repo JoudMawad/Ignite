@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FormContainerView: View {
     @ObservedObject var viewModel: UserProfileViewModel
+    @Environment(\.colorScheme) var colorScheme
     @Binding var isShowingImagePicker: Bool
     
     // Computed properties for first and last name.
@@ -42,11 +43,11 @@ struct FormContainerView: View {
                 VStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(firstName)
-                            .font(.system(size: 45, weight: .bold, design: .rounded))
+                            .font(.system(size: 45, weight: .bold, design: .default))
                             .foregroundColor(.primary)
                         if !lastName.isEmpty {
                             Text(lastName)
-                                .font(.system(size: 45, weight: .bold, design: .rounded))
+                                .font(.system(size: 45, weight: .bold, design: .default))
                                 .foregroundColor(.primary)
                                 .padding(.leading, 10)
                                 .padding(.top, -10)
@@ -61,7 +62,7 @@ struct FormContainerView: View {
                     .padding()
                     
                     WeightProgressView(viewModel: viewModel, onWeightChange: { })
-                        .padding(.top, -10)
+                        .padding(.top, -40)
                         .padding(.horizontal)
                     
                     Divider().padding(.horizontal)
@@ -78,7 +79,7 @@ struct FormContainerView: View {
                     
                     Spacer(minLength: 40)
                 }
-                .background(Color(UIColor.systemBackground))
+                .background(colorScheme == .dark ? Color.black : Color.white)
                 .cornerRadius(30, corners: [.topLeft, .topRight])
                 .shadow(color: Color.black.opacity(0.8), radius: 30, x: 0, y: 0)
             }
