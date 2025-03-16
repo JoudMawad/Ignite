@@ -113,11 +113,13 @@ struct AddFoodView: View {
                         }
                     
                     // ManualEntryView with slide-up/slide-down animation and dynamic offset.
-                    ManualEntryView(viewModel: viewModel)
-                        .frame(height: UIScreen.main.bounds.height * 0.5)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                        .offset(y: cardOffset)
-                        .ignoresSafeArea(edges: .bottom)
+                    ManualEntryView(viewModel: viewModel, onSuccessfulDismiss: {
+                        dismissManualEntry()
+                    })
+                    .frame(height: UIScreen.main.bounds.height * 0.5)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .offset(y: cardOffset)
+                    .ignoresSafeArea(edges: .bottom)
                 }
             }
         }

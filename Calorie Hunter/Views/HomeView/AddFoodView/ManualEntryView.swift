@@ -1,18 +1,13 @@
-//
-//  ManualEntryView.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 06.03.25.
-//  Revised by [Your Name] on [Today’s Date]
-
 import SwiftUI
 
 struct ManualEntryView: View {
     // MARK: - Observed and Environment Properties
     @ObservedObject var viewModel: FoodViewModel
-    @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
 
+    /// Closure to trigger the slide‑down dismissal animation from the parent view.
+    var onSuccessfulDismiss: () -> Void
+    
     // MARK: - State Properties
     @State private var name: String = ""
     @State private var calories: String = ""
@@ -72,7 +67,7 @@ struct ManualEntryView: View {
         VStack {
             CardView {
                 VStack(alignment: .leading) {
-                    // Display error messages (if any) centered with extra bottom padding.
+                    // Error messages
                     if !errorMessages.isEmpty {
                         VStack(spacing: 5) {
                             ForEach(errorMessages, id: \.self) { message in
@@ -90,9 +85,8 @@ struct ManualEntryView: View {
                             removal: .move(edge: .top).combined(with: .opacity)))
                         .animation(.easeInOut, value: errorMessages)
                     }
-
                     
-                    // Display a success message (if any)
+                    // Success message
                     if let successMessage = successMessage {
                         Text(successMessage)
                             .font(.subheadline)
@@ -127,7 +121,7 @@ struct ManualEntryView: View {
                                     errorMessages.append("All fields must be filled correctly.")
                                 }
                                 
-                                // Validate grams exactly 100
+                                // Validate grams equals 100
                                 if let gramsValue = sanitizeDoubleInput(grams) {
                                     if gramsValue != 100 {
                                         errorMessages.append("Grams must be exactly 100.")
@@ -136,12 +130,12 @@ struct ManualEntryView: View {
                                     errorMessages.append("Grams must be exactly 100.")
                                 }
                                 
-                                // Check for duplicate food names
+                                // Check for duplicates
                                 if isDuplicateFood {
                                     errorMessages.append("A food with this name already exists.")
                                 }
                                 
-                                // If no errors, add the new food item
+                                // If valid, add the new food and auto-dismiss
                                 if errorMessages.isEmpty {
                                     let newFood = FoodItem(
                                         name: name,
@@ -153,22 +147,22 @@ struct ManualEntryView: View {
                                         mealType: mealType
                                     )
                                     successMessage = "Food successfully added to storage!"
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                        successMessage = nil
-                                    }
                                     viewModel.addUserPredefinedFood(food: newFood)
+                                    
+                                    // Dismiss after a short delay to show the success message
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                        withAnimation {
+                                            onSuccessfulDismiss()
+                                        }
+                                    }
                                 }
                             }
                         }
                         .padding(.top, -10)
                         
-                        
-                        
                         ExpandingButton2(title: "Add") {
                             withAnimation {
-                                // Clear previous errors
                                 errorMessages = []
-                                
                                 if !isFormValid {
                                     errorMessages.append("All fields must be filled correctly.")
                                     return
@@ -190,13 +184,15 @@ struct ManualEntryView: View {
                                     grams: gramsValue,
                                     mealType: mealType
                                 )
-                                dismiss()
+                                withAnimation {
+                                    onSuccessfulDismiss()
+                                }
                             }
                         }
                         .padding(.top, -10)
-                        
                     }
-                }.padding(.bottom, -10)
+                }
+                .padding(.bottom, -10)
             }
             .onTapGesture {
                 hideKeyboard()
@@ -229,7 +225,6 @@ struct CardView<Content: View>: View {
                     .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
             )
             .padding(.horizontal, 45)
-            
     }
 }
 
@@ -290,5 +285,6 @@ extension View {
 #endif
 
 #Preview {
-    ManualEntryView(viewModel: FoodViewModel())
+    // Provide a dummy onSuccessfulDismiss closure for preview purposes.
+    ManualEntryView(viewModel: FoodViewModel(), onSuccessfulDismiss: {})
 }
