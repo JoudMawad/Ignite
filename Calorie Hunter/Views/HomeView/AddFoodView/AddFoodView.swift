@@ -2,18 +2,12 @@ import SwiftUI
 
 struct AddFoodView: View {
     @ObservedObject var viewModel: FoodViewModel
-    
     @Environment(\.colorScheme) var colorScheme
-    
-    var preselectedMealType: String  // New property for meal type
-
+    var preselectedMealType: String
     @Environment(\.dismiss) var dismiss
 
     @State private var searchText: String = ""
-    @State private var isManualEntryPresented: Bool = false  // Controls sheet presentation
-    
-    // Optional: If you want to track the selected meal type in this view,
-    // you can use a state variable that is initialized with preselectedMealType.
+    @State private var isManualEntryPresented: Bool = false
     @State private var selectedMealType: String
 
     init(viewModel: FoodViewModel, preselectedMealType: String) {
@@ -22,67 +16,111 @@ struct AddFoodView: View {
         _selectedMealType = State(initialValue: preselectedMealType)
     }
     
+    // MARK: - Data Filtering
     private var combinedFoods: [FoodItem] {
         PredefinedFoods.foods + PredefinedUserFoods.shared.foods
     }
     
     private var filteredFoods: [FoodItem] {
-        searchText.isEmpty ? combinedFoods : combinedFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        if searchText.isEmpty {
+            return combinedFoods
+        } else {
+            return combinedFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+    
+    // MARK: - Subviews
+    private var searchBar: some View {
+        TextField("Search food...", text: $searchText)
+            .padding(10)
+            .foregroundColor(.primary)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(colorScheme == .dark ? Color.black : Color.white)
+                    .shadow(color: Color.primary.opacity(0.25), radius: 8)
+            )
+            .padding(.horizontal, 30)
+            .padding(.top, 25)
+            .padding(.bottom, 9)
+    }
+    
+    private var foodList: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(filteredFoods, id: \.id) { food in
+                    FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
+                   
+                        .background(colorScheme == .dark ? Color.black : Color.white)
+                }
+            }
+            .background(colorScheme == .dark ? Color.black : Color.white)
+            .padding(.horizontal, 20)
+        }
+        .frame(maxHeight: 550)
+    }
+    
+    private var manualEntryButton: some View {
+        ExpandingButton(title: "Manual Entry") {
+            withAnimation {
+                isManualEntryPresented = true
+            }
+        }
+        .padding(.horizontal, 30)
+        .padding(.bottom, 8)
     }
     
     var body: some View {
         NavigationView {
-            VStack {
+            ZStack {
+                // Background content remains intact
+                VStack {
+                    Text("Add Food")
+                        .font(.system(size: 33, weight: .bold, design: .default))
+                        .padding(.trailing, 220)
+                        .padding(.top, 30)
+                    
+                        
+                    searchBar
+                        .padding(.horizontal, 30)
+                        .padding(.top, -19)
+                        .padding(.bottom, 5)
+                    if !filteredFoods.isEmpty {
+                        foodList
+                    }
+                    Spacer()
+                    manualEntryButton
+                }
                 
-                // Search Bar
-                TextField("Search food...", text: $searchText)
-                    .padding(10)
-                    .foregroundColor(.primary)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(colorScheme == .dark ? Color.black : Color.white)
-                            .shadow(color: Color.primary.opacity(0.25), radius: 8)
-                    )
-                    .padding(.horizontal, 30)
-                    .padding(.top, 25)
-                    .padding(.bottom, 9)
+                .background(colorScheme == .dark ? Color.black : Color.white)
                 
-                // List of foods; each row is handled by FoodRowView.
-                if !filteredFoods.isEmpty {
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            ForEach(filteredFoods, id: \.id) { food in
-                                FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
-                                Divider()
-                                    .background(colorScheme == .dark ? Color.black : Color.white)
+                
+                // Overlay: Only the ManualEntryView card slides up
+                if isManualEntryPresented {
+                    // Dimmed background (tapping dismisses the card)
+                    Color.black.opacity(0.25)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation {
+                                isManualEntryPresented = false
                             }
                         }
-                        .background(colorScheme == .dark ? Color.black : Color.white) // Makes the entire list area black.
-                        .padding(.horizontal, 20)
-                    }
-                    .frame(maxHeight: 460)
-
+                    
+                    // The card slides up from the bottom with horizontal padding
+                    ManualEntryView(viewModel: viewModel)
+                        .frame(height: UIScreen.main.bounds.height * 0.5)
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .transition(.move(edge: .bottom))
+                        .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3), value: isManualEntryPresented)
                 }
-
-                
-                Spacer()
-                
-                // Button to open manual entry using SwiftUI's native .sheet modifier
-                ExpandingButton(title: "Manual Entry") {
-                    isManualEntryPresented = true
-                }
-                .padding(.horizontal, 30)
-                
-            }
-            .navigationTitle("Add Food")
-            .background(colorScheme == .dark ? Color.black : Color.white)
-            .sheet(isPresented: $isManualEntryPresented) {
-                ManualEntryView(viewModel: viewModel)
             }
         }
+
     }
+    
 }
 
-#Preview {
-    AddFoodView(viewModel: FoodViewModel(), preselectedMealType: "Breakfast")
+struct AddFoodView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddFoodView(viewModel: FoodViewModel(), preselectedMealType: "Breakfast")
+    }
 }

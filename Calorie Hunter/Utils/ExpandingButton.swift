@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ExpandingButton: View {
+struct ExpandingButton2: View {
     var title: String
     var action: () -> Void // ✅ Custom action when tapped
     
@@ -36,7 +36,7 @@ struct ExpandingButton: View {
                 // Button content
                 Text(title)
                     .font(.headline)
-                    .frame(width: 280, height: 30)
+                    
                     .padding()
                     .background(colorScheme == .dark ? Color.white : Color.black) // ✅ Dynamic Background Color
                     .foregroundColor(colorScheme == .dark ? Color.black : Color.white) // ✅ Dynamic Text Color
