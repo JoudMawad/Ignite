@@ -5,6 +5,7 @@ struct AddFoodView: View {
     @Environment(\.colorScheme) var colorScheme
     var preselectedMealType: String
     @Environment(\.dismiss) var dismiss
+    @StateObject private var keyboardManager = KeyboardManager()
 
     @State private var searchText: String = ""
     @State private var isManualEntryPresented: Bool = false
@@ -105,20 +106,19 @@ struct AddFoodView: View {
                 
                 // Overlay for Manual Entry
                 if isManualEntryPresented {
-                    // Dimmed background with animated opacity
                     Color.black.opacity(overlayOpacity)
                         .ignoresSafeArea()
                         .onTapGesture {
                             dismissManualEntry()
                         }
                     
-                    // ManualEntryView with slide-up/slide-down animation and dynamic offset.
                     ManualEntryView(viewModel: viewModel, onSuccessfulDismiss: {
                         dismissManualEntry()
                     })
                     .frame(height: UIScreen.main.bounds.height * 0.5)
                     .frame(maxHeight: .infinity, alignment: .bottom)
-                    .offset(y: cardOffset)
+                    // Combine your custom offset with the keyboard height
+                    .offset(y: cardOffset - keyboardManager.keyboardHeight)
                     .ignoresSafeArea(edges: .bottom)
                 }
             }
