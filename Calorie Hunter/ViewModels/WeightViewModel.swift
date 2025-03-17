@@ -22,8 +22,6 @@ class WeightViewModel: ObservableObject {
         healthKitManager.requestAuthorization { success, error in
             if success {
                 self.importHistoricalWeightsFromHealthKit()
-            } else {
-                print("HealthKit authorization failed for weight: \(String(describing: error))")
             }
         }
     }
@@ -35,7 +33,6 @@ class WeightViewModel: ObservableObject {
         
         weightManager.fetchHistoricalDailyWeights(startDate: startDate, endDate: endDate) { weightData in
             WeightHistoryManager.shared.importHistoricalWeights(weightData)
-            print("DEBUG: Imported all historical weight data into WeightHistoryManager.")
         }
     }
     

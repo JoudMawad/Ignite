@@ -20,8 +20,6 @@ class StepsViewModel: ObservableObject {
         healthKitManager.requestAuthorization { success, error in
             if success {
                 self.importHistoricalStepsFromHealthKit()
-            } else {
-                print("HealthKit authorization failed: \(String(describing: error))")
             }
         }
     }
@@ -33,7 +31,6 @@ class StepsViewModel: ObservableObject {
         
         stepsManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
             StepsHistoryManager.shared.importHistoricalSteps(stepsData)
-            print("DEBUG: Imported historical steps from HealthKit into StepsHistoryManager.")
         }
     }
     
@@ -51,8 +48,7 @@ class StepsViewModel: ObservableObject {
         
         observerQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completionHandler, error in
             guard let self = self else { return }
-            if let error = error {
-                print("Error in steps observer query: \(error.localizedDescription)")
+            if error != nil {
                 completionHandler()
                 return
             }
@@ -90,5 +86,4 @@ class StepsViewModel: ObservableObject {
         
         healthKitManager.healthStore.execute(sampleQuery)
     }
-
 }

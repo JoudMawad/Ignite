@@ -12,10 +12,7 @@ struct Calorie_HunterApp: App {
     init() {
         HealthKitManager.shared.requestAuthorization { success, error in
             if success {
-                print("✅ HealthKit authorization successful in App initializer.")
                 HealthKitManager.shared.enableBackgroundDeliveryForAll()
-            } else {
-                print("❌ HealthKit authorization failed in App initializer: \(error?.localizedDescription ?? "Unknown error")")
             }
         }
     }
@@ -44,11 +41,9 @@ struct Calorie_HunterApp: App {
                 }
             }
             .onAppear {
-                print("Calorie_HunterApp: onAppear")
                 // Delay the removal of the splash screen to let the animation play
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.35) {
                     withAnimation {
-                        print("Hiding splash view")
                         showSplash = false
                     }
                 }
