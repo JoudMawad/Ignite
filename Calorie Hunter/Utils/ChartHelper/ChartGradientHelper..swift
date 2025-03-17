@@ -7,17 +7,29 @@
 
 import SwiftUI
 
+import SwiftUI
+
 struct ChartGradientHelper {
     
-    // Gradient colors for each nutrient
-    static func gradientForNutrient(_ name: String) -> [Color] {
+    /// Returns an array of colors for the given nutrient name, using the provided color scheme.
+    static func gradientForNutrient(_ name: String, colorScheme: ColorScheme) -> [Color] {
+        // Define colors within proper ranges (0...1).
+        let darkRed = Color(red: 0.6, green: 0, blue: 0)
+        let darkBlue = Color(red: 0, green: 0, blue: 0.6)
+        let darkGreen = Color(red: 0, green: 0.6, blue: 0)
+        
+        let lightRed = Color(red: 1, green: 0, blue: 0)
+        let lightBlue = Color(red: 0, green: 0, blue: 1)
+        let lightGreen = Color(red: 0, green: 1, blue: 0)
+        
         switch name.lowercased() {
         case "protein":
-            return [Color.purple.opacity(1), Color.purple.opacity(1.3)]
+            return colorScheme == .light ? [lightRed] : [darkRed]
         case "carbs":
-            return [Color.pink.opacity(1), Color.pink.opacity(1.3)]
+            // Using two identical colors for demonstration. Adjust as needed.
+            return colorScheme == .light ? [lightGreen] : [darkGreen]
         case "fat":
-            return [Color.blue.opacity(1), Color.blue.opacity(1.3)]
+            return colorScheme == .light ? [lightBlue] : [darkBlue]
         default:
             return [Color.gray.opacity(0.3)]
         }
