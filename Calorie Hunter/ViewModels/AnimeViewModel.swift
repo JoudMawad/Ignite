@@ -24,15 +24,11 @@ class AppSplashViewController: UIViewController {
         // Use flexible margins so it remains centered on rotation or different screen sizes.
         webView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin, .flexibleBottomMargin]
         self.view.addSubview(webView)
-        print("AppSplashViewController: WKWebView added and centered.")
 
         // Load the HTML file containing your SVG animation.
         if let filePath = Bundle.main.path(forResource: "FireAnimation", ofType: "html") {
-            print("Found FireAnimation.html at: \(filePath)")
             let fileURL = URL(fileURLWithPath: filePath)
             webView.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
-        } else {
-            print("FireAnimation.html not found in bundle!")
-        }
+        } 
     }
 }

@@ -23,13 +23,11 @@ final class WeightManager {
                                   predicate: nil,
                                   limit: 1,
                                   sortDescriptors: [sortDescriptor]) { _, samples, error in
-            if let error = error {
-                print("Error fetching latest weight: \(error)")
+            if error != nil {
                 completion(nil)
                 return
             }
             guard let sample = samples?.first as? HKQuantitySample else {
-                print("No sample returned for latest weight")
                 completion(nil)
                 return
             }
@@ -44,7 +42,6 @@ final class WeightManager {
                                      completion: @escaping ([(date: String, weight: Double)]) -> Void)
     {
         guard let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
-            print("Failed to create weightType for historical fetch")
             completion([])
             return
         }
@@ -56,8 +53,7 @@ final class WeightManager {
                                                 anchorDate: anchorDate,
                                                 intervalComponents: interval)
         query.initialResultsHandler = { _, results, error in
-            if let error = error {
-                print("Error fetching historical weight: \(error)")
+            if error != nil {
                 completion([])
                 return
             }

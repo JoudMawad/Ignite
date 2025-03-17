@@ -26,16 +26,11 @@ final class HealthKitManager {
     
     private func enableBackgroundDelivery(for identifier: HKQuantityTypeIdentifier) {
         guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
-            print("DEBUG: Unable to create HKQuantityType for \(identifier)")
             return
         }
         
         healthStore.enableBackgroundDelivery(for: type, frequency: .immediate) { success, error in
-            if let error = error {
-                print("Error enabling background delivery for \(identifier): \(error.localizedDescription)")
-            } else {
-                print("Background delivery for \(identifier) enabled successfully.")
-            }
+            // Debug statements removed.
         }
     }
 }
