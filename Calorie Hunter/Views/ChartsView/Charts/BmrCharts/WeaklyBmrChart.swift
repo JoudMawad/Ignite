@@ -9,30 +9,22 @@ struct WeeklyBMRChartView: View {
     /// Retrieve stored weight data for the last 7 days.
     private func getStoredWeightsForPeriod(days: Int) -> [(date: String, weight: Double)] {
         let allWeights = weightHistoryManager.weightForPeriod(days: days)
-        return allWeights.map { (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date) ?? Date()), $0.weight) }
+        return allWeights.map {
+            (ChartDataHelper.dateToString(ChartDataHelper.stringToDate($0.date) ?? Date()), $0.weight)
+        }
     }
     
-    /// Weight data for the week.
     var weightData: [(date: String, weight: Double)] {
         getStoredWeightsForPeriod(days: 7)
     }
     
-    /// For each day in the past week (excluding today), compute the BMR.
-    /// Offsets run from 1 to 7 so that if today is Friday, you get:
-    /// - Offset 1: Thursday
-    /// - Offset 2: Wednesday
-    /// - …
-    /// - Offset 7: Previous Friday
-    /// The resulting array is then reversed for chronological order.
     var formattedData: [(label: String, bmr: Double)] {
         let calendar = Calendar.current
         let today = Date()
         return (1..<8).compactMap { offset -> (String, Double)? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             let dateString = ChartDataHelper.dateToString(date)
-            // Use stored weight if available; otherwise, use the profile's current weight.
-            let weight = weightData.first(where: { $0.date == dateString })?.weight
-                ?? (viewModel.profile?.currentWeight ?? 70.0)
+            let weight = weightData.first(where: { $0.date == dateString })?.weight ?? (viewModel.profile?.currentWeight ?? 70.0)
             let bmr = BMRCalculator.computeBMR(
                 forWeight: weight,
                 age: Double(viewModel.profile?.age ?? 25),
@@ -46,73 +38,30 @@ struct WeeklyBMRChartView: View {
         .reversed()
     }
     
-    /// Calculate dynamic Y-axis maximum.
     func maxBMRValue() -> Double {
-        let maxValue = formattedData.map { $0.bmr }.max() ?? 1500
-        return maxValue + 50
+        (formattedData.map { $0.bmr }.max() ?? 1500) + 50
     }
     
-    /// Calculate dynamic Y-axis minimum.
     func minBMRValue() -> Double {
-        let minValue = formattedData.map { $0.bmr }.min() ?? 1200
-        return minValue - 50
+        (formattedData.map { $0.bmr }.min() ?? 1200) - 50
     }
     
     var body: some View {
         ChartCardYellowView {
-            VStack {
-                Text("BMR")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                Text("Week")
-                    .font(.system(size: 18, weight: .light, design: .rounded))
-                    .foregroundColor(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                
-                Chart {
+            BaseChartView(
+                title: "BMR",
+                subtitle: "Week",
+                yDomain: minBMRValue()...maxBMRValue(),
+                chartContent: {
                     ForEach(formattedData, id: \.label) { entry in
                         LineMark(
                             x: .value("Date", entry.label),
                             y: .value("BMR", entry.bmr)
                         )
-                        .interpolationMethod(.monotone)
-                        .lineStyle(StrokeStyle(lineWidth: 3))
-                        .symbol(.circle)
-                        .foregroundStyle(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.yellow, colorScheme == .dark ? Color.white : Color.black]),
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .commonStyle(gradientColors: [.yellow, colorScheme == .dark ? Color.white : Color.black])
                     }
                 }
-                .chartXAxis {
-                    AxisMarks(values: .automatic) { _ in
-                        AxisGridLine().foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
-                        AxisTick()
-                        AxisValueLabel()
-                    }
-                }
-                .overlay(
-                    ZStack {
-                        let positions: [CGFloat] = [0, 36, 71, 106, 141, 175, 210, 244]
-                        ForEach(positions, id: \.self) { x in
-                            Rectangle()
-                                .frame(width: 3, height: 21)
-                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
-                                .blendMode(.normal)
-                                .position(x: x, y: 242)
-                        }
-                    }
-                )
-                .chartYScale(domain: minBMRValue()...maxBMRValue())
-                .frame(height: 250)
-                .padding()
-            }
+            )
         }
     }
 }
