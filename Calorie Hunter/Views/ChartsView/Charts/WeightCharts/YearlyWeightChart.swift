@@ -27,7 +27,7 @@ struct YearlyWeightChartView: View {
     }
     
     var body: some View {
-        ChartCardPinkView {
+        ChartCardPurpleView {
             BaseChartView(
                 title: "Weight",
                 subtitle: "Year",

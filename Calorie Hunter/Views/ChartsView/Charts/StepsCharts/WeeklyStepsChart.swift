@@ -23,7 +23,7 @@ struct WeeklyStepsChartView: View {
     }
     
     var body: some View {
-        ChartCardRedView {
+        ChartCardOrangeView {
             BaseChartView(
                 title: "Steps",
                 subtitle: "Week",

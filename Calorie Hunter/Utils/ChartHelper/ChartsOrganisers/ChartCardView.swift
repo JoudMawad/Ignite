@@ -25,6 +25,42 @@ struct ChartCardCyanView<Content: View>: View {
     }
 }
 
+struct ChartCardOrangeView<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 60)
+                    .fill(Color(UIColor.systemBackground))
+                    .shadow(color: Color.orange.opacity(0.2), radius: 5, x: 0, y: 4)
+            )
+    }
+}
+
+struct ChartCardBlueView<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 60)
+                    .fill(Color(UIColor.systemBackground))
+                    .shadow(color: Color.blue.opacity(0.2), radius: 5, x: 0, y: 4)
+            )
+    }
+}
+
 struct ChartCardYellowView<Content: View>: View {
     let content: Content
     
@@ -61,7 +97,7 @@ struct ChartCardRedView<Content: View>: View {
     }
 }
 
-struct ChartCardPinkView<Content: View>: View {
+struct ChartCardPurpleView<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -74,7 +110,7 @@ struct ChartCardPinkView<Content: View>: View {
             .background(
                 RoundedRectangle(cornerRadius: 60)
                     .fill(Color(UIColor.systemBackground))
-                    .shadow(color: Color.pink.opacity(0.2), radius: 5, x: 0, y: 4)
+                    .shadow(color: Color.purple.opacity(0.2), radius: 5, x: 0, y: 4)
             )
     }
 }

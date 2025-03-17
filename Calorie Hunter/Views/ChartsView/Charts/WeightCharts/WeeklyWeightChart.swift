@@ -66,7 +66,7 @@ struct WeeklyWeightChartView: View {
     
     var body: some View {
         // Wrap the chart inside a card view for consistent styling.
-        ChartCardPinkView {
+        ChartCardPurpleView {
             VStack {
                 // Title for the chart.
                 Text("Weight")
@@ -109,20 +109,6 @@ struct WeeklyWeightChartView: View {
                         AxisValueLabel()
                     }
                 }
-                // Add an overlay with vertical rectangles for additional styling.
-                .overlay(
-                    ZStack {
-                        // Predefined positions for overlay elements.
-                        let positions: [CGFloat] = [0, 36, 72, 108, 145, 180, 216, 253]
-                        ForEach(positions, id: \.self) { x in
-                            Rectangle()
-                                .frame(width: 3, height: 21)
-                                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
-                                .blendMode(.normal)
-                                .position(x: x, y: 242)
-                        }
-                    }
-                )
                 // Set the Y-axis scale dynamically based on the min and max weight.
                 .chartYScale(domain: minWeightValue()...maxWeightValue())
                 .frame(height: 250)

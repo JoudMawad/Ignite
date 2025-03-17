@@ -29,7 +29,7 @@ struct MonthlyWeightChartView: View {
     }
     
     var body: some View {
-        ChartCardPinkView {
+        ChartCardPurpleView {
             BaseChartView(
                 title: "Weight",
                 subtitle: "Month",

@@ -23,7 +23,7 @@ struct MonthlyStepsChartView: View {
     }
     
     var body: some View {
-        ChartCardRedView {
+        ChartCardOrangeView {
             BaseChartView(
                 title: "Steps",
                 subtitle: "Month",

@@ -25,7 +25,7 @@ struct YearlyWaterChartView: View {
     }
     
     var body: some View {
-        ChartCardRedView {
+        ChartCardBlueView {
             BaseChartView(
                 title: "Water",
                 subtitle: "Year",
