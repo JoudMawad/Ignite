@@ -2,17 +2,16 @@ import SwiftUI
 
 struct ExpandingButton2: View {
     var title: String
-    var action: () -> Void // ✅ Custom action when tapped
+    var action: () -> Void // Custom action when tapped
     
     @Environment(\.colorScheme) var colorScheme // Detect Light/Dark Mode
     @State private var isPressed = false // Track button press state
     @State private var gradientStart: UnitPoint = .leading
     @State private var gradientEnd: UnitPoint = .trailing
-    
 
     var body: some View {
         Button(action: {
-            giveHapticFeedback() // ✅ Haptic feedback on tap
+            giveHapticFeedback() // Haptic feedback on tap
             
             withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
                 isPressed = true
@@ -29,26 +28,26 @@ struct ExpandingButton2: View {
                 isPressed = false
             }
             
-            action() // ✅ Execute the passed action
+            action() // Execute the passed action
         }) {
             ZStack {
-                
                 // Button content
                 Text(title)
                     .font(.headline)
-                    
                     .padding()
-                    .background(colorScheme == .dark ? Color.white : Color.black) // ✅ Dynamic Background Color
-                    .foregroundColor(colorScheme == .dark ? Color.black : Color.white) // ✅ Dynamic Text Color
+                    .background(colorScheme == .dark ? Color.black : Color.white) // Dynamic Background Color
+                    .foregroundColor(colorScheme == .dark ? Color.white : Color.black) // Dynamic Text Color
                     .cornerRadius(12)
-                    .scaleEffect(isPressed ? 1.05 : 1.0) // ✅ Expands slightly when tapped
+                    .scaleEffect(isPressed ? 1.05 : 1.0) // Expands slightly when tapped
                     .animation(.easeInOut(duration: 0.2), value: isPressed)
             }
+            // Fix the size of the button regardless of text content
+            .frame(width: 100, height: 80)
         }
         .padding()
     }
 
-    // ✅ Function to Provide Haptic Feedback
+    // Function to Provide Haptic Feedback
     func giveHapticFeedback() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
@@ -56,7 +55,7 @@ struct ExpandingButton2: View {
 }
 
 #Preview {
-    ExpandingButton(title: "Tap Me") {
+    ExpandingButton2(title: "Tap Me") {
         print("Button Pressed")
     }
 }

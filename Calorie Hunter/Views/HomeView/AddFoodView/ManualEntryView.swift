@@ -160,7 +160,7 @@ struct ManualEntryView: View {
                         }
                         .padding(.top, -10)
                         
-                        ExpandingButton2(title: "Add") {
+                        ExpandingButton2(title: "Add to Diary") {
                             withAnimation {
                                 errorMessages = []
                                 if !isFormValid {
@@ -191,6 +191,8 @@ struct ManualEntryView: View {
                         }
                         .padding(.top, -10)
                     }
+                    .frame(alignment: .center)
+                    .padding(.horizontal, 20)
                 }
                 .padding(.bottom, -10)
             }
@@ -219,10 +221,6 @@ struct CardView<Content: View>: View {
                 RoundedRectangle(cornerRadius: 55, style: .continuous)
                     .fill(colorScheme == .dark ? Color.white : Color.black)
                     .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                    .stroke(Color.secondary.opacity(0.1), lineWidth: 1)
             )
             .padding(.horizontal, 45)
     }
