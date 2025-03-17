@@ -103,6 +103,7 @@ struct AddFoodView: View {
                 }
                 .background(colorScheme == .dark ? Color.black : Color.white)
                 .blur(radius: dynamicBlur)
+                .clipped()
                 
                 // Overlay for Manual Entry
                 if isManualEntryPresented {
@@ -129,20 +130,27 @@ struct AddFoodView: View {
     
     // Present the manual entry view immediately with a slide-up animation and increasing blur.
     private func presentManualEntry() {
-        // Set the card offscreen and reset overlay opacity.
+        // Start offscreen.
         cardOffset = UIScreen.main.bounds.height
-        overlayOpacity = 0.25
+        overlayOpacity = 0.25  // or your initial value
+
+        // Insert the view.
         isManualEntryPresented = true
-        
-        // Animate the card into view immediately.
-        withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3)) {
-            cardOffset = 0
+
+        // Animate after a slight delay, allowing the transition to complete.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.interactiveSpring(response: 0.8, dampingFraction: 0.8, blendDuration: 1)) {
+                cardOffset = 0
+            }
+            withAnimation(.easeIn(duration: 0.8)) {
+                overlayOpacity = 0.5
+            }
         }
     }
     
     // Dismiss the manual entry view with a slide-down animation and decreasing blur.
     private func dismissManualEntry() {
-        withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.3)) {
+        withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 1)) {
             cardOffset = UIScreen.main.bounds.height
             overlayOpacity = 0.0
         }

@@ -192,9 +192,10 @@ struct ManualEntryView: View {
                         .padding(.top, -10)
                     }
                     .frame(alignment: .center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 30)
+                    .padding(.top, -5)
                 }
-                .padding(.bottom, -10)
+                .padding(.bottom, -11)
             }
             .onTapGesture {
                 hideKeyboard()
@@ -240,7 +241,7 @@ struct InputField: View {
             .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
             .placeholder(placeholder, when: text.isEmpty, placeholderColor: .gray)
             .accessibilityLabel(placeholder)
-            .font(.system(size: 20, weight: .light, design: .rounded))
+            .font(.system(size: 20, weight: .regular, design: .rounded))
             .padding(.vertical, -5)
     }
 }
