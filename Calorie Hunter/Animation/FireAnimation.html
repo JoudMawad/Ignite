@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ignite Animation</title>
+  <style>
+    /* Make sure the body and html occupy the full size */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- Paste your SVG animation code below -->
+  <?xml version="1.0" encoding="UTF-8"?>
+  <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Fire gradient: from vibrant orange to deep orange-red -->
+      <linearGradient id="fireGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#FFA500"/>
+        <stop offset="100%" stop-color="#FF4500"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Fire Icon Group: The icon moves to the left over 1.2 seconds -->
+    <g id="fireIcon" transform="translate(350,350)">
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        from="450 350"
+        to="250 350"
+        dur="0.5s"
+        fill="freeze"/>
+      <g transform="scale(13.5)">
+        <path d="M12 21C16.4183 21 20 17.6439 20 13.504C20 9.76257 17.9654 6.83811 16.562 5.44436C16.3017 5.18584 15.8683 5.30006 15.7212 5.63288C14.9742 7.3229 13.4178 9.75607 11.4286 9.75607C10.1975 9.92086 8.31688 8.86844 9.83483 3.64868C9.97151 3.17868 9.46972 2.80113 9.08645 3.11539C6.9046 4.90436 4 8.51143 4 13.504C4 17.6439 7.58172 21 12 21Z" fill="url(#fireGradient)"/>
+      </g>
+    </g>
+    
+    <!-- Text "Ignite." is positioned lower and slides a short distance -->
+    <text x="450" y="550" text-anchor="start" fill="url(#fireGradient)" font-size="100" font-family="Arial" opacity="0">
+      Ignite.
+      <!-- Animate the x attribute from 450 to 550 -->
+      <animate attributeName="x" from="450" to="550" dur="0.5s" begin="0s" fill="freeze" />
+      <!-- Animate opacity to fade in the text -->
+      <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0s" fill="freeze" />
+    </text>
+    
+  </svg>
+</body>
+</html>
