@@ -18,6 +18,26 @@ extension UserProfile {
     }
 }
 
+// MARK: - Scroll Visual Effect Modifier
+/// A custom view modifier that applies scroll-based transformations.
+struct ScrollVisualEffect: ViewModifier {
+    func body(content: Content) -> some View {
+        content.scrollTransition(.animated.threshold(.visible(0.75))) { content, phase in
+            content
+                .opacity(phase.isIdentity ? 1 : 0.5)
+                .scaleEffect(phase.isIdentity ? 1 : 0.90)
+                .blur(radius: phase.isIdentity ? 0 : 2)
+        }
+    }
+}
+
+extension View {
+    /// Applies a scroll-based visual effect.
+    func scrollVisualEffect() -> some View {
+        self.modifier(ScrollVisualEffect())
+    }
+}
+
 // MARK: - ChartsView
 /// A view that displays various chart carousels including calorie, weight, BMR, water, steps, and burned calories charts.
 struct ChartsView: View {
@@ -31,73 +51,60 @@ struct ChartsView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                LazyVStack {
+                LazyVStack(spacing: 20) {
                     // Header text for the charts screen.
                     Text("Charts")
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.top, 10)
                     
-                    // MARK: Calorie Charts Carousel
+                    // MARK: Calorie Charts Carousel with visual effect
                     ChartCarouselView(charts: [
-                        // Weekly calorie chart.
                         AnyView(WeeklyCalorieChartView(viewModel: foodViewModel)),
-                        // Monthly calorie chart.
                         AnyView(MonthlyCalorieChartView(viewModel: foodViewModel)),
-                        // Yearly calorie chart.
                         AnyView(YearlyCalorieChartView(viewModel: foodViewModel))
                     ])
+                    .scrollVisualEffect()
                     
-                    Spacer()
-                    
-                    // MARK: Burned Calories Charts Carousel
+                    // MARK: Burned Calories Charts Carousel with visual effect
                     ChartCarouselView(charts: [
-                        // Weekly burned calories chart.
                         AnyView(WeeklyBurnedCaloriesChartView(burnedCaloriesManager: BurnedCaloriesHistoryManager.shared)),
-                        // Monthly burned calories chart.
                         AnyView(MonthlyBurnedCaloriesChartView(burnedCaloriesManager: BurnedCaloriesHistoryManager.shared)),
-                        // Yearly burned calories chart.
                         AnyView(YearlyBurnedCaloriesChartView(burnedCaloriesManager: BurnedCaloriesHistoryManager.shared))
                     ])
+                    .scrollVisualEffect()
                     
-                    Spacer()
-                    
-                    // MARK: Weight Charts Carousel
+                    // MARK: Weight Charts Carousel with visual effect
                     ChartCarouselView(charts: [
-                        // Weekly weight chart.
                         AnyView(WeeklyWeightChartView(viewModel: userProfileViewModel)),
                         AnyView(MonthlyWeightChartView()),
                         AnyView(YearlyWeightChartView())
                     ])
+                    .scrollVisualEffect()
                     
-                    Spacer()
-                    
-                    // MARK: BMR Charts Carousel
+                    // MARK: BMR Charts Carousel with visual effect
                     ChartCarouselView(charts: [
                         AnyView(WeeklyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(MonthlyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(YearlyBMRChartView(viewModel: userProfileViewModel))
                     ])
+                    .scrollVisualEffect()
                     
-                    Spacer()
-                    
-                    // MARK: Water Charts Carousel
+                    // MARK: Water Charts Carousel with visual effect
                     ChartCarouselView(charts: [
                         AnyView(WeeklyWaterChartView(waterManager: waterViewModel)),
                         AnyView(MonthlyWaterChartView(waterManager: waterViewModel)),
                         AnyView(YearlyWaterChartView(waterManager: waterViewModel))
                     ])
+                    .scrollVisualEffect()
                     
-                    Spacer()
-                    
-                    // MARK: Steps Charts Carousel
+                    // MARK: Steps Charts Carousel with visual effect
                     ChartCarouselView(charts: [
                         AnyView(WeeklyStepsChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(MonthlyStepsChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(YearlyStepsChartView(stepsManager: StepsHistoryManager.shared))
                     ])
-                    
-                    Spacer()
+                    .scrollVisualEffect()
                 }
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
             }
@@ -107,5 +114,6 @@ struct ChartsView: View {
 
 // MARK: - Preview
 #Preview {
-    ChartsView(foodViewModel: FoodViewModel(), userProfileViewModel: UserProfileViewModel())
+    ChartsView(foodViewModel: FoodViewModel(),
+               userProfileViewModel: UserProfileViewModel())
 }
