@@ -4,15 +4,14 @@ struct HomeView: View {
     @ObservedObject var viewModel: FoodViewModel
     @ObservedObject var stepsViewModel: StepsViewModel
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
-    @ObservedObject var userProfileViewModel: UserProfileViewModel  // Single user view model
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
 
     @Environment(\.colorScheme) var colorScheme
 
     // Instantiate WaterViewModel locally.
     @StateObject private var waterViewModel = WaterViewModel(container: PersistenceController.shared.container)
-    
     @State private var showSettings = false
-    
+
     init(viewModel: FoodViewModel,
          stepsViewModel: StepsViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
@@ -21,8 +20,8 @@ struct HomeView: View {
         self.stepsViewModel = stepsViewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.userProfileViewModel = userProfileViewModel
-        
-        // Configure navigation bar appearance to be transparent with no shadow.
+
+        // Configure transparent navigation bar.
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.shadowColor = .clear
@@ -34,27 +33,37 @@ struct HomeView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    
                     // MARK: - Welcome Section
                     welcomeSection
                     
+                    
+                    
+                    
                     // MARK: - Charts & Water Intake Section
                     HStack(alignment: .top, spacing: 11) {
-                        // Card containing header text and charts.
                         chartsCardSection
                         VStack {
-                            
-                            StepsCardView(viewModel: userProfileViewModel,
-                                          stepsViewModel: stepsViewModel)
-                            
-                            BurnedCaloriesCardView(burnedCaloriesviewModel: burnedCaloriesViewModel,
-                                                   viewModel: userProfileViewModel)
+                            StepsCardView(viewModel: userProfileViewModel, stepsViewModel: stepsViewModel)
+                            BurnedCaloriesCardView(burnedCaloriesviewModel: burnedCaloriesViewModel, viewModel: userProfileViewModel)
                         }
                     }
-                    // Water Intake View placed to the right.
+                    
+                    // Water Intake Section.
                     waterSection
                     
                     // MARK: - Food List Section
                     foodListSection
+                    // MARK: - Calendar Section
+                   
+                    CalendarView(
+                        userProfileViewModel: userProfileViewModel,
+                        stepsViewModel: stepsViewModel,
+                        burnedCaloriesViewModel: burnedCaloriesViewModel,
+                        waterViewModel: waterViewModel,
+                        foodViewModel: viewModel
+                    )
+                    
                 }
                 .padding(.horizontal)
                 .padding(.top, 20)
@@ -91,7 +100,7 @@ struct HomeView: View {
     // MARK: - Charts Card Section
     private var chartsCardSection: some View {
         ZStack {
-            // Background Card
+            // Background Card.
             RoundedRectangle(cornerRadius: 20)
                 .fill(colorScheme == .dark ? Color.white : Color.black)
                 .shadow(radius: 5, x: 0, y: 4)
@@ -111,7 +120,6 @@ struct HomeView: View {
                     .padding(.top, 4)
                     
                     TabView {
-                        // Calorie Chart now shows both consumed and burned calories.
                         CalorieChartView(
                             viewModel: userProfileViewModel,
                             totalCalories: viewModel.totalCalories,
@@ -149,7 +157,7 @@ struct HomeView: View {
         })
     }
     
-    // MARK: - Helper Method
+    // MARK: - Helper Method to Present AddFoodView
     private func openAddFoodView(for mealType: String) {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
