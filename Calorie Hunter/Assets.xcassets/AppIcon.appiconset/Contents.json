@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "svgviewer-png-output-8 1.png",
+      "filename" : "svgviewer-png-output-10.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "svgviewer-png-output-9 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

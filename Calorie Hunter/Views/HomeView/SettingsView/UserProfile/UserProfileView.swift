@@ -13,7 +13,7 @@ struct UserProfileView: View {
                 ZStack {
                     ZStack(alignment: .top) {
                         ProfileHeaderView(imageVM: imageVM, isShowingImagePicker: $isShowingImagePicker)
-                            .frame(height: geometry.size.height * 0.6)
+                            .frame(height: geometry.size.height * 0.7)
                             .clipped()
                             .overlay(
                                 LinearGradient(
