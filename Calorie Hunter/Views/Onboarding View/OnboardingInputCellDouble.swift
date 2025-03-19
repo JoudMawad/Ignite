@@ -7,6 +7,7 @@ struct OnboardingInputCellDouble: View {
     @Binding var value: Double
     @State private var textValue: String = ""
     @Environment(\.colorScheme) var colorScheme
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         VStack(spacing: 4) {
@@ -22,7 +23,7 @@ struct OnboardingInputCellDouble: View {
             ZStack {
                 if textValue.isEmpty {
                     Text(placeholder)
-                        .foregroundColor(.gray.opacity(0.5))
+                        .foregroundColor(Color.gray.opacity(0.5))
                         .font(.system(size: 18, weight: .regular))
                 }
                 TextField("", text: Binding(
@@ -48,20 +49,19 @@ struct OnboardingInputCellDouble: View {
                 .padding(.bottom, 10)
                 .padding(.horizontal, 10)
                 .foregroundColor(colorScheme == .dark ? .black : .white)
+                .focused($isFocused)
             }
             .frame(height: 30)
         }
         .frame(width: 200, height: 100)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(colorScheme == .dark ? .white : .black)
+                .fill(colorScheme == .dark ? Color.white : Color.black)
                 .shadow(radius: 3)
         )
-    }
-}
-
-extension UIApplication {
-    func endEditing() {
-        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        // When tapping anywhere on the card, focus the TextField.
+        .onTapGesture {
+            isFocused = true
+        }
     }
 }

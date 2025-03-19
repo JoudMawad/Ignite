@@ -14,6 +14,21 @@ struct OnboardingInputCellPicker: View {
     @Binding var selection: String
     @Environment(\.colorScheme) var colorScheme
 
+    // Custom initializer to set the UISegmentedControl appearance
+    init(title: String, systemImageName: String? = nil, options: [String], selection: Binding<String>) {
+        self.title = title
+        self.systemImageName = systemImageName
+        self.options = options
+        self._selection = selection
+
+        // Configure the segmented control's appearance
+        // Note: This change is global for all UISegmentedControls in your app.
+        UISegmentedControl.appearance().selectedSegmentTintColor = UIColor.systemBlue  // Selected segment background color
+        UISegmentedControl.appearance().backgroundColor = UIColor.white         // Overall background color
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
+    }
+
     var body: some View {
         VStack(spacing: 4) {
             if let systemImageName = systemImageName {
@@ -36,9 +51,8 @@ struct OnboardingInputCellPicker: View {
         .frame(width: 200, height: 100)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.primary)
+                .fill(Color.primary)
                 .shadow(radius: 3)
         )
     }
 }
-

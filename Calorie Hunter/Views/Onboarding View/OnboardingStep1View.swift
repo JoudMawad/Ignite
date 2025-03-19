@@ -4,7 +4,7 @@ struct OnboardingStep1View: View {
     @ObservedObject var viewModel: UserProfileViewModel
     @Environment(\.colorScheme) var colorScheme
     @State private var showContent = false       // For input fields
-    @State private var showContent1 = false      // For the button
+    @State private var showContent1 = false        // For the button
     @State private var hasCompletedAnimation = false
     @State private var navigateToStep2 = false
     @State private var showCustomAlert = false
@@ -24,6 +24,7 @@ struct OnboardingStep1View: View {
                 Spacer()
                 
                 // Animated title with typewriter effect.
+                // (Assuming TypewriterText is defined elsewhere in your project)
                 TypewriterText(fullText: "Welcome. Let's build your profile.", interval: 0.04) {
                     if !hasCompletedAnimation {
                         // Show input fields after a 1-second delay.
@@ -62,8 +63,6 @@ struct OnboardingStep1View: View {
                             systemImageName: "number.circle",
                             value: $viewModel.age
                         )
-                        
-                        
                     }
                     .transition(.opacity)
                     .blur(radius: inputBlur)
@@ -112,10 +111,12 @@ struct OnboardingStep1View: View {
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
             .onTapGesture {
+                // Dismiss the keyboard when tapping outside
                 UIApplication.shared.endEditing()
             }
             
             // Custom alert overlay for validation errors.
+            // (Assuming CustomAlert is defined elsewhere in your project)
             if showCustomAlert {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
@@ -146,5 +147,13 @@ struct OnboardingStep1View_Previews: PreviewProvider {
             let viewModel = UserProfileViewModel(context: context)
             OnboardingStep1View(viewModel: viewModel)
         }
+    }
+}
+
+import UIKit
+
+extension UIApplication {
+    func endEditing() {
+        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
