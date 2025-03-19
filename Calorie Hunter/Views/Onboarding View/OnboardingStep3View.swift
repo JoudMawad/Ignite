@@ -4,17 +4,15 @@ struct OnboardingStep3View: View {
     @ObservedObject var viewModel: UserProfileViewModel
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @Environment(\.colorScheme) var colorScheme
-    @State private var showContent = false       // For input fields
-    @State private var showContent1 = false      // For the button
+    @State private var showContent = false
+    @State private var showContent1 = false
     @State private var hasCompletedAnimation = false
     @State private var showCustomAlert = false
     @State private var inputBlur: CGFloat = 10
     @State private var buttonBlur: CGFloat = 10
 
     var isStep3Valid: Bool {
-        return
-               viewModel.goalWeight > 0 &&
-               viewModel.dailyCalorieGoal > 0
+        viewModel.goalWeight > 0 && viewModel.dailyCalorieGoal > 0
     }
     
     var body: some View {
@@ -22,16 +20,13 @@ struct OnboardingStep3View: View {
             VStack {
                 Spacer()
                 
-                // Animated title with typewriter effect.
                 TypewriterText(fullText: "Let's set your goals clear. Elevate your potential.", interval: 0.04) {
                     if !hasCompletedAnimation {
-                        // Show input fields after a 1-second delay.
                         DispatchQueue.main.asyncAfter(deadline: .now()) {
                             withAnimation(.easeOut(duration: 1.0)) {
                                 showContent = true
                             }
                         }
-                        // Show the button after an additional 0.8 seconds.
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                             withAnimation(.easeOut(duration: 1.0)) {
                                 showContent1 = true
@@ -73,6 +68,8 @@ struct OnboardingStep3View: View {
                     .onAppear {
                         withAnimation(.easeOut(duration: 1.0)) {
                             inputBlur = 0
+                                        viewModel.startWeight = viewModel.currentWeight
+                                
                         }
                     }
                 }
@@ -97,8 +94,8 @@ struct OnboardingStep3View: View {
                             .font(.system(size: 18, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.black)
-                            .foregroundColor(.white)
+                            .background(Color.primary)
+                            .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                             .cornerRadius(8)
                             .padding(.horizontal, 40)
                     }
@@ -114,24 +111,27 @@ struct OnboardingStep3View: View {
                 Spacer()
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
-            .onTapGesture {
-                UIApplication.shared.endEditing()
-            }
+            .onTapGesture { UIApplication.shared.endEditing() }
+            .blur(radius: showCustomAlert ? 10 : 0)
+            .animation(.easeInOut(duration: 0.5), value: showCustomAlert)
             
-            // Custom alert overlay for validation errors.
             if showCustomAlert {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
-                    .transition(.opacity)
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            showCustomAlert = false
+                        }
+                    }
                 CustomAlert(
                     title: "Incomplete Details",
                     message: "Please fill in your starting weight, goal weight, and daily calorie goal to continue."
                 ) {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.5)) {
                         showCustomAlert = false
                     }
                 }
-                .transition(.scale)
+                .transition(.blurScale)
                 .zIndex(1)
             }
         }

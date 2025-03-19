@@ -2,33 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDisplayName</key>
-    <string>Ignite</string>
-    <key>CFBundleExecutable</key>
-    <string>$(EXECUTABLE_NAME)</string>
-    <key>CFBundleIdentifier</key>
-    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-    <key>CFBundleName</key>
-    <string>Calorie Hunter</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>2.1.1</string>
-    <key>CFBundleVersion</key>
-    <string>2.1.1</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>NSHealthShareUsageDescription</key>
-    <string>We need to read your Health App Data to track your progress</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>We need to write your data to Apple Health so all your information is synced</string>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>fetch</string>
-    </array>
-    <key>UILaunchStoryboardName</key>
-    <string>LaunchScreen.storyboard</string>
-    <key>UIRequiresFullScreen</key>
-    <true/>
+	<key>CFBundleDisplayName</key>
+	<string>Ignite</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>Calorie Hunter</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2.1.2</string>
+	<key>CFBundleVersion</key>
+	<string>2.1.2</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>We need to read your Health App Data to track your progress</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We need to write your data to Apple Health so all your information is synced</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen.storyboard</string>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 </dict>
 </plist>

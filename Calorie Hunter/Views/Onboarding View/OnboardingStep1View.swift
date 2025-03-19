@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - OnboardingStep1View
+
 struct OnboardingStep1View: View {
     @ObservedObject var viewModel: UserProfileViewModel
     @Environment(\.colorScheme) var colorScheme
@@ -8,6 +10,10 @@ struct OnboardingStep1View: View {
     @State private var hasCompletedAnimation = false
     @State private var navigateToStep2 = false
     @State private var showCustomAlert = false
+    
+    @StateObject var imageVM = ProfileImageViewModel()
+    @State private var isShowingImagePicker = false
+
     @State private var inputBlur: CGFloat = 10
     @State private var buttonBlur: CGFloat = 10
 
@@ -20,14 +26,14 @@ struct OnboardingStep1View: View {
     
     var body: some View {
         ZStack {
+            // Main content with conditional blur.
             VStack {
                 Spacer()
                 
                 // Animated title with typewriter effect.
-                // (Assuming TypewriterText is defined elsewhere in your project)
                 TypewriterText(fullText: "Welcome. Let's build your profile.", interval: 0.04) {
                     if !hasCompletedAnimation {
-                        // Show input fields after a 1-second delay.
+                        // Show input fields after a short delay.
                         DispatchQueue.main.asyncAfter(deadline: .now()) {
                             withAnimation(.easeOut(duration: 1.0)) {
                                 showContent = true
@@ -45,6 +51,10 @@ struct OnboardingStep1View: View {
                 
                 if showContent {
                     VStack(spacing: 20) {
+                        OnboardingProfilePicCell(
+                                                    isShowingImagePicker: $isShowingImagePicker,
+                                                    profileImage: $imageVM.profileImage
+                                                )
                         OnboardingInputCellString(
                             title: "Name",
                             placeholder: "....",
@@ -93,8 +103,8 @@ struct OnboardingStep1View: View {
                             .font(.system(size: 18, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.black)
-                            .foregroundColor(.white)
+                            .background(Color.primary)
+                            .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                             .cornerRadius(8)
                             .padding(.horizontal, 40)
                     }
@@ -111,25 +121,30 @@ struct OnboardingStep1View: View {
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
             .onTapGesture {
-                // Dismiss the keyboard when tapping outside
                 UIApplication.shared.endEditing()
             }
+            .blur(radius: showCustomAlert ? 10 : 0)
+            .animation(.easeInOut(duration: 0.5), value: showCustomAlert)
             
-            // Custom alert overlay for validation errors.
-            // (Assuming CustomAlert is defined elsewhere in your project)
+            // Custom Alert Overlay.
             if showCustomAlert {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
-                    .transition(.opacity)
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            showCustomAlert = false
+                        }
+                    }
+                
                 CustomAlert(
                     title: "Incomplete Details",
                     message: "It looks like some fields are missing. Please fill in your name, gender, and age to proceed."
                 ) {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.5)) {
                         showCustomAlert = false
                     }
                 }
-                .transition(.scale)
+                .transition(.blurScale)
                 .zIndex(1)
             }
         }
@@ -137,8 +152,13 @@ struct OnboardingStep1View: View {
         .navigationDestination(isPresented: $navigateToStep2) {
             OnboardingStep2View(viewModel: viewModel)
         }
+        // **Attach the sheet modifier here**
+        .sheet(isPresented: $isShowingImagePicker) {
+            ImagePicker(image: $imageVM.profileImage)
+        }
     }
 }
+
 
 struct OnboardingStep1View_Previews: PreviewProvider {
     static var previews: some View {

@@ -7,9 +7,9 @@ struct OnboardingStep2View: View {
     @State private var showContent1 = false
     @State private var navigateToStep3 = false
     @State private var showCustomAlert = false
-    @State private var textOffset: CGFloat = 0 // Start at normal position
-    @State private var inputBlur: CGFloat = 10   // Start with blur on inputs
-    @State private var buttonBlur: CGFloat = 10  // Start with blur on the next button
+    @State private var textOffset: CGFloat = 0
+    @State private var inputBlur: CGFloat = 10
+    @State private var buttonBlur: CGFloat = 10
 
     var isStep2Valid: Bool {
         viewModel.height > 0 && viewModel.currentWeight > 0
@@ -20,60 +20,48 @@ struct OnboardingStep2View: View {
             VStack {
                 Spacer()
                 
-                // Group both text and input container together.
                 VStack(spacing: 20) {
-                    // Typewriter effect for the text.
                     TypewriterText(fullText: "Define your physical essence. Every detail matters.", interval: 0.04) {
-                        
-                        // After a delay, reveal the input fields.
                         DispatchQueue.main.asyncAfter(deadline: .now()) {
                             withAnimation(.easeOut(duration: 1.0)) {
                                 showContent = true
-                                
                             }
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                             withAnimation(.easeOut(duration: 1.0)) {
                                 showContent1 = true
-                                
                             }
                         }
                     }
                     .offset(y: textOffset)
                     
-                    // Reserve space for input fields to avoid shifting.
-                    Group {
-                        if showContent {
-                            VStack(spacing: 20) {
-                                OnboardingInputCellInt(
-                                    title: "Height (cm)",
-                                    placeholder: "....",
-                                    systemImageName: "ruler.fill",
-                                    value: $viewModel.height
-                                )
-                                
-                                OnboardingInputCellDouble(
-                                    title: "Weight (kg)",
-                                    placeholder: "....",
-                                    systemImageName: "scalemass",
-                                    value: $viewModel.currentWeight
-                                )
-                                .onChange(of: viewModel.currentWeight) { newValue, _ in
-                                    viewModel.startWeight = newValue
-                                }
+                    if showContent {
+                        VStack(spacing: 20) {
+                            OnboardingInputCellInt(
+                                title: "Height (cm)",
+                                placeholder: "....",
+                                systemImageName: "ruler.fill",
+                                value: $viewModel.height
+                            )
+                            OnboardingInputCellDouble(
+                                title: "Weight (kg)",
+                                placeholder: "....",
+                                systemImageName: "scalemass",
+                                value: $viewModel.currentWeight
+                            )
+                            .onChange(of: viewModel.currentWeight) { newValue, _ in
+                                viewModel.startWeight = newValue
                             }
-                            .transition(.opacity)
-                            // Apply blur effect on inputs.
-                            .blur(radius: inputBlur)
-                            .onAppear {
-                                withAnimation(.easeOut(duration: 1.0)) {
-                                    inputBlur = 0
-                                }
-                            }
-                        } else {
-                            // Reserve fixed height when inputs are hidden.
-                            Color.clear.frame(height: 150)
                         }
+                        .transition(.opacity)
+                        .blur(radius: inputBlur)
+                        .onAppear {
+                            withAnimation(.easeOut(duration: 1.0)) {
+                                inputBlur = 0
+                            }
+                        }
+                    } else {
+                        Color.clear.frame(height: 150)
                     }
                 }
                 
@@ -97,12 +85,12 @@ struct OnboardingStep2View: View {
                             .font(.system(size: 18, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.black)
-                            .foregroundColor(.white)
+                            .background(Color.primary)
+                            .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                             .cornerRadius(8)
                             .padding(.horizontal, 40)
                     }
-                    // Apply blur effect on the Next button.
+                    .transition(.opacity)
                     .blur(radius: buttonBlur)
                     .onAppear {
                         withAnimation(.easeOut(duration: 1.0)) {
@@ -114,29 +102,32 @@ struct OnboardingStep2View: View {
                 Spacer()
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
-            .onTapGesture {
-                UIApplication.shared.endEditing()
-            }
+            .onTapGesture { UIApplication.shared.endEditing() }
+            // Blur the main content when the alert is active.
+            .blur(radius: showCustomAlert ? 10 : 0)
+            .animation(.easeInOut(duration: 0.5), value: showCustomAlert)
             
-            // Custom alert overlay.
+            // Alert overlay identical to Step 1.
             if showCustomAlert {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
-                    .transition(.opacity)
-                
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            showCustomAlert = false
+                        }
+                    }
                 CustomAlert(
                     title: "Incomplete Details",
                     message: "Please fill in your height and weight to continue."
                 ) {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.5)) {
                         showCustomAlert = false
                     }
                 }
-                .transition(.scale)
+                .transition(.blurScale)
                 .zIndex(1)
             }
         }
-        // Navigation to Step 3.
         .navigationDestination(isPresented: $navigateToStep3) {
             OnboardingStep3View(viewModel: viewModel)
         }

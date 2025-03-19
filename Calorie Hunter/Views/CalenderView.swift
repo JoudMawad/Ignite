@@ -139,7 +139,7 @@ struct CalendarView: View {
                     Spacer()
                 }
                 .padding()
-                .transition(.scale)
+                .transition(.blurScale)
             }
         }
     }

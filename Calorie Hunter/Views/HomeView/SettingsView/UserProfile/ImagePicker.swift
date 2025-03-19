@@ -1,49 +1,46 @@
-//
-//  ImagePicker.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 06.03.25.
-//
-
 import SwiftUI
+import UIKit
+import CoreData
+
+// MARK: - ImagePicker Implementation
 
 struct ImagePicker: UIViewControllerRepresentable {
-    @Binding var selectedImage: UIImage?
-    @Environment(\.presentationMode) var presentationMode
+    @Binding var image: UIImage?
+    @Environment(\.presentationMode) private var presentationMode
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.allowsEditing = true // Set to true if you need image editing
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         let parent: ImagePicker
+
         init(_ parent: ImagePicker) {
             self.parent = parent
         }
-        
+
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            // Try to retrieve the edited image first.
             if let editedImage = info[.editedImage] as? UIImage {
-                parent.selectedImage = editedImage
+                parent.image = editedImage
             } else if let originalImage = info[.originalImage] as? UIImage {
-                parent.selectedImage = originalImage
+                parent.image = originalImage
             }
             parent.presentationMode.wrappedValue.dismiss()
         }
 
-        
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.presentationMode.wrappedValue.dismiss()
         }
     }
-}
 
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.allowsEditing = true // Enable editing
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) { }
+}

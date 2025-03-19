@@ -1,40 +1,37 @@
 import SwiftUI
 
 struct CustomAlert: View {
+    @Environment(\.colorScheme) var colorScheme
     var title: String
     var message: String
     var onDismiss: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 13) {
             Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
+                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                 .padding(.top, 16)
             
-            Text(message)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.white)
-                .padding(.horizontal, 16)
+            Divider()
+                .padding(.top, -10)
             
-            Button(action: {
-                onDismiss()
-            }) {
-                Text("Got it!")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.white)
-                    .foregroundColor(.black)
-                    .cornerRadius(8)
-                    .padding(.horizontal, 16)
-            }
+            Text(message)
+                .font(.system(size: 20, weight: .medium, design: .rounded))
+                .multilineTextAlignment(.center)
+                .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
+                .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
-        .background(Color.black.opacity(1))
-        .cornerRadius(12)
+        .background(.primary)
+        .cornerRadius(20)
         .shadow(radius: 10)
-        .padding(.horizontal, 40)
+        .padding(.horizontal, 60)
+    }
+}
+
+struct CustomAlert_Previews: PreviewProvider {
+    static var previews: some View {
+        CustomAlert(title: "Alert Title", message: "This is a sample alert message.", onDismiss: {})
     }
 }

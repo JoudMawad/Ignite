@@ -51,8 +51,10 @@ struct UserProfileView: View {
                 }
             }
             .sheet(isPresented: $isShowingImagePicker) {
-                ImagePicker(selectedImage: $imageVM.profileImage)
+                ImagePicker(image: $imageVM.profileImage)
             }
+
+
         }
         .navigationViewStyle(StackNavigationViewStyle())
         
