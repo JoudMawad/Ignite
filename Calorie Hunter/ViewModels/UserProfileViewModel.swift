@@ -6,6 +6,8 @@ class UserProfileViewModel: ObservableObject {
     // Separate published property to force immediate UI updates for the calorie goal.
     @Published var dailyCalorieGoalValue: Int = 1500
     @Published var dailyStepsGoalValue: Int = 10000
+    @Published var dailyBurnedCaloriesGoalValue: Int = 500
+
 
     
     // Existing managers.
@@ -45,7 +47,7 @@ class UserProfileViewModel: ObservableObject {
     // Listen for Core Data changes and update our published goal if necessary.
     @objc private func contextObjectsDidChange(_ notification: Notification) {
         if let profile = profile {
-            // Update calorie goal (as before)...
+            // Update calorie goal (already handled)...
             let newCalorieGoal = Int(profile.dailyCalorieGoal)
             if newCalorieGoal != dailyCalorieGoalValue {
                 DispatchQueue.main.async {
@@ -53,15 +55,24 @@ class UserProfileViewModel: ObservableObject {
                 }
             }
             
-            // Update steps goal
+            // Update steps goal (already handled)...
             let newStepsGoal = Int(profile.dailyStepsGoal)
             if newStepsGoal != dailyStepsGoalValue {
                 DispatchQueue.main.async {
                     self.dailyStepsGoalValue = newStepsGoal
                 }
             }
+            
+            // Update burned calories goal:
+            let newBurnedGoal = Int(profile.dailyBurnedCaloriesGoal)
+            if newBurnedGoal != dailyBurnedCaloriesGoalValue {
+                DispatchQueue.main.async {
+                    self.dailyBurnedCaloriesGoalValue = newBurnedGoal
+                }
+            }
         }
     }
+
 
     
     @objc private func handleHealthKitDataChange() {
@@ -237,12 +248,15 @@ class UserProfileViewModel: ObservableObject {
 
     
     var dailyBurnedCaloriesGoal: Int {
-        get { Int(profile?.dailyBurnedCaloriesGoal ?? 500) }
+        get { dailyBurnedCaloriesGoalValue }
         set {
+            objectWillChange.send()
+            dailyBurnedCaloriesGoalValue = newValue
             profile?.dailyBurnedCaloriesGoal = Int32(newValue)
             saveProfile()
         }
     }
+
     
     var gender: String {
         get { profile?.gender ?? "Male" }

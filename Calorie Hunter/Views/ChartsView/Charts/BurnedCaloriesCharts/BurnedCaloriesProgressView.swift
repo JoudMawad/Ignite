@@ -12,17 +12,16 @@ struct BurnedCaloriesProgressView: View {
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
     var onBurnedCaloriesChange: () -> Void = {}
     
-    // Computed properties that retrieve values from the Core Data profile.
-    private var dailyBurnedCaloriesGoal: Int32 {
-        viewModel.profile?.dailyBurnedCaloriesGoal ?? 500
+    // Use the published property directly.
+    private var dailyBurnedCaloriesGoal: Int {
+        viewModel.dailyBurnedCaloriesGoalValue
     }
     
-    
-    // Calculate progress between start and goal weight.
+    // Calculate progress based on the current burned calories vs. the goal.
     private var progress: CGFloat {
         guard dailyBurnedCaloriesGoal != 0 else { return 0 }
         let caloriesRange = CGFloat(dailyBurnedCaloriesGoal)
-        let currentOffset = CGFloat(burnedCaloriesViewModel.currentBurnedCalories - 0)
+        let currentOffset = CGFloat(burnedCaloriesViewModel.currentBurnedCalories)
         return min(max(currentOffset / caloriesRange, 0), 1)
     }
     
@@ -31,12 +30,12 @@ struct BurnedCaloriesProgressView: View {
             HStack {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background progress bar
+                        // Background progress bar.
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.gray.opacity(0.3))
                             .frame(height: 10)
                         
-                        // Gradient progress bar
+                        // Gradient progress bar.
                         RoundedRectangle(cornerRadius: 10)
                             .fill(
                                 LinearGradient(
@@ -51,10 +50,7 @@ struct BurnedCaloriesProgressView: View {
                 .frame(height: 10)
                 
                 Spacer()
-                
             }
-            
         }
     }
 }
-
