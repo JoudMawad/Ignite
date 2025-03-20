@@ -49,8 +49,5 @@ struct StepsProgressView: View {
                 Spacer()
             }
         }
-        .onChange(of: viewModel.dailyStepsGoal) { oldValue, newValue in
-            onStepsChange()
-        }
     }
 }
