@@ -7,6 +7,9 @@ class UserProfileViewModel: ObservableObject {
     @Published var dailyCalorieGoalValue: Int = 1500
     @Published var dailyStepsGoalValue: Int = 10000
     @Published var dailyBurnedCaloriesGoalValue: Int = 500
+    @Published var startWeightValue: Double = 70.0
+    @Published var currentWeightValue: Double = 70.0
+    @Published var goalWeightValue: Double = 65.0
 
 
     
@@ -68,6 +71,27 @@ class UserProfileViewModel: ObservableObject {
             if newBurnedGoal != dailyBurnedCaloriesGoalValue {
                 DispatchQueue.main.async {
                     self.dailyBurnedCaloriesGoalValue = newBurnedGoal
+                }
+            }
+            
+            let newStartWeight = profile.startWeight
+            if newStartWeight != startWeightValue {
+                DispatchQueue.main.async {
+                    self.startWeightValue = newStartWeight
+                }
+            }
+                
+            let newCurrentWeight = profile.currentWeight
+            if newCurrentWeight != currentWeightValue {
+                DispatchQueue.main.async {
+                    self.currentWeightValue = newCurrentWeight
+                }
+            }
+                  
+            let newGoalWeight = profile.goalWeight
+            if newGoalWeight != goalWeightValue {
+                DispatchQueue.main.async {
+                    self.goalWeightValue = newGoalWeight
                 }
             }
         }
@@ -199,25 +223,31 @@ class UserProfileViewModel: ObservableObject {
         }
     }
     
-    var currentWeight: Double {
-        get { profile?.currentWeight ?? 70.0 }
-        set {
-            profile?.currentWeight = newValue
-            saveProfile()
-        }
-    }
-    
     var startWeight: Double {
-        get { profile?.startWeight ?? 70.0 }
+        get { startWeightValue }
         set {
+            objectWillChange.send()
+            startWeightValue = newValue
             profile?.startWeight = newValue
             saveProfile()
         }
     }
-    
-    var goalWeight: Double {
-        get { profile?.goalWeight ?? 65.0 }
+
+    var currentWeight: Double {
+        get { currentWeightValue }
         set {
+            objectWillChange.send()
+            currentWeightValue = newValue
+            profile?.currentWeight = newValue
+            saveProfile()
+        }
+    }
+
+    var goalWeight: Double {
+        get { goalWeightValue }
+        set {
+            objectWillChange.send()
+            goalWeightValue = newValue
             profile?.goalWeight = newValue
             saveProfile()
         }

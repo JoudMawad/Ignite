@@ -4,20 +4,18 @@ struct WeightProgressView: View {
     @ObservedObject var viewModel: UserProfileViewModel
     var onWeightChange: () -> Void = {}
     
-    // Computed properties that retrieve values from the Core Data profile.
     private var startWeight: Double {
-        viewModel.profile?.startWeight ?? 70.0
+        viewModel.startWeightValue
     }
     
     private var currentWeight: Double {
-        viewModel.profile?.currentWeight ?? 70.0
+        viewModel.currentWeightValue
     }
     
     private var goalWeight: Double {
-        viewModel.profile?.goalWeight ?? 65.0
+        viewModel.goalWeightValue
     }
     
-    // Calculate progress between start and goal weight.
     private var progress: CGFloat {
         guard goalWeight != startWeight else { return 0 }
         let weightRange = CGFloat(goalWeight - startWeight)
@@ -36,12 +34,10 @@ struct WeightProgressView: View {
                 
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background progress bar
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.gray.opacity(0.3))
                             .frame(height: 10)
                         
-                        // Gradient progress bar
                         RoundedRectangle(cornerRadius: 10)
                             .fill(
                                 LinearGradient(
@@ -62,7 +58,6 @@ struct WeightProgressView: View {
                     .foregroundColor(.gray)
             }
             .padding()
-            
         }
     }
 }
