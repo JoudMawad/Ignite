@@ -30,10 +30,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		85BA7DA52D7C0C8700392260 /* Exceptions for "Calorie Hunter" folder in "Calorie Hunter" target */ = {
+		8555C08E2D8CB02D00ABA43D /* Exceptions for "Calorie Hunter" folder in "Calorie Hunter" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				info.plist,
+				App/info.plist,
 			);
 			target = 85D6BC2F2D73782A00B8166C /* Calorie Hunter */;
 		};
@@ -43,7 +43,7 @@
 		85D6BC322D73782A00B8166C /* Calorie Hunter */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				85BA7DA52D7C0C8700392260 /* Exceptions for "Calorie Hunter" folder in "Calorie Hunter" target */,
+				8555C08E2D8CB02D00ABA43D /* Exceptions for "Calorie Hunter" folder in "Calorie Hunter" target */,
 			);
 			path = "Calorie Hunter";
 			sourceTree = "<group>";
@@ -408,14 +408,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Calorie Hunter/Calorie Hunter.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Calorie Hunter/App/Calorie Hunter.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Calorie Hunter/Preview Content\"";
 				DEVELOPMENT_TEAM = VU98NN8S3R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "/Users/jude/Calorie Hunter/Calorie Hunter/Info.plist";
+				INFOPLIST_FILE = "/Users/jude/Calorie Hunter/Calorie Hunter/App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -441,14 +441,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = "Calorie Hunter/Calorie Hunter.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "Calorie Hunter/App/Calorie Hunter.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Calorie Hunter/Preview Content\"";
 				DEVELOPMENT_TEAM = VU98NN8S3R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "/Users/jude/Calorie Hunter/Calorie Hunter/Info.plist";
+				INFOPLIST_FILE = "/Users/jude/Calorie Hunter/Calorie Hunter/App/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
