@@ -5,6 +5,8 @@ class UserProfileViewModel: ObservableObject {
     @Published var profile: UserProfile?
     // Separate published property to force immediate UI updates for the calorie goal.
     @Published var dailyCalorieGoalValue: Int = 1500
+    @Published var dailyStepsGoalValue: Int = 10000
+
     
     // Existing managers.
     private let weightHistoryManager = WeightHistoryManager.shared
@@ -43,14 +45,24 @@ class UserProfileViewModel: ObservableObject {
     // Listen for Core Data changes and update our published goal if necessary.
     @objc private func contextObjectsDidChange(_ notification: Notification) {
         if let profile = profile {
-            let newGoal = Int(profile.dailyCalorieGoal)
-            if newGoal != dailyCalorieGoalValue {
+            // Update calorie goal (as before)...
+            let newCalorieGoal = Int(profile.dailyCalorieGoal)
+            if newCalorieGoal != dailyCalorieGoalValue {
                 DispatchQueue.main.async {
-                    self.dailyCalorieGoalValue = newGoal
+                    self.dailyCalorieGoalValue = newCalorieGoal
+                }
+            }
+            
+            // Update steps goal
+            let newStepsGoal = Int(profile.dailyStepsGoal)
+            if newStepsGoal != dailyStepsGoalValue {
+                DispatchQueue.main.async {
+                    self.dailyStepsGoalValue = newStepsGoal
                 }
             }
         }
     }
+
     
     @objc private func handleHealthKitDataChange() {
         reimportWorkItem?.cancel()
@@ -212,12 +224,17 @@ class UserProfileViewModel: ObservableObject {
     }
     
     var dailyStepsGoal: Int {
-        get { Int(profile?.dailyStepsGoal ?? 10000) }
+        get { dailyStepsGoalValue }
         set {
+            objectWillChange.send()  // Notify immediately.
+            dailyStepsGoalValue = newValue
             profile?.dailyStepsGoal = Int32(newValue)
             saveProfile()
         }
     }
+
+
+
     
     var dailyBurnedCaloriesGoal: Int {
         get { Int(profile?.dailyBurnedCaloriesGoal ?? 500) }

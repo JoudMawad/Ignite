@@ -11,18 +11,16 @@ struct StepsProgressView: View {
     @ObservedObject var viewModel: UserProfileViewModel
     @ObservedObject var stepsViewModel: StepsViewModel
     var onStepsChange: () -> Void = {}
-    
-    // Computed properties that retrieve values from the Core Data profile.
-    private var dailyStepsGoal: Int32 {
-        viewModel.profile?.dailyStepsGoal ?? 10000
+
+    // Read the steps goal from the published property.
+    private var dailyStepsGoal: Int {
+        viewModel.dailyStepsGoalValue
     }
     
-    
-    // Calculate progress between start and goal weight.
     private var progress: CGFloat {
         guard dailyStepsGoal != 0 else { return 0 }
-        let stepsRange = CGFloat(dailyStepsGoal - 0)
-        let currentOffset = CGFloat(stepsViewModel.currentSteps - 0)
+        let stepsRange = CGFloat(dailyStepsGoal)
+        let currentOffset = CGFloat(stepsViewModel.currentSteps)
         return min(max(currentOffset / stepsRange, 0), 1)
     }
     
@@ -31,12 +29,10 @@ struct StepsProgressView: View {
             HStack {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        // Background progress bar
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.gray.opacity(0.3))
                             .frame(height: 10)
                         
-                        // Gradient progress bar
                         RoundedRectangle(cornerRadius: 10)
                             .fill(
                                 LinearGradient(
@@ -51,10 +47,10 @@ struct StepsProgressView: View {
                 .frame(height: 10)
                 
                 Spacer()
-                
             }
-            
+        }
+        .onChange(of: viewModel.dailyStepsGoal) { oldValue, newValue in
+            onStepsChange()
         }
     }
 }
-
