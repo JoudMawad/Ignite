@@ -9,10 +9,13 @@ struct AddFoodView: View {
 
     @State private var searchText: String = ""
     @State private var isManualEntryPresented: Bool = false
-    // Start the card offscreen (cardOffset equals screen height)
-    @State private var cardOffset: CGFloat = UIScreen.main.bounds.height
+    // The card will start offscreen. viewHeight is used instead of UIScreen bounds.
+    @State private var cardOffset: CGFloat = 0
     @State private var overlayOpacity: Double = 0.25
     @State private var selectedMealType: String
+    @State private var viewHeight: CGFloat = 0  // will be updated from GeometryReader
+    @State private var cardHorizontalOffset: CGFloat = -30
+
 
     init(viewModel: FoodViewModel, preselectedMealType: String) {
         self.viewModel = viewModel
@@ -20,13 +23,11 @@ struct AddFoodView: View {
         _selectedMealType = State(initialValue: preselectedMealType)
     }
     
-    // Computed property for dynamic blur based on the card's offset.
-    // When cardOffset is UIScreen.main.bounds.height, blur is 0.
-    // When cardOffset is 0, blur is maxBlur.
+    // Dynamic blur based on cardOffset relative to the actual view height.
     private var dynamicBlur: CGFloat {
-        guard isManualEntryPresented else { return 0 }
+        guard isManualEntryPresented, viewHeight > 0 else { return 0 }
         let maxBlur: CGFloat = 5
-        return maxBlur * (1 - cardOffset / UIScreen.main.bounds.height)
+        return maxBlur * (1 - cardOffset / viewHeight)
     }
     
     // MARK: - Data Filtering
@@ -52,9 +53,10 @@ struct AddFoodView: View {
                     .fill(colorScheme == .dark ? Color.black : Color.white)
                     .shadow(color: Color.primary.opacity(0.25), radius: 8)
             )
-            .padding(.horizontal, 30)
             .padding(.top, 25)
             .padding(.bottom, 9)
+            .padding(.horizontal, 23)
+            .padding(.trailing, 3)
     }
     
     private var foodList: some View {
@@ -66,78 +68,89 @@ struct AddFoodView: View {
                 }
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
-            .padding(.horizontal, 20)
+            
         }
         .frame(maxHeight: 550)
+        
     }
     
     private var manualEntryButton: some View {
         ExpandingButton(title: "Manual Entry") {
             presentManualEntry()
         }
-        .padding(.horizontal, 30)
         .padding(.bottom, 8)
     }
     
     var body: some View {
         NavigationView {
-            ZStack {
-                // Main content with dynamic blur applied.
-                VStack {
-                    Text("Add Food")
-                        .font(.system(size: 33, weight: .bold, design: .default))
-                        .padding(.trailing, 220)
-                        .padding(.top, 30)
-                    
-                    searchBar
-                        .padding(.horizontal, 30)
-                        .padding(.top, -19)
-                        .padding(.bottom, 5)
-                    
-                    if !filteredFoods.isEmpty {
-                        foodList
-                    }
-                    
-                    Spacer()
-                    manualEntryButton
-                }
-                .background(colorScheme == .dark ? Color.black : Color.white)
-                .blur(radius: dynamicBlur)
-                .clipped()
-                
-                // Overlay for Manual Entry
-                if isManualEntryPresented {
-                    Color.black.opacity(overlayOpacity)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            dismissManualEntry()
+            GeometryReader { geometry in
+                ZStack {
+                    // Main content with dynamic blur applied.
+                    VStack {
+                        Text("Add Food")
+                            .font(.system(size: 33, weight: .bold, design: .default))
+                            .padding(.top, 30)
+                            .padding(.trailing, 210)
+                        
+                        searchBar
+                            .padding(.top, -19)
+                            .padding(.bottom, 5)
+                        
+                        if !filteredFoods.isEmpty {
+                            foodList
                         }
+                        
+                        Spacer()
+                        manualEntryButton
+                    }
+                    // Ensure the VStack takes the full available width and is centered.
+                    .frame(width: geometry.size.width)
+                    .background(colorScheme == .dark ? Color.black : Color.white)
+                    .blur(radius: dynamicBlur)
+                    .clipped()
                     
-                    ManualEntryView(viewModel: viewModel, onSuccessfulDismiss: {
-                        dismissManualEntry()
-                    })
-                    .frame(height: UIScreen.main.bounds.height * 0.5)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    // Combine your custom offset with the keyboard height
-                    .offset(y: cardOffset - keyboardManager.keyboardHeight)
-                    .ignoresSafeArea(edges: .bottom)
+                    // Overlay for Manual Entry
+                    if isManualEntryPresented {
+                        Color.black.opacity(overlayOpacity)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                dismissManualEntry()
+                            }
+                        
+                        ManualEntryView(viewModel: viewModel, onSuccessfulDismiss: {
+                            dismissManualEntry()
+                        })
+                        .frame(height: viewHeight * 0.68)
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        // Adjust the offset with the current keyboard height.
+                        .offset( y: cardOffset - keyboardManager.keyboardHeight)
+                        .ignoresSafeArea(edges: .bottom)
+                    }
                 }
+                .onAppear {
+                    // Set viewHeight from the available geometry and position the card offscreen.
+                    viewHeight = geometry.size.height
+                    cardOffset = viewHeight
+                }
+                .frame(width: geometry.size.width)
+
             }
+            .navigationBarHidden(true)
+            
         }
     }
     
     // MARK: - Animation Functions
     
-    // Present the manual entry view immediately with a slide-up animation and increasing blur.
+    // Present the manual entry view with a slide-up animation.
     private func presentManualEntry() {
-        // Start offscreen.
-        cardOffset = UIScreen.main.bounds.height
-        overlayOpacity = 0.25  // or your initial value
+        // Start with the card offscreen.
+        cardOffset = viewHeight
+        overlayOpacity = 0.25
 
-        // Insert the view.
         isManualEntryPresented = true
 
-        // Animate after a slight delay, allowing the transition to complete.
+        // Animate after a slight delay.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             withAnimation(.interactiveSpring(response: 0.8, dampingFraction: 0.8, blendDuration: 1)) {
                 cardOffset = 0
@@ -148,10 +161,10 @@ struct AddFoodView: View {
         }
     }
     
-    // Dismiss the manual entry view with a slide-down animation and decreasing blur.
+    // Dismiss the manual entry view with a slide-down animation.
     private func dismissManualEntry() {
         withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 1)) {
-            cardOffset = UIScreen.main.bounds.height
+            cardOffset = viewHeight
             overlayOpacity = 0.0
         }
         // Remove the manual entry view after the animation completes.
