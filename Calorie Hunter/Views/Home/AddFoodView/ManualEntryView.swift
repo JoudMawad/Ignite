@@ -223,7 +223,13 @@ struct CardView<Content: View>: View {
                     .fill(colorScheme == .dark ? Color.white : Color.black)
                     .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
             )
+            .overlay(
+                        RoundedRectangle(cornerRadius: 55, style: .continuous)
+                            .stroke(colorScheme == .dark ? Color.black : Color.white, lineWidth: 2)
+                    )
+
             .padding(.horizontal, 45)
+        
     }
 }
 
