@@ -197,6 +197,7 @@ class UserProfileViewModel: ObservableObject {
     var name: String {
         get { profile?.name ?? "" }
         set {
+            objectWillChange.send()  // Notify SwiftUI of the upcoming change.
             profile?.name = newValue
             saveProfile()
         }

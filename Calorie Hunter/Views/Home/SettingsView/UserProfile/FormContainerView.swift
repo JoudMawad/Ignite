@@ -36,11 +36,11 @@ struct FormContainerView: View {
     
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack() {
+            VStack {
                 Spacer().frame(height: 390) // Adjust as needed for vertical spacing
                 
-                // User name and stats area.
-                VStack(spacing: 16) {
+                VStack(spacing: 26) {
+                    // User name and stats area.
                     VStack(alignment: .leading, spacing: 0) {
                         Text(firstName)
                             .font(.system(size: 45, weight: .bold, design: .default))
@@ -65,17 +65,46 @@ struct FormContainerView: View {
                         .padding(.top, -40)
                         .padding(.horizontal)
                     
-                    Divider().padding(.horizontal)
                     
-                    // Personal Information Section.
-                    SectionHeaderView(title: "Personal Information")
-                    PersonalInfoSectionView(viewModel: viewModel, isShowingImagePicker: $isShowingImagePicker)
-                    
-                    Divider().padding(.horizontal)
-                    
-                    // Health Goals Section.
-                    SectionHeaderView(title: "Health Goals")
-                    HealthGoalsSectionView(viewModel: viewModel)
+                    VStack(spacing: -20){
+                        // Personal Information Section as a button.
+                        NavigationLink(
+                            destination: DetailedPersonalInfoView(viewModel: viewModel, isShowingImagePicker: $isShowingImagePicker)
+                        ){
+                            HStack {
+                                Spacer()
+                                Text("Profile Info")
+                                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                                    .foregroundColor(Color.primary)
+                                Spacer()
+                            }
+                            
+                            .frame(width: 390, height: 100)
+                            
+                            
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Health Goals Section as a button.
+                        NavigationLink(
+                            destination: DetailedHealthGoalsView(viewModel: viewModel)
+                               
+                        ) {
+                            HStack {
+                                Spacer()
+                                Text("Health Goals")
+                                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                                    .foregroundColor(Color.primary)
+                                Spacer()
+                            }
+                            .frame(width: 380, height: 100)
+                            
+                            
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+
+                    }
                     
                     Spacer(minLength: 40)
                 }
@@ -86,4 +115,3 @@ struct FormContainerView: View {
         }
     }
 }
-

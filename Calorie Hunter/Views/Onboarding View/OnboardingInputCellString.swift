@@ -5,7 +5,6 @@ struct OnboardingInputCellString: View {
     var placeholder: String = ""
     var systemImageName: String? = nil
     @Binding var value: String
-    @State private var textValue: String = ""
     @Environment(\.colorScheme) var colorScheme
     @FocusState private var isFocused: Bool
 
@@ -20,31 +19,15 @@ struct OnboardingInputCellString: View {
             Text(title)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(colorScheme == .dark ? .black : .white)
-            ZStack {
-                if textValue.isEmpty {
-                    Text(placeholder)
-                        .foregroundColor(Color.gray.opacity(0.5))
-                        .font(.system(size: 18, weight: .regular))
-                }
-                TextField("", text: Binding(
-                    get: {
-                        if textValue.isEmpty && value.isEmpty {
-                            return ""
-                        }
-                        return textValue
-                    },
-                    set: { newValue in
-                        textValue = newValue
-                        value = newValue
-                    }
-                ))
+            // Bind the TextField directly to the string value.
+            TextField(placeholder, text: $value)
+                .tint(Color.blue)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 10)
                 .padding(.horizontal, 10)
+                .padding(.bottom, 10)
                 .foregroundColor(colorScheme == .dark ? .black : .white)
                 .focused($isFocused)
-            }
-            .frame(height: 30)
+                .frame(height: 30)
         }
         .frame(width: 200, height: 100)
         .background(

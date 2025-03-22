@@ -5,9 +5,19 @@ struct OnboardingInputCellDouble: View {
     var placeholder: String = ""
     var systemImageName: String? = nil
     @Binding var value: Double
-    @State private var textValue: String = ""
     @Environment(\.colorScheme) var colorScheme
     @FocusState private var isFocused: Bool
+
+    // Configure a NumberFormatter that uses the current locale.
+    private var numberFormatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = Locale.current
+        // Optionally, adjust these as needed:
+        formatter.maximumFractionDigits = 10
+        formatter.minimumFractionDigits = 0
+        return formatter
+    }
 
     var body: some View {
         VStack(spacing: 4) {
@@ -21,35 +31,21 @@ struct OnboardingInputCellDouble: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(colorScheme == .dark ? .black : .white)
             ZStack {
-                if textValue.isEmpty {
+                // Show placeholder only if the field is not focused and the value is zero.
+                if !isFocused && (value == 0.0) {
                     Text(placeholder)
                         .foregroundColor(Color.gray.opacity(0.5))
                         .font(.system(size: 18, weight: .regular))
                 }
-                TextField("", text: Binding(
-                    get: {
-                        if textValue.isEmpty && value == 0.0 {
-                            return ""
-                        }
-                        return textValue
-                    },
-                    set: { newValue in
-                        // Replace any commas with dots.
-                        let normalized = newValue.replacingOccurrences(of: ",", with: ".")
-                        textValue = newValue
-                        if let doubleValue = Double(normalized) {
-                            value = doubleValue
-                        } else {
-                            value = 0.0
-                        }
-                    }
-                ))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 10)
-                .padding(.horizontal, 10)
-                .foregroundColor(colorScheme == .dark ? .black : .white)
-                .focused($isFocused)
+                // Use SwiftUI's built-in TextField for numbers.
+                TextField("", value: $value, formatter: numberFormatter)
+                    .tint(Color.blue)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 10)
+                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                    .focused($isFocused)
             }
             .frame(height: 30)
         }
@@ -59,7 +55,6 @@ struct OnboardingInputCellDouble: View {
                 .fill(colorScheme == .dark ? Color.white : Color.black)
                 .shadow(radius: 3)
         )
-        // When tapping anywhere on the card, focus the TextField.
         .onTapGesture {
             isFocused = true
         }
