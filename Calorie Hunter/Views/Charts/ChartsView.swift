@@ -1,6 +1,8 @@
 import SwiftUI
+import Charts
 
 // MARK: - Default Profile Extension
+/// Provides a default user profile used as a fallback or initial state.
 extension UserProfile {
     static var defaultProfile: UserProfile {
         let context = PersistenceController.shared.container.viewContext
@@ -19,40 +21,41 @@ extension UserProfile {
 }
 
 // MARK: - Scroll Visual Effect Modifier
-/// A custom view modifier that applies scroll-based transformations.
+/// A custom view modifier that applies scroll-based visual transformations.
+/// As the view scrolls, its opacity, scale, and blur change to create an animated effect.
 struct ScrollVisualEffect: ViewModifier {
     func body(content: Content) -> some View {
         content.scrollTransition(.animated.threshold(.visible(0.75))) { content, phase in
             content
-                .opacity(phase.isIdentity ? 1 : 0.5)
-                .scaleEffect(phase.isIdentity ? 1 : 0.90)
-                .blur(radius: phase.isIdentity ? 0 : 2)
+                .opacity(phase.isIdentity ? 1 : 0.5)    // Fade view when not fully visible.
+                .scaleEffect(phase.isIdentity ? 1 : 0.90) // Slightly shrink view when scrolling.
+                .blur(radius: phase.isIdentity ? 0 : 2)   // Apply blur when view is transitioning.
         }
     }
 }
 
 extension View {
-    /// Applies a scroll-based visual effect.
+    /// Convenience method to apply the scroll-based visual effect.
     func scrollVisualEffect() -> some View {
         self.modifier(ScrollVisualEffect())
     }
 }
 
 // MARK: - ChartsView
-/// A view that displays various chart carousels including calorie, weight, BMR, water, steps, and burned calories charts.
+/// The main view that displays various chart carousels for tracking nutrition, weight, BMR, water, steps, and burned calories.
 struct ChartsView: View {
-    // Observed view model for food-related data.
+    // Observed view model for food-related data (e.g., calorie charts).
     @ObservedObject var foodViewModel: FoodViewModel
-    // Observed view model for user profile data.
+    // Observed view model for user profile data (e.g., weight, BMR charts).
     @ObservedObject var userProfileViewModel: UserProfileViewModel
-    // Create a water view model.
+    // A state object for water tracking, initialized with the shared Persistence container.
     @StateObject var waterViewModel = WaterViewModel(container: PersistenceController.shared.container)
 
     var body: some View {
         NavigationView {
             ScrollView {
                 LazyVStack(spacing: 20) {
-                    // Header text for the charts screen.
+                    // Header for the charts screen.
                     Text("Charts")
                         .font(.title2)
                         .fontWeight(.bold)
@@ -64,7 +67,7 @@ struct ChartsView: View {
                         AnyView(MonthlyCalorieChartView(viewModel: foodViewModel)),
                         AnyView(YearlyCalorieChartView(viewModel: foodViewModel))
                     ])
-                    .scrollVisualEffect()
+                    .scrollVisualEffect() // Apply custom scroll effect
                     
                     // MARK: Burned Calories Charts Carousel with visual effect
                     ChartCarouselView(charts: [
@@ -106,6 +109,7 @@ struct ChartsView: View {
                     ])
                     .scrollVisualEffect()
                 }
+                // Ensure the background covers the full scrollable area.
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))
             }
         }

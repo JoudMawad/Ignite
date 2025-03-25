@@ -1,17 +1,39 @@
 import SwiftUI
 
+/// The main home view that presents the user's dashboard, including welcome text, charts,
+/// steps and burned calories cards, water intake, a food list, and a calendar view.
+/// It also includes a settings button in the navigation bar.
 struct HomeView: View {
+    // MARK: - Observed Objects
+    
+    /// The view model handling food-related data.
     @ObservedObject var viewModel: FoodViewModel
+    
+    /// The view model managing the user's step count.
     @ObservedObject var stepsViewModel: StepsViewModel
+    
+    /// The view model that tracks burned calories.
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
+    
+    /// The view model providing user profile information.
     @ObservedObject var userProfileViewModel: UserProfileViewModel
 
+    // MARK: - Environment
+    
+    /// Accesses the current color scheme for dynamic styling.
     @Environment(\.colorScheme) var colorScheme
 
-    // Instantiate WaterViewModel locally.
+    // MARK: - Local State Objects
+    
+    /// Instantiates the WaterViewModel locally using the shared persistence container.
     @StateObject private var waterViewModel = WaterViewModel(container: PersistenceController.shared.container)
+    
+    /// Tracks whether the settings view should be presented.
     @State private var showSettings = false
 
+    // MARK: - Initialization
+    
+    /// Custom initializer to configure view models and the navigation bar appearance.
     init(viewModel: FoodViewModel,
          stepsViewModel: StepsViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
@@ -21,13 +43,15 @@ struct HomeView: View {
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.userProfileViewModel = userProfileViewModel
 
-        // Configure transparent navigation bar.
+        // Configure transparent navigation bar appearance.
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.shadowColor = .clear
         UINavigationBar.appearance().standardAppearance = appearance
         UINavigationBar.appearance().scrollEdgeAppearance = appearance
     }
+    
+    // MARK: - Body
     
     var body: some View {
         NavigationView {
@@ -37,25 +61,24 @@ struct HomeView: View {
                     // MARK: - Welcome Section
                     welcomeSection
                     
-                    
-                    
-                    
-                    // MARK: - Charts & Water Intake Section
+                    // MARK: - Charts & Activity Cards Section
                     HStack(alignment: .top, spacing: 11) {
                         chartsCardSection
                         VStack {
+                            // Displays a card with step count information.
                             StepsCardView(viewModel: userProfileViewModel, stepsViewModel: stepsViewModel)
+                            // Displays a card with burned calories information.
                             BurnedCaloriesCardView(burnedCaloriesviewModel: burnedCaloriesViewModel, viewModel: userProfileViewModel)
                         }
                     }
                     
-                    // Water Intake Section.
+                    // MARK: - Water Intake Section
                     waterSection
                     
                     // MARK: - Food List Section
                     foodListSection
+                    
                     // MARK: - Calendar Section
-                   
                     CalendarView(
                         userProfileViewModel: userProfileViewModel,
                         stepsViewModel: stepsViewModel,
@@ -70,6 +93,7 @@ struct HomeView: View {
                 .padding(.bottom, 40)
             }
             .toolbar {
+                // Toolbar item for the settings gear button.
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showSettings.toggle()
@@ -81,13 +105,16 @@ struct HomeView: View {
                     }
                 }
             }
+            // Present the settings view modally when showSettings is true.
             .sheet(isPresented: $showSettings) {
                 SettingsView()
             }
         }
     }
     
-    // MARK: - Welcome Section
+    // MARK: - View Components
+    
+    /// The welcome section that greets the user by name.
     private var welcomeSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             TypingText(fullText: "Welcome, \(userProfileViewModel.firstName).")
@@ -97,18 +124,20 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
-    // MARK: - Charts Card Section
+    /// The charts card section which includes charts and a header message.
     private var chartsCardSection: some View {
         ZStack {
-            // Background Card.
+            // Background card with rounded corners and shadow.
             RoundedRectangle(cornerRadius: 20)
                 .fill(colorScheme == .dark ? Color.white : Color.black)
                 .shadow(radius: 5, x: 0, y: 4)
             
             GeometryReader { geometry in
+                // Calculate header height based on available geometry.
                 let headerHeight = geometry.size.height * (0.5 / 3)
                 
                 VStack(spacing: 0) {
+                    // Header text above the charts.
                     HStack {
                         Text("Keep a close eye on these.")
                             .font(.system(size: 20, weight: .bold))
@@ -119,6 +148,7 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 4)
                     
+                    // TabView for switching between different chart views.
                     TabView {
                         CalorieChartView(
                             viewModel: userProfileViewModel,
@@ -145,19 +175,22 @@ struct HomeView: View {
         .frame(height: 300)
     }
     
-    // MARK: - Water Intake Section
+    /// The water intake section, showing daily water progress.
     private var waterSection: some View {
         WaterProgressView(waterViewModel: waterViewModel, dailyGoal: 2.8)
     }
     
-    // MARK: - Food List Section
+    /// The food list section that displays a list of foods and provides an action to add more food.
     private var foodListSection: some View {
         FoodListView(viewModel: viewModel, addFoodAction: { mealType in
             openAddFoodView(for: mealType)
         })
     }
     
-    // MARK: - Helper Method to Present AddFoodView
+    // MARK: - Helper Methods
+    
+    /// Presents the AddFoodView modally for a specific meal type.
+    /// - Parameter mealType: The type of meal (e.g., breakfast, lunch) for which to add food.
     private func openAddFoodView(for mealType: String) {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
