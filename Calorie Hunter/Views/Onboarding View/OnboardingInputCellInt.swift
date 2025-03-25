@@ -13,10 +13,11 @@ struct OnboardingInputCellInt: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.locale = Locale.current
-        // Ensure no fractional digits are allowed.
         formatter.maximumFractionDigits = 0
+        formatter.usesGroupingSeparator = false  // Disable grouping separators
         return formatter
     }
+
 
     var body: some View {
         VStack(spacing: 4) {
