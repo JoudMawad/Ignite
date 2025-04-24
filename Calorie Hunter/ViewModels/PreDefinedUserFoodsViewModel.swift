@@ -21,13 +21,13 @@ class UserPreDefinedFoodsViewModel: ObservableObject {
     
     /// Loads the predefined foods from the shared data store.
     func loadFoods() {
-        foods = PredefinedUserFoods.shared.foods
+        foods = PreDefinedUserFoods.shared.foods
     }
     
     /// Removes a food item from the shared data store using its unique identifier.
     /// - Parameter id: The unique identifier of the food item to remove.
     func removeFood(by id: UUID) {
-        PredefinedUserFoods.shared.removeFood(by: id)
+        PreDefinedUserFoods.shared.removeFood(by: id)
         loadFoods() // Refresh the list after deletion.
     }
     

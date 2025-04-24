@@ -56,7 +56,7 @@ struct ExpandingButton2: View {
                     .animation(.easeInOut(duration: 0.2), value: isPressed)
             }
             // Fix the button's size regardless of the text content.
-            .frame(width: 100, height: 80)
+            .frame(width: 200, height: 100)
         }
         .padding()
     }

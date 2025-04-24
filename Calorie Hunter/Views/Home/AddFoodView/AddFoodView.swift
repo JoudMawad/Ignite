@@ -1,178 +1,173 @@
 import SwiftUI
 
 struct AddFoodView: View {
-    // ViewModel for handling food data.
+    // MARK: - Dependencies
     @ObservedObject var viewModel: FoodViewModel
-    // Use the system color scheme to adjust colors accordingly.
     @Environment(\.colorScheme) var colorScheme
-    // Preselected meal type passed from the parent view.
-    var preselectedMealType: String
-    // Environment value to dismiss the view.
     @Environment(\.dismiss) var dismiss
-    // Manage keyboard-related behavior.
+    var preselectedMealType: String
     @StateObject private var keyboardManager = KeyboardManager()
 
-    // Local state for search text input.
-    @State private var searchText: String = ""
-    // State to control whether the manual entry view is presented.
-    @State private var isManualEntryPresented: Bool = false
-    // The card starts offscreen; viewHeight (from GeometryReader) is used to compute offsets.
-    @State private var cardOffset: CGFloat = 0
-    // Opacity for the overlay behind the manual entry view.
-    @State private var overlayOpacity: Double = 0.25
-    // Track the selected meal type; initially set from the preselected value.
-    @State private var selectedMealType: String
-    // Store the available view height, which will be updated via GeometryReader.
-    @State private var viewHeight: CGFloat = 0
-    // Horizontal offset for the card; used for visual adjustment.
-    @State private var cardHorizontalOffset: CGFloat = -30
+    // MARK: - Scanning State
+    @State private var isShowingScanner = false
+    @State private var scannedCode: String? = nil
 
-    // Initialize with a FoodViewModel and preselected meal type.
+    // MARK: - View State
+    @State private var searchText: String = ""
+    @State private var isManualEntryPresented: Bool = false
+    @State private var cardOffset: CGFloat = 0
+    @State private var overlayOpacity: Double = 0.25
+    @State private var viewHeight: CGFloat = 0
+
+    // MARK: - Initialization
     init(viewModel: FoodViewModel, preselectedMealType: String) {
         self.viewModel = viewModel
         self.preselectedMealType = preselectedMealType
-        // Set the selected meal type to the preselected value.
-        _selectedMealType = State(initialValue: preselectedMealType)
     }
-    
-    /// Computes a dynamic blur value for the main content based on the card's vertical offset.
-    /// The further the card moves (relative to viewHeight), the less blur is applied.
-    private var dynamicBlur: CGFloat {
-        guard isManualEntryPresented, viewHeight > 0 else { return 0 }
-        let maxBlur: CGFloat = 5
-        return maxBlur * (1 - cardOffset / viewHeight)
-    }
-    
-    // MARK: - Data Filtering
-    /// Combine predefined foods with user-added foods.
+
+    // MARK: - Computed Collections
     private var combinedFoods: [FoodItem] {
-        PredefinedFoods.foods + PredefinedUserFoods.shared.foods
+        PredefinedFoods.foods + PreDefinedUserFoods.shared.foods
     }
-    
-    /// Filter the combined food items based on the search text.
-    /// If the search text is empty, return all items; otherwise, filter by name.
     private var filteredFoods: [FoodItem] {
+        if let code = scannedCode, !code.isEmpty,
+           let found = viewModel.findFoodByBarcode(code) {
+            return [found]
+        }
         if searchText.isEmpty {
             return combinedFoods
-        } else {
-            return combinedFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
         }
+        return combinedFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
-    
-    // MARK: - Subviews
-    /// A search bar view with padding, rounded background, and shadow.
-    private var searchBar: some View {
-        TextField("Search food...", text: $searchText)
-            .padding(10)
-            .foregroundColor(.primary)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(colorScheme == .dark ? Color.black : Color.white)
-                    .shadow(color: Color.primary.opacity(0.25), radius: 8)
-            )
-            .padding(.top, 25)
-            .padding(.bottom, 9)
-            .padding(.horizontal, 23)
-            .padding(.trailing, 3)
-    }
-    
-    /// A scrollable list of food items displayed as rows.
-    private var foodList: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ForEach(filteredFoods, id: \.id) { food in
-                    FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
-                        .background(colorScheme == .dark ? Color.black : Color.white)
-                }
-            }
-            .background(colorScheme == .dark ? Color.black : Color.white)
-        }
-        .frame(maxHeight: 550)
-    }
-    
-    /// A button to trigger the manual entry view.
-    private var manualEntryButton: some View {
-        ExpandingButton(title: "Manual Entry") {
-            presentManualEntry()
-        }
-        .padding(.bottom, 8)
-    }
-    
+
+    // MARK: - Body
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
-                ZStack {
-                    // Main content of the view.
-                    VStack {
-                        // Title at the top of the view.
-                        Text("Add Food")
-                            .font(.system(size: 33, weight: .bold, design: .default))
-                            .padding(.top, 30)
-                            .padding(.trailing, 210)
-                        
-                        // The search bar allows the user to filter food items.
-                        searchBar
-                            .padding(.top, -19)
-                            .padding(.bottom, 5)
-                        
-                        // Only display the food list if there are results.
-                        if !filteredFoods.isEmpty {
-                            foodList
-                        }
-                        
-                        Spacer()
-                        // Button to present manual entry of food.
-                        manualEntryButton
-                    }
-                    // Ensure the content takes full width and apply dynamic blur.
-                    .frame(width: geometry.size.width)
-                    .background(colorScheme == .dark ? Color.black : Color.white)
-                    .blur(radius: dynamicBlur)
-                    .clipped()
-                    
-                    // Overlay for manual entry.
-                    if isManualEntryPresented {
-                        // Dimmed background overlay that dismisses manual entry on tap.
-                        Color.black.opacity(overlayOpacity)
-                            .ignoresSafeArea()
-                            .onTapGesture {
-                                dismissManualEntry()
+                VStack(spacing: 0) {
+                    // Title
+                    Text("Add Food")
+                        .font(.system(size: 33, weight: .bold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 23)
+                        .padding(.top, 30)
+
+                    // Search Bar Card (expandable)
+VStack(spacing: 0) {
+    HStack(spacing: 0) {
+        TextField("Search food...", text: $searchText, onEditingChanged: { _ in scannedCode = nil })
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+
+        Button(action: {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                isShowingScanner.toggle()
+            }
+        }) {
+            Image(systemName: "barcode.viewfinder")
+                .font(.system(size: 20))
+                .foregroundColor(.primary)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+        }
+    }
+    .frame(maxWidth: .infinity)
+    .background(Color.clear)
+
+    if isShowingScanner {
+        VStack(spacing: 12) {
+            Text("Align barcode in the box")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            BarcodeScannerView { code in
+                handleScanned(code)
+            }
+            .frame(height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .padding()
+    }
+}
+.background(
+    RoundedRectangle(cornerRadius: 20)
+        .fill(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+        .shadow(color: Color.primary.opacity(0.15), radius: 6, x: 0, y: 2)
+)
+.padding(.horizontal, 23)
+.padding(.top, 25)
+.animation(.spring(response: 0.4, dampingFraction: 0.8), value: isShowingScanner)
+
+// Food List
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(filteredFoods, id: \.id) { food in
+                                FoodRowView(food: food,
+                                            viewModel: viewModel,
+                                            mealType: preselectedMealType)
+                                    .background(colorScheme == .dark ? Color.black : Color.white)
                             }
-                        
-                        // The manual entry view itself.
-                        ManualEntryView(viewModel: viewModel, onSuccessfulDismiss: {
-                            dismissManualEntry()
-                        })
-                        .frame(height: viewHeight * 0.68)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                        // Offset is adjusted based on the current keyboard height.
-                        .offset(y: cardOffset - keyboardManager.keyboardHeight)
-                        .ignoresSafeArea(edges: .bottom)
+                        }
+                        .padding(.horizontal, 23)
+                        .padding(.top, isShowingScanner ? 13 : 13)
                     }
+                    .frame(maxHeight: 550)
+
+                    Spacer()
+
+                    // Manual Entry Button
+                    ExpandingButton(title: "Manual Entry") {
+                        presentManualEntry()
+                    }
+                    .padding(.horizontal, 23)
                 }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(colorScheme == .dark ? Color.black : Color.white)
+                .blur(radius: isManualEntryPresented ? 5 : 0)
+                .animation(.spring(), value: isShowingScanner)
                 .onAppear {
-                    // Set the view height based on available geometry and position the card offscreen.
                     viewHeight = geometry.size.height
                     cardOffset = viewHeight
                 }
-                .frame(width: geometry.size.width)
+
+                // Manual Entry Overlay
+                if isManualEntryPresented {
+                    Color.black.opacity(overlayOpacity)
+                        .ignoresSafeArea()
+                        .onTapGesture { dismissManualEntry() }
+
+                    ManualEntryView(viewModel: viewModel, scannedBarcode: scannedCode, onSuccessfulDismiss: {
+                        dismissManualEntry()
+                        scannedCode = nil
+                    })
+                    .frame(height: viewHeight * 1.6)
+                    .frame(maxWidth: .infinity, alignment: .bottom)
+                    .offset(y: cardOffset - keyboardManager.keyboardHeight + 50)
+                    .ignoresSafeArea(edges: .bottom)
+                }
             }
             .navigationBarHidden(true)
         }
     }
-    
-    // MARK: - Animation Functions
-    
-    /// Presents the manual entry view with a slide-up animation.
+
+    // MARK: - Scanning Handler
+    private func handleScanned(_ code: String) {
+        if viewModel.findFoodByBarcode(code) != nil {
+            scannedCode = code
+        } else {
+            scannedCode = code
+            presentManualEntry()
+        }
+        withAnimation(.spring()) { isShowingScanner = false }
+    }
+
+    // MARK: - Manual Entry Animations
     private func presentManualEntry() {
-        // Begin with the card positioned offscreen.
-        cardOffset = viewHeight
         overlayOpacity = 0.25
         isManualEntryPresented = true
-
-        // After a slight delay, animate the card sliding up and increase the overlay opacity.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.interactiveSpring(response: 0.8, dampingFraction: 0.8, blendDuration: 1)) {
+            withAnimation(.interactiveSpring(response: 0.8, dampingFraction: 0.8)) {
                 cardOffset = 0
             }
             withAnimation(.easeIn(duration: 0.8)) {
@@ -180,15 +175,13 @@ struct AddFoodView: View {
             }
         }
     }
-    
-    /// Dismisses the manual entry view with a slide-down animation.
+
     private func dismissManualEntry() {
-        withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 1)) {
+        withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8)) {
             cardOffset = viewHeight
-            overlayOpacity = 0.0
+            overlayOpacity = 0
         }
-        // After the animation, hide the manual entry view.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             isManualEntryPresented = false
         }
     }
