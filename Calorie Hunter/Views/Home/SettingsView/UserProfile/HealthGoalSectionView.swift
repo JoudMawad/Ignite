@@ -13,14 +13,7 @@ struct HealthGoalsSectionView: View {
                         .padding(.top)
                 }
                 
-                AnimatedCard {
-                    OnboardingInputCellDouble(
-                        title: "Weight",
-                        placeholder: String(viewModel.startWeight),
-                        systemImageName: "scalemass",
-                        value: $viewModel.startWeight
-                    )
-                }
+                
                 
                 AnimatedCard {
                     OnboardingInputCellDouble(
@@ -56,6 +49,19 @@ struct HealthGoalsSectionView: View {
                         systemImageName: "flame",
                         value: $viewModel.dailyBurnedCaloriesGoal
                     )
+                }
+                
+                AnimatedCard {
+                                            CalorieGoalSliderView(
+                                                age: viewModel.age,
+                                                height: Double(viewModel.height),
+                                                weight: viewModel.startWeight,
+                                                gender: viewModel.gender
+                                            ) { newGoal in
+                                                viewModel.dailyCalorieGoal = newGoal
+                                            }
+                    
+                    
                 }
             }
             .padding(.horizontal)

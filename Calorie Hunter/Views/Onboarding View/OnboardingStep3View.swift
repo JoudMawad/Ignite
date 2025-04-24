@@ -78,13 +78,7 @@ struct OnboardingStep3View: View {
                             systemImageName: "target",
                             value: $viewModel.goalWeight
                         )
-                        // Input field for setting the daily calorie goal (Int value).
-                        OnboardingInputCellInt(
-                            title: "Calories Goal",
-                            placeholder: "....",
-                            systemImageName: "flame.fill",
-                            value: $viewModel.dailyCalorieGoal
-                        )
+                       
                         // Input field for setting the daily steps goal (Int value).
                         OnboardingInputCellInt(
                             title: "Steps Goal",
@@ -99,6 +93,15 @@ struct OnboardingStep3View: View {
                             systemImageName: "flame",
                             value: $viewModel.dailyBurnedCaloriesGoal
                         )
+                        
+                                                    CalorieGoalSliderView(
+                                                        age: viewModel.age,
+                                                        height: Double(viewModel.height),
+                                                        weight: viewModel.startWeight,
+                                                        gender: viewModel.gender
+                                                    ) { newGoal in
+                                                        viewModel.dailyCalorieGoal = newGoal
+                                                    }
                     }
                     .transition(.opacity) // Fade in the input fields.
                     .blur(radius: inputBlur) // Apply an initial blur.
