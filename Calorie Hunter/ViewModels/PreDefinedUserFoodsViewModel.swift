@@ -39,4 +39,12 @@ class UserPreDefinedFoodsViewModel: ObservableObject {
             removeFood(by: foodId)
         }
     }
+    
+    /// Updates a predefined food item in the shared store.
+    /// - Parameter updated: The FoodItem with updated properties.
+    func updateFood(_ updated: FoodItem) {
+        PreDefinedUserFoods.shared.removeFood(by: updated.id)
+        PreDefinedUserFoods.shared.addFood(updated)
+        loadFoods()
+    }
 }

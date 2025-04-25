@@ -4,7 +4,16 @@ struct PreDefinedFoodRow: View {
     @Environment(\.colorScheme) var colorScheme
     var food: FoodItem
     @ObservedObject var viewModel: UserPreDefinedFoodsViewModel
+    var onDelete: (() -> Void)? = nil
     @State private var isExpanded: Bool = false
+
+    // Editable fields
+    @State private var editName: String = ""
+    @State private var editCalories: String = ""
+    @State private var editProtein: String = ""
+    @State private var editCarbs: String = ""
+    @State private var editFat: String = ""
+    @State private var editGrams: String = ""
 
     // Formatted nutritional strings
     private var proteinText: String { String(format: "%.1f", food.protein) }
@@ -20,30 +29,160 @@ struct PreDefinedFoodRow: View {
                 Spacer()
                 Button {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        isExpanded.toggle()
+                        if isExpanded {
+                            // Close expansion
+                            isExpanded = false
+                        } else {
+                            // Initialize editable fields when opening
+                            editName = food.name
+                            editCalories = String(food.calories)
+                            editProtein = String(food.protein)
+                            editCarbs = String(food.carbs)
+                            editFat = String(food.fat)
+                            editGrams = String(food.grams)
+                            isExpanded = true
+                        }
                     }
                 } label: {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    Image(systemName: "pencil.circle.fill")
                         .foregroundColor(.primary)
+                        .font(.system(size: 20))
+                }
+                .padding(.leading, 4)
+                if isExpanded {
+                    Button(action: { onDelete?() }) {
+                        Image(systemName: "trash.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.system(size: 20))
+                    }
+                    .padding(.leading, 4)
                 }
             }
             .padding(.horizontal)
             .background(colorScheme == .dark ? Color.black : Color.white)
 
             // Expanded detail section
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Calories: \(food.calories)")
-                Text("Protein: \(proteinText) g")
-                Text("Carbs: \(carbsText) g")
-                Text("Fat: \(fatText) g")
-                Text("Grams: \(food.grams) g")
+            if isExpanded {
+                // Editable fields with improved UI
+                VStack(alignment: .leading, spacing: 16) {
+                    // Name field
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Name")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        TextField("Name", text: $editName)
+                            .font(.body)
+                            .padding(8)
+                            .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
+                            .cornerRadius(8)
+                    }
+
+                    // Nutrition fields in two columns
+                    HStack(spacing: 12) {
+                        // Calories
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Calories")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            TextField("0", text: $editCalories)
+                                .keyboardType(.numberPad)
+                                .padding(8)
+                                .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                        // Protein
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Protein (g)")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            TextField("0.0", text: $editProtein)
+                                .keyboardType(.decimalPad)
+                                .padding(8)
+                                .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                    }
+
+                    HStack(spacing: 12) {
+                        // Carbs
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Carbs (g)")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            TextField("0.0", text: $editCarbs)
+                                .keyboardType(.decimalPad)
+                                .padding(8)
+                                .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                        // Fat
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Fat (g)")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            TextField("0.0", text: $editFat)
+                                .keyboardType(.decimalPad)
+                                .padding(8)
+                                .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                    }
+
+                    // Grams field
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Grams (g)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        TextField("0.0", text: $editGrams)
+                            .keyboardType(.decimalPad)
+                            .padding(8)
+                            .background(colorScheme == .dark ? Color(.systemGray5) : Color(.systemGray6))
+                            .cornerRadius(8)
+                    }
+
+                    // Action buttons
+                    HStack(spacing: 16) {
+                        Button("Save") {
+                            // existing save logic
+                            guard
+                                let cals = Int(editCalories),
+                                let prot = Double(editProtein),
+                                let carbsVal = Double(editCarbs),
+                                let fatVal = Double(editFat),
+                                let gramsVal = Double(editGrams)
+                            else { return }
+                            let updatedItem = FoodItem(
+                                id: food.id,
+                                name: editName,
+                                calories: cals,
+                                protein: prot,
+                                carbs: carbsVal,
+                                fat: fatVal,
+                                grams: gramsVal,
+                                mealType: food.mealType,
+                                date: food.date,
+                                isUserAdded: food.isUserAdded,
+                                barcode: food.barcode
+                            )
+                            viewModel.updateFood(updatedItem)
+                            isExpanded = false
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.primary)
+                        .foregroundColor(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+                        
+
+                        Button("Delete") {
+                            onDelete?()
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+                    }
+                }
+                .padding()
+                .background(colorScheme == .dark ? .black : .white)
+                .cornerRadius(12)
             }
-            .padding()
-            .background(colorScheme == .dark ? Color.black : Color.white)
-            .cornerRadius(8)
-            .frame(maxHeight: isExpanded ? .infinity : 0)
-            .opacity(isExpanded ? 1 : 0)
-            .clipped()
             
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isExpanded)
@@ -57,8 +196,47 @@ struct UserPreDefinedFoodsView: View {
     @StateObject private var viewModel = UserPreDefinedFoodsViewModel()
     // State to store the search text entered by the user.
     @State private var searchText = ""
-    @State private var isEditing: Bool = false
     @State private var foodToEdit: FoodItem? = nil
+
+    // MARK: - Subviews for body
+    private var headerView: some View {
+        VStack {
+            Text("Storage")
+                .font(.system(size: 35, weight: .bold))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .padding(.bottom, 5)
+                .padding(.trailing, 200)
+                .padding(.top, -50)
+            TextField("Search food...", text: $searchText)
+                .padding(10)
+                .foregroundColor(.primary)
+                .cornerRadius(10)
+                .padding(.horizontal, 30)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colorScheme == .dark ? .black : .white)
+                        .shadow(color: .gray.opacity(0.3), radius: 8)
+                        .padding(.horizontal, 30)
+                )
+                .padding(.vertical, 9)
+        }
+    }
+
+    private var foodsListView: some View {
+        ScrollView {
+            ForEach(Array(filteredFoods.enumerated()), id: \.element.id) { _, food in
+                PreDefinedFoodRow(
+                    food: food,
+                    viewModel: viewModel,
+                    onDelete: { viewModel.removeFood(by: food.id) }
+                )
+                Divider()
+            }
+        }
+        .padding(.horizontal, 5)
+        .scrollContentBackground(.hidden)
+        .background(colorScheme == .dark ? .black : .white)
+    }
 
     /// Filters the food items based on the search text.
     /// If searchText is empty, all foods are returned; otherwise, only those whose name contains the search text.
@@ -72,76 +250,11 @@ struct UserPreDefinedFoodsView: View {
 
     var body: some View {
         NavigationView {
-            VStack {
-                // Header title for the Storage view.
-                Text("Storage")
-                    .font(.system(size: 35, weight: .bold, design: .default))
-                    .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
-                    .padding(.bottom, 5)
-                    .padding(.trailing, 200)
-                    .padding(.top, -50)
-                
-                // Search bar to filter food items.
-                TextField("Search food...", text: $searchText)
-                    .padding(10)
-                    .foregroundColor(.primary) // Uses primary color for text.
-                    .cornerRadius(10)
-                    .padding(.horizontal, 30)
-                    .background(
-                        // Background with rounded corners, fill color adjusted for light/dark mode, and a subtle shadow.
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(colorScheme == .dark ? Color.black : Color.white)
-                            .shadow(color: Color.gray.opacity(0.3), radius: 8)
-                            .padding(.horizontal, 30)
-                    )
-                    .padding(.top, 25)
-                    .padding(.bottom, 9)
-
-                // List view to display the filtered food items.
-                ScrollView() {
-                    ForEach(Array(filteredFoods.enumerated()), id: \.element.id) { index, food in
-                        HStack {
-                            if isEditing {
-                                Button(action: {
-                                    viewModel.removeFood(by: food.id)
-                                }) {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundColor(.red)
-                                }
-                                Button(action: {
-                                    // Trigger editing for this food item
-                                    foodToEdit = food
-                                }) {
-                                    Image(systemName: "pencil.circle.fill")
-                                        .foregroundColor(.blue)
-                                        .font(.system(size: 22))
-                                }
-                                .padding(.horizontal, 4)
-                            }
-                            PreDefinedFoodRow(food: food, viewModel: viewModel)
-                        }
-                        Divider()
-                    }
-                }
-                .padding(.horizontal, 5)
-                // Hides the default scroll background.
-                .scrollContentBackground(.hidden)
-                // Sets a consistent background for the list.
-                .background(colorScheme == .dark ? Color.black : Color.white)
+            VStack(spacing: 0) {
+                headerView
+                foodsListView
             }
-            // Ensure the entire view has the proper background.
             .background(colorScheme == .dark ? Color.black : Color.white)
-            .toolbar {
-                Button(action: { isEditing.toggle() }) {
-                    Text(isEditing ? "Done" : "Edit")
-                }
-            }
-        }
-        .sheet(item: $foodToEdit) { item in
-            // Replace with your actual edit view; passing the viewModel and the selected food
-            ManualEntryView(viewModel: viewModel, scannedBarcode: nil, existingFood: item, onSuccessfulDismiss: {
-                foodToEdit = nil
-            })
         }
     }
 }
