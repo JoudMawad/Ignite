@@ -1,5 +1,55 @@
 import SwiftUI
 
+struct PreDefinedFoodRow: View {
+    @Environment(\.colorScheme) var colorScheme
+    var food: FoodItem
+    @ObservedObject var viewModel: UserPreDefinedFoodsViewModel
+    @State private var isExpanded: Bool = false
+
+    // Formatted nutritional strings
+    private var proteinText: String { String(format: "%.1f", food.protein) }
+    private var carbsText: String   { String(format: "%.1f", food.carbs) }
+    private var fatText: String     { String(format: "%.1f", food.fat) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text(food.name)
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundColor(.primary)
+                Spacer()
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.primary)
+                }
+            }
+            .padding(.horizontal)
+            .background(colorScheme == .dark ? Color.black : Color.white)
+
+            // Expanded detail section
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Calories: \(food.calories)")
+                Text("Protein: \(proteinText) g")
+                Text("Carbs: \(carbsText) g")
+                Text("Fat: \(fatText) g")
+                Text("Grams: \(food.grams) g")
+            }
+            .padding()
+            .background(colorScheme == .dark ? Color.black : Color.white)
+            .cornerRadius(8)
+            .frame(maxHeight: isExpanded ? .infinity : 0)
+            .opacity(isExpanded ? 1 : 0)
+            .clipped()
+            
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isExpanded)
+    }
+}
+
 struct UserPreDefinedFoodsView: View {
     // Adapt UI styling based on the current color scheme.
     @Environment(\.colorScheme) var colorScheme
@@ -7,6 +57,8 @@ struct UserPreDefinedFoodsView: View {
     @StateObject private var viewModel = UserPreDefinedFoodsViewModel()
     // State to store the search text entered by the user.
     @State private var searchText = ""
+    @State private var isEditing: Bool = false
+    @State private var foodToEdit: FoodItem? = nil
 
     /// Filters the food items based on the search text.
     /// If searchText is empty, all foods are returned; otherwise, only those whose name contains the search text.
@@ -46,34 +98,31 @@ struct UserPreDefinedFoodsView: View {
                     .padding(.bottom, 9)
 
                 // List view to display the filtered food items.
-                List {
-                    ForEach(filteredFoods) { food in
+                ScrollView() {
+                    ForEach(Array(filteredFoods.enumerated()), id: \.element.id) { index, food in
                         HStack {
-                            // Food information section.
-                            VStack(alignment: .leading) {
-                                Text(food.name)
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                Text("Calories: \(food.calories)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                            if isEditing {
+                                Button(action: {
+                                    viewModel.removeFood(by: food.id)
+                                }) {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundColor(.red)
+                                }
+                                Button(action: {
+                                    // Trigger editing for this food item
+                                    foodToEdit = food
+                                }) {
+                                    Image(systemName: "pencil.circle.fill")
+                                        .foregroundColor(.blue)
+                                        .font(.system(size: 22))
+                                }
+                                .padding(.horizontal, 4)
                             }
-                            Spacer()
-                            // Trash button to remove a food item.
-                            Button(action: {
-                                viewModel.removeFood(by: food.id)
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
+                            PreDefinedFoodRow(food: food, viewModel: viewModel)
                         }
-                        // Adjust the background of each row based on the current color scheme.
-                        .listRowBackground(colorScheme == .dark ? Color.black : Color.white)
+                        Divider()
                     }
-                    // Allow deletion of items using swipe-to-delete.
-                    .onDelete(perform: viewModel.deleteFood)
                 }
-                .listStyle(PlainListStyle())
                 .padding(.horizontal, 5)
                 // Hides the default scroll background.
                 .scrollContentBackground(.hidden)
@@ -82,6 +131,17 @@ struct UserPreDefinedFoodsView: View {
             }
             // Ensure the entire view has the proper background.
             .background(colorScheme == .dark ? Color.black : Color.white)
+            .toolbar {
+                Button(action: { isEditing.toggle() }) {
+                    Text(isEditing ? "Done" : "Edit")
+                }
+            }
+        }
+        .sheet(item: $foodToEdit) { item in
+            // Replace with your actual edit view; passing the viewModel and the selected food
+            ManualEntryView(viewModel: viewModel, scannedBarcode: nil, existingFood: item, onSuccessfulDismiss: {
+                foodToEdit = nil
+            })
         }
     }
 }
