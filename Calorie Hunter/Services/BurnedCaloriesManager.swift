@@ -24,12 +24,9 @@ final class BurnedCaloriesManager {
             completion(false, nil)
             return
         }
-        
-        // Define the set of types you want to read from HealthKit.
         let typesToRead: Set<HKObjectType> = [activeEnergyType]
-        
-        // Request read permissions (we're not writing any data here).
-        healthStore.requestAuthorization(toShare: [], read: typesToRead) { success, error in
+        let typesToShare: Set<HKSampleType> = []
+        healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             completion(success, error)
         }
     }
@@ -114,7 +111,6 @@ final class BurnedCaloriesManager {
                                         predicate: predicate,
                                         limit: HKObjectQueryNoLimit,
                                         sortDescriptors: nil) { _, samples, error in
-            // Ensure we have valid samples and no error.
             guard let samples = samples as? [HKQuantitySample], error == nil else {
                 completion(0)
                 return
@@ -123,9 +119,9 @@ final class BurnedCaloriesManager {
             let totalCalories = samples.reduce(0.0) { sum, sample in
                 sum + sample.quantity.doubleValue(for: HKUnit.kilocalorie())
             }
+            // Active‑energy statistics already include workout calories; return the total directly
             completion(totalCalories)
         }
-        
         // Execute the sample query.
         healthStore.execute(sampleQuery)
     }

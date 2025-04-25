@@ -34,11 +34,18 @@ class BurnedCaloriesViewModel: ObservableObject {
     @objc private func handleHealthKitDataChanged(notification: Notification) {
         if let userInfo = notification.userInfo,
            let latestCalories = userInfo["latestCalories"] as? Double {
-            updateCumulativeCalories(with: latestCalories)
+            DispatchQueue.main.async {
+                // Prevent duplicate updates
+                guard self.currentBurnedCalories != latestCalories else { return }
+                self.currentBurnedCalories = latestCalories
+            }
         } else {
-            // Fallback: if the notification doesn't include a new value, get today's calories from history.
-            let todayCalories = self.historyManager.burnedCaloriesForPeriod(days: 1).first?.burnedCalories ?? 0
-            updateCumulativeCalories(with: todayCalories)
+            let todayCalories = self.historyManager.burnedCalories(on: Date())
+            DispatchQueue.main.async {
+                // Prevent duplicate updates
+                guard self.currentBurnedCalories != todayCalories else { return }
+                self.currentBurnedCalories = todayCalories
+            }
         }
     }
     
@@ -47,9 +54,21 @@ class BurnedCaloriesViewModel: ObservableObject {
     private func requestAuthorization() {
         healthKitManager.requestAuthorization { success, error in
             if success {
+                // Import past year of data, then fetch today's latest burned calories.
                 self.importHistoricalBurnedCaloriesFromHealthKit()
+                BurnedCaloriesManager.shared.fetchLatestBurnedCalories { latest in
+                    DispatchQueue.main.async {
+                        // Only update if value has changed
+                        guard self.currentBurnedCalories != latest else { return }
+                        self.currentBurnedCalories = latest
+                    }
+                }
             } else {
-                // Handle the error as needed (e.g., log or show an alert).
+                // HealthKit not available or denied: fallback to local history.
+                let manualCalories = self.historyManager.burnedCalories(on: Date())
+                DispatchQueue.main.async {
+                    self.currentBurnedCalories = manualCalories
+                }
             }
         }
     }
@@ -63,31 +82,6 @@ class BurnedCaloriesViewModel: ObservableObject {
         
         healthKitManager.fetchHistoricalDailyBurnedCalories(startDate: startDate, endDate: endDate) { caloriesData in
             self.historyManager.importHistoricalBurnedCalories(caloriesData)
-        }
-    }
-    
-    /// Updates the cumulative burned calories value using a delta approach.
-    ///
-    /// This method reads the previous cumulative total and the last recorded today's value,
-    /// computes the difference (delta) from the new value, and updates both the cumulative total
-    /// and the last today's value in UserDefaults.
-    /// Finally, it updates the published property so that the UI reflects the new total.
-    private func updateCumulativeCalories(with newValue: Double) {
-        let previousCumulative = UserDefaults.standard.double(forKey: "cumulativeBurnedCalories")
-        let lastTodayValue = UserDefaults.standard.double(forKey: "lastTodayBurnedCalories")
-        
-        // Calculate the difference from the last known value.
-        let delta = newValue - lastTodayValue
-        // Update the cumulative total by adding the difference.
-        let updatedTotal = previousCumulative + delta
-        
-        // Save the new cumulative total and the latest today's value.
-        UserDefaults.standard.set(updatedTotal, forKey: "cumulativeBurnedCalories")
-        UserDefaults.standard.set(newValue, forKey: "lastTodayBurnedCalories")
-        
-        // Update the published property on the main thread so UI updates correctly.
-        DispatchQueue.main.async {
-            self.currentBurnedCalories = updatedTotal
         }
     }
     

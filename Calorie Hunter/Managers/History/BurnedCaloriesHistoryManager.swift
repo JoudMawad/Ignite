@@ -47,6 +47,17 @@ class BurnedCaloriesHistoryManager: ObservableObject {
         localHistory = history
     }
     
+    /// Returns the burned calories logged locally for a specific date.
+    /// - Parameter date: The date to query.
+    /// - Returns: The calories burned on that date, or 0 if none recorded.
+    func burnedCalories(on date: Date) -> Double {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        let key = formatter.string(from: date)
+        return localHistory[key] ?? 0
+    }
+    
     // MARK: - Retrieving Data
     
     /// Returns the burned calories for the last given number of days.

@@ -30,6 +30,9 @@ struct HomeView: View {
     
     /// Tracks whether the settings view should be presented.
     @State private var showSettings = false
+    
+    /// ViewModel for tracking exercises.
+    @StateObject private var exerciseViewModel = ExerciseViewModel()
 
     // MARK: - Initialization
     
@@ -77,6 +80,13 @@ struct HomeView: View {
                     
                     // MARK: - Food List Section
                     foodListSection
+                    
+                    // MARK: - Exercise Card Section
+                    ExerciseCardView(viewModel: exerciseViewModel)
+                        .onAppear {
+                            let startOfDay = Calendar.current.startOfDay(for: Date())
+                            exerciseViewModel.loadExercises(from: startOfDay, to: Date())
+                        }
                     
                     // MARK: - Calendar Section
                     CalendarView(
