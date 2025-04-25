@@ -81,12 +81,12 @@ struct DayDetailCardView: View {
             // Display the full date in a bold, medium-sized font.
             Text(formattedFullDate(date))
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .foregroundColor(.primary)
                 .padding(.top, -8)
             
             // A divider to separate the date header from the details.
             Divider()
-                .background(colorScheme == .dark ? Color.black : Color.white)
+                .background(.primary)
             
             // Info rows displaying nutritional and activity data.
             VStack(spacing: 12) {
@@ -100,7 +100,7 @@ struct DayDetailCardView: View {
         .background(
             // Card background with rounded corners and a soft shadow.
             RoundedRectangle(cornerRadius: 55, style: .continuous)
-                .fill(colorScheme == .dark ? Color.white : Color.black)
+                .fill(colorScheme == .dark ? Color.black : Color.white)
                 .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
         )
         .padding(.horizontal, 45)
@@ -139,11 +139,11 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .foregroundColor(.primary)
                 .font(.system(size: 20, weight: .medium))
             Spacer()
             Text(value)
-                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .foregroundColor(.primary)
                 .font(.system(size: 20, weight: .medium))
         }
     }

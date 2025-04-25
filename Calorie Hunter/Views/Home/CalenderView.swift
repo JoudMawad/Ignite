@@ -72,7 +72,7 @@ struct CalendarView: View {
                     Button(action: { changeMonth(by: -1) }) {
                         Image(systemName: "chevron.left")
                     }
-                    .foregroundColor(.primary)
+                    .foregroundColor(colorScheme == .dark ? .black : .white)
                     
                     Spacer()
                     
@@ -81,25 +81,6 @@ struct CalendarView: View {
                         .font(.headline)
                         .foregroundColor(.white)
                         .padding()
-                        .background(
-                            // Background with a custom mesh gradient for a stylish look.
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(MeshGradient(
-                                    width: 3,
-                                    height: 3,
-                                    points: [
-                                        [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
-                                        [0.0, 0.5], [0.9, 0.3], [1.0, 0.5],
-                                        [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
-                                    ],
-                                    colors: [
-                                        .green, .blue, .green,
-                                        .green, .blue, .blue,
-                                        .black, .black, .black
-                                    ]
-                                ))
-                                .frame(width: 180, height: 40)
-                        )
                     
                     Spacer()
                     
@@ -107,10 +88,8 @@ struct CalendarView: View {
                     Button(action: { changeMonth(by: 1) }) {
                         Image(systemName: "chevron.right")
                     }
-                    .foregroundColor(.primary)
-                }
-                .padding()
-                
+                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                }                
                 // MARK: - Calendar Grid
                 
                 // Define a grid layout with 7 columns (one per weekday).
@@ -120,6 +99,7 @@ struct CalendarView: View {
                     ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
                         Text(day)
                             .font(.subheadline)
+                            .foregroundColor(colorScheme == .dark ? .black : .white)
                             .frame(maxWidth: .infinity)
                     }
                     
@@ -136,7 +116,7 @@ struct CalendarView: View {
                                 Text("\(Calendar.current.component(.day, from: date))")
                                     .font(.system(size: 20, weight: .medium))
                                     .frame(maxWidth: .infinity, minHeight: 40)
-                                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                                    .foregroundColor(colorScheme == .dark ? .black : .white)
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
@@ -147,11 +127,8 @@ struct CalendarView: View {
                 }
                 .padding()
             }
-            .background(
-                // Background of the calendar grid adjusts based on the color scheme.
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(colorScheme == .dark ? Color.black : Color.white)
-            )
+            
+            
             .padding()
             // Blur the calendar grid when the day detail card is visible.
             .blur(radius: selectedDate != nil ? 10 : 0)
@@ -162,7 +139,7 @@ struct CalendarView: View {
             // If a date is selected, display a detail card overlay.
             if let date = selectedDate {
                 // Semi-transparent background that dismisses the detail card when tapped.
-                (colorScheme == .dark ? Color.black.opacity(0.1) : Color.white.opacity(0.1))
+                (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
                     .ignoresSafeArea()
                     .onTapGesture {
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
@@ -186,6 +163,11 @@ struct CalendarView: View {
                 .transition(.blurScale)
             }
         }
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.primary)
+                .shadow(radius: 3)
+        )
     }
     
     // MARK: - Helper Methods
