@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Camera access is required to scan food barcodes.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Ignite</string>
 	<key>CFBundleExecutable</key>
@@ -15,11 +13,13 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.2.0</string>
+	<string>2.2.1</string>
 	<key>CFBundleVersion</key>
-	<string>2.2.0</string>
+	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to scan food barcodes.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>We need to read your Health App Data to track your progress</string>
 	<key>NSHealthUpdateUsageDescription</key>
