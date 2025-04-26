@@ -196,6 +196,8 @@ struct UserPreDefinedFoodsView: View {
     @StateObject private var viewModel = UserPreDefinedFoodsViewModel()
     // State to store the search text entered by the user.
     @State private var searchText = ""
+    @State private var isShowingScanner = false
+    @State private var scannedCode: String? = nil
     @State private var foodToEdit: FoodItem? = nil
 
     // MARK: - Subviews for body
@@ -207,18 +209,30 @@ struct UserPreDefinedFoodsView: View {
                 .padding(.bottom, 5)
                 .padding(.trailing, 200)
                 .padding(.top, -50)
-            TextField("Search food...", text: $searchText)
-                .padding(10)
-                .foregroundColor(.primary)
-                .cornerRadius(10)
-                .padding(.horizontal, 30)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(colorScheme == .dark ? .black : .white)
-                        .shadow(color: .gray.opacity(0.3), radius: 8)
-                        .padding(.horizontal, 30)
-                )
-                .padding(.vertical, 9)
+            HStack(spacing: 0) {
+                TextField("Search food...", text: $searchText)
+                    .padding(10)
+                    .foregroundColor(.primary)
+                    .cornerRadius(10)
+                Button(action: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        isShowingScanner.toggle()
+                    }
+                }) {
+                    Image(systemName: "barcode.viewfinder")
+                        .font(.system(size: 20))
+                        .foregroundColor(.primary)
+                        .padding(.leading, 8)
+                }
+            }
+            .padding(.horizontal, 30)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(colorScheme == .dark ? .black : .white)
+                    .shadow(color: .gray.opacity(0.3), radius: 8)
+            )
+            .padding(13)
+            .padding(.bottom, 15)
         }
     }
 
@@ -241,6 +255,10 @@ struct UserPreDefinedFoodsView: View {
     /// Filters the food items based on the search text.
     /// If searchText is empty, all foods are returned; otherwise, only those whose name contains the search text.
     var filteredFoods: [FoodItem] {
+        if let code = scannedCode,
+           let local = viewModel.foods.first(where: { $0.barcode == code }) {
+            return [local]
+        }
         if searchText.isEmpty {
             return viewModel.foods
         } else {
@@ -255,6 +273,17 @@ struct UserPreDefinedFoodsView: View {
                 foodsListView
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
+        }
+        .sheet(isPresented: $isShowingScanner) {
+            BarcodeScannerView { code in
+                // Clear text search and dismiss
+                searchText = ""
+                isShowingScanner = false
+                // If found locally, set the scannedCode to filter list
+                if let local = viewModel.foods.first(where: { $0.barcode == code }) {
+                    scannedCode = local.barcode
+                }
+            }
         }
     }
 }

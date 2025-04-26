@@ -8,7 +8,7 @@
 import Foundation
 import HealthKit
 
-private extension HKWorkoutActivityType {
+extension HKWorkoutActivityType {
     /// Human-readable display name for each workout activity type.
     var displayName: String {
         switch self {
@@ -24,8 +24,11 @@ private extension HKWorkoutActivityType {
         case .cricket:                return "Cricket"
         case .curling:                return "Curling"
         case .cycling:                return "Cycling"
+        case .crossTraining:          return "Cross Training"
         case .dance:                  return "Dance"
-        case .danceInspiredTraining:  return "Dance Training"
+        case .cardioDance:            return "Cardio Dance"
+        case .socialDance:            return "Social Dance"
+        case .barre:                  return "Barre"
         case .elliptical:             return "Elliptical"
         case .equestrianSports:       return "Equestrian"
         case .fencing:                return "Fencing"
@@ -40,7 +43,7 @@ private extension HKWorkoutActivityType {
         case .lacrosse:               return "Lacrosse"
         case .martialArts:            return "Martial Arts"
         case .mindAndBody:            return "Mind & Body"
-        case .mixedMetabolicCardioTraining: return "Cardio Training"
+        case .mixedCardio:                return "Mixed Cardio"
         case .paddleSports:           return "Paddle Sports"
         case .play:                   return "Play"
         case .preparationAndRecovery: return "Recovery"
@@ -68,7 +71,8 @@ private extension HKWorkoutActivityType {
         case .waterSports:            return "Water Sports"
         case .wrestling:              return "Wrestling"
         case .yoga:                   return "Yoga"
-        @unknown default:             return String(describing: self).capitalized
+        default:
+            return String(describing: self).capitalized
         }
     }
 }

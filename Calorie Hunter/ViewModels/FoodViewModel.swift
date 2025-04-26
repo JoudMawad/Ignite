@@ -24,6 +24,11 @@ class FoodViewModel: ObservableObject {
     /// Today’s total fat.
     @Published var totalFat: Double = 0
 
+    /// The product fetched from the API
+    @Published var currentProduct: FoodItem?
+    /// Error message if fetching fails
+    @Published var errorMessage: String?
+
     // MARK: - Internal Managers
 
     /// Handles history and midnight reset.
@@ -115,6 +120,46 @@ class FoodViewModel: ObservableObject {
         return allFoods.first { $0.barcode == code }
     }
 
+    /// Fetch product data from Open Food Facts API for the given barcode
+    @MainActor
+    func fetchProduct(barcode: String) async {
+        let urlString = "https://world.openfoodfacts.org/api/v0/product/\(barcode).json"
+        guard let url = URL(string: urlString) else {
+            self.errorMessage = "Invalid URL for barcode \(barcode)"
+            return
+        }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(ProductResponse.self, from: data)
+            if let apiProduct = response.product,
+               let name = apiProduct.product_name {
+                let nutr = apiProduct.nutriments
+                let food = FoodItem(
+                    name: name,
+                    calories: Int(nutr?.energy_kcal_100g ?? 0),
+                    protein: nutr?.proteins_100g ?? 0,
+                    carbs: nutr?.carbohydrates_100g ?? 0,
+                    fat: nutr?.fat_100g ?? 0,
+                    grams: 100,
+                    mealType: "Scanned",
+                    date: Date(),
+                    isUserAdded: false,
+                    barcode: barcode
+                )
+                self.currentProduct = food
+                // Persist fetched product into the user-defined foods list
+                self.addUserPredefinedFood(food: food)
+                self.errorMessage = nil
+            } else {
+                self.currentProduct = nil
+                self.errorMessage = "Product not found for barcode \(barcode)"
+            }
+        } catch {
+            self.currentProduct = nil
+            self.errorMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Totals Calculation
 
     /// Recalculates today’s nutritional totals.
@@ -170,4 +215,34 @@ class FoodViewModel: ObservableObject {
             updateTotals()
         }
     }
+}
+
+// MARK: - Open Food Facts API Models
+struct ProductResponse: Codable {
+    let product: APIProduct?
+}
+
+struct APIProduct: Codable {
+    let code: String?
+    let product_name: String?
+    let nutriments: Nutriments?
+}
+
+struct Nutriments: Codable {
+    let energy_kcal_100g: Double?
+    let proteins_100g: Double?
+    let carbohydrates_100g: Double?
+    let fat_100g: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case energy_kcal_100g = "energy-kcal_100g"
+        case proteins_100g = "proteins_100g"
+        case carbohydrates_100g = "carbohydrates_100g"
+        case fat_100g = "fat_100g"
+    }
+}
+
+// MARK: - Open Food Facts Search API Models
+struct SearchResponse: Codable {
+    let products: [APIProduct]
 }

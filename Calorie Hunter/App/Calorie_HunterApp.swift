@@ -5,6 +5,7 @@ import HealthKit
 struct Calorie_HunterApp: App {
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
+    @StateObject var userProfileVM = UserProfileViewModel()
     
     // Control the display of the splash screen
     @State private var showSplash = true
@@ -23,6 +24,7 @@ struct Calorie_HunterApp: App {
                 // Main SwiftUI content.
                 ContentView()
                     .environmentObject(burnedCaloriesViewModel)
+                    .environmentObject(userProfileVM)
                     .fullScreenCover(isPresented: Binding(
                         get: { !hasCompletedOnboarding },
                         set: { _ in }

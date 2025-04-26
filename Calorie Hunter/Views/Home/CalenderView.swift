@@ -79,7 +79,7 @@ struct CalendarView: View {
                     // Display the current month and year.
                     Text(monthYearString(from: currentDate))
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(colorScheme == .dark ? .black : .white)
                         .padding()
                     
                     Spacer()

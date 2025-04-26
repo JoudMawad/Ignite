@@ -8,6 +8,16 @@ struct AddFoodView: View {
     var preselectedMealType: String
     @StateObject private var keyboardManager = KeyboardManager()
 
+    // MARK: - Usage Counts
+    /// Number of times each food item has been added, based on viewModel.foodItems
+    private var usageCounts: [String: Int] {
+        var counts: [String: Int] = [:]
+        for item in viewModel.foodItems {
+            counts[item.name, default: 0] += 1
+        }
+        return counts
+    }
+
     // MARK: - Scanning State
     @State private var isShowingScanner = false
     @State private var scannedCode: String? = nil
@@ -18,6 +28,7 @@ struct AddFoodView: View {
     @State private var cardOffset: CGFloat = 0
     @State private var overlayOpacity: Double = 0.25
     @State private var viewHeight: CGFloat = 0
+    @State private var searchTask: Task<(), Never>? = nil
 
     // MARK: - Initialization
     init(viewModel: FoodViewModel, preselectedMealType: String) {
@@ -30,14 +41,35 @@ struct AddFoodView: View {
         PredefinedFoods.foods + PreDefinedUserFoods.shared.foods
     }
     private var filteredFoods: [FoodItem] {
-        if let code = scannedCode, !code.isEmpty,
-           let found = viewModel.findFoodByBarcode(code) {
-            return [found]
+        // Determine base list
+        let baseList: [FoodItem]
+        if let product = viewModel.currentProduct {
+            // If this product was just saved locally, skip the API result
+            if !combinedFoods.contains(where: { $0.barcode == product.barcode }) {
+                baseList = [product]
+            } else {
+                baseList = [product]
+            }
+        } else if let code = scannedCode, !code.isEmpty,
+                  let local = viewModel.findFoodByBarcode(code) {
+            baseList = [local]
+        } else if !searchText.isEmpty {
+            baseList = combinedFoods.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText)
+            }
+        } else {
+            baseList = combinedFoods
         }
-        if searchText.isEmpty {
-            return combinedFoods
+        // Sort by usage count descending, then by name
+        return baseList.sorted {
+            let countA = usageCounts[$0.name] ?? 0
+            let countB = usageCounts[$1.name] ?? 0
+            if countA != countB {
+                return countA > countB
+            } else {
+                return $0.name < $1.name
+            }
         }
-        return combinedFoods.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
     // MARK: - Body
@@ -55,7 +87,17 @@ struct AddFoodView: View {
                     // Search Bar Card (expandable)
 VStack(spacing: 0) {
     HStack(spacing: 0) {
-        TextField("Search food...", text: $searchText, onEditingChanged: { _ in scannedCode = nil })
+        TextField("Search food...", text: $searchText)
+            .submitLabel(.search)
+            .onSubmit {
+                viewModel.currentProduct = nil
+            }
+            .onChange(of: searchText) { _, _ in
+                viewModel.currentProduct = nil
+                // Reset scan state and previous errors/results
+                scannedCode = nil
+                viewModel.errorMessage = nil
+            }
             .padding(.vertical, 10)
             .padding(.horizontal, 16)
 
@@ -99,7 +141,23 @@ VStack(spacing: 0) {
 .padding(.top, 25)
 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isShowingScanner)
 
-// Food List
+                    // MARK: - Fetched Product Quantity Input
+                    if let product = viewModel.currentProduct,
+                       !combinedFoods.contains(where: { $0.barcode == product.barcode }) {
+                        FoodRowView(food: product, viewModel: viewModel, mealType: preselectedMealType)
+                            .padding(.horizontal, 23)
+                            .padding(.top, 13)
+                    }
+
+                    // API Lookup Error
+                    if let error = viewModel.errorMessage {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 23)
+                            .padding(.vertical, 8)
+                    }
+
+                    // Food List
                     ScrollView {
                         VStack(spacing: 0) {
                             ForEach(filteredFoods, id: \.id) { food in
@@ -153,13 +211,30 @@ VStack(spacing: 0) {
 
     // MARK: - Scanning Handler
     private func handleScanned(_ code: String) {
-        if viewModel.findFoodByBarcode(code) != nil {
-            scannedCode = code
-        } else {
-            scannedCode = code
-            presentManualEntry()
+        withAnimation(.spring()) {
+            isShowingScanner = false
         }
-        withAnimation(.spring()) { isShowingScanner = false }
+        // Reset previous scan results
+        viewModel.currentProduct = nil
+        viewModel.errorMessage = nil
+        searchText = ""
+        // If product already saved locally, show it and skip API lookup
+        if let _ = viewModel.findFoodByBarcode(code) {
+            scannedCode = code
+            return
+        }
+
+        Task {
+            await viewModel.fetchProduct(barcode: code)
+            if viewModel.currentProduct != nil {
+                // Product definition already saved; show it for manual addition
+                scannedCode = code
+            } else {
+                // Fallback to manual entry when not found
+                scannedCode = code
+                presentManualEntry()
+            }
+        }
     }
 
     // MARK: - Manual Entry Animations
