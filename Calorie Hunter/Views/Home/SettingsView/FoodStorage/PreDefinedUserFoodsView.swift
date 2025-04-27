@@ -217,33 +217,63 @@ struct UserPreDefinedFoodsView: View {
             Text("Storage")
                 .font(.system(size: 35, weight: .bold))
                 .foregroundColor(colorScheme == .dark ? .white : .black)
-                .padding(.bottom, 5)
-                .padding(.trailing, 200)
-                .padding(.top, -50)
-            HStack(spacing: 0) {
-                TextField("Search food...", text: $searchText)
-                    .padding(10)
-                    .foregroundColor(.primary)
-                    .cornerRadius(10)
-                Button(action: {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        isShowingScanner.toggle()
+                .padding(.bottom, 25)
+                .padding(.trailing, 220)
+                .padding(.top, 50)
+
+            // --- Modern, expandable search bar card ---
+            VStack(spacing: 0) {
+                HStack(spacing: 0) {
+                    TextField("Search food...", text: $searchText)
+                        .submitLabel(.search)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isShowingScanner.toggle()
+                        }
+                    }) {
+                        Image(systemName: "barcode.viewfinder")
+                            .font(.system(size: 20))
+                            .foregroundColor(.primary)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 16)
                     }
-                }) {
-                    Image(systemName: "barcode.viewfinder")
-                        .font(.system(size: 20))
-                        .foregroundColor(.primary)
-                        .padding(.leading, 8)
+                }
+                .frame(maxWidth: .infinity)
+                .background(Color.clear)
+
+                if isShowingScanner {
+                    VStack(spacing: 12) {
+                        Text("Align barcode in the box")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                        BarcodeScannerView { code in
+                            // When barcode is scanned:
+                            searchText = ""
+                            isShowingScanner = false
+                            // Keep your original scannedCode logic
+                            if let local = viewModel.foods.first(where: { $0.barcode == code }) {
+                                scannedCode = local.barcode
+                            }
+                        }
+                        .frame(height: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding()
                 }
             }
-            .padding(.horizontal, 30)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(colorScheme == .dark ? .black : .white)
-                    .shadow(color: .gray.opacity(0.3), radius: 8)
+                    .fill(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+                    .shadow(color: Color.primary.opacity(0.15), radius: 6, x: 0, y: 2)
             )
-            .padding(13)
-            .padding(.bottom, 15)
+            .padding(.horizontal, 23)
+            .padding(.bottom, 25)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isShowingScanner)
         }
     }
 
@@ -278,23 +308,11 @@ struct UserPreDefinedFoodsView: View {
     }
 
     var body: some View {
-        NavigationView {
             VStack(spacing: 0) {
                 headerView
                 foodsListView
             }
             .background(colorScheme == .dark ? Color.black : Color.white)
-        }
-        .sheet(isPresented: $isShowingScanner) {
-            BarcodeScannerView { code in
-                // Clear text search and dismiss
-                searchText = ""
-                isShowingScanner = false
-                // If found locally, set the scannedCode to filter list
-                if let local = viewModel.foods.first(where: { $0.barcode == code }) {
-                    scannedCode = local.barcode
-                }
-            }
-        }
+        
     }
 }
