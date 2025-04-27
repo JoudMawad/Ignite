@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24D81" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24E263" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="BurnedCaloriesEntry" representedClassName="BurnedCaloriesEntry" syncable="YES" codeGenerationType="class">
+        <attribute name="burnedCalories" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="dateString" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="CalorieEntry" representedClassName="CalorieEntry" syncable="YES" codeGenerationType="class">
+        <attribute name="calories" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="dateString" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="ConsumptionEntity" representedClassName="ConsumptionEntity" syncable="YES">
+        <attribute name="dateEaten" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="gramsConsumed" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="mealType" optional="YES" attributeType="String"/>
+        <relationship name="food" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="FoodEntity" inverseName="consumptions" inverseEntity="FoodEntity"/>
+    </entity>
     <entity name="DailyWaterIntakeEntity" representedClassName="DailyWaterIntakeEntity" syncable="YES" codeGenerationType="class">
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="waterAmount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
@@ -11,8 +26,26 @@
         <attribute name="startDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="type" optional="YES" attributeType="String"/>
     </entity>
+    <entity name="FoodEntity" representedClassName="FoodEntity" syncable="YES">
+        <attribute name="barcode" optional="YES" attributeType="String"/>
+        <attribute name="calories" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="carbs" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fat" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="grams" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isUserAdded" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="mealType" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="protein" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="consumptions" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ConsumptionEntity" inverseName="food" inverseEntity="ConsumptionEntity"/>
+    </entity>
     <entity name="Item" representedClassName="Item" syncable="YES" codeGenerationType="class">
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="StepsEntry" representedClassName="StepsEntry" syncable="YES" codeGenerationType="class">
+        <attribute name="dateString" optional="YES" attributeType="String"/>
+        <attribute name="steps" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
     </entity>
     <entity name="UserProfile" representedClassName="UserProfile" syncable="YES">
         <attribute name="age" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>

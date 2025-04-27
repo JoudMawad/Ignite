@@ -189,23 +189,3 @@ struct CalendarView: View {
         }
     }
 }
-
-struct CalendarView_Previews: PreviewProvider {
-    static var previews: some View {
-        let profileVM = UserProfileViewModel()
-        let stepsVM = StepsViewModel()
-        let burnedCaloriesVM = BurnedCaloriesViewModel()
-        let waterVM = WaterViewModel(container: PersistenceController.shared.container)
-        let foodVM = FoodViewModel()
-        
-        NavigationView {
-            CalendarView(
-                userProfileViewModel: profileVM,
-                stepsViewModel: stepsVM,
-                burnedCaloriesViewModel: burnedCaloriesVM,
-                waterViewModel: waterVM,
-                foodViewModel: foodVM
-            )
-        }
-    }
-}

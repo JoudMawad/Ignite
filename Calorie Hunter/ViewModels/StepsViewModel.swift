@@ -1,132 +1,124 @@
 import SwiftUI
 import Combine
 import HealthKit
+import CoreData
 
-// StepsViewModel is responsible for fetching, observing, and updating the user's step count.
-// It leverages HealthKit to fetch historical data and to observe real-time step changes.
 class StepsViewModel: ObservableObject {
-    // Reference to the shared HealthKitManager to handle HealthKit-related tasks.
     private let healthKitManager = HealthKitManager.shared
-    // StepsManager is used to fetch historical steps data from HealthKit.
     private let stepsManager = StepsManager()
-    // Optional observer query for monitoring step count changes in HealthKit.
     private var observerQuery: HKObserverQuery?
-    
-    // Published property for the current step count so that SwiftUI views can react to changes.
+    private let viewContext = PersistenceController.shared.container.viewContext
+
+    // The latest steps for today, published for UI updates.
     @Published var currentSteps: Int = 0
     
     init() {
-        // Load the stored step count value from UserDefaults or default to 0.
-        self.currentSteps = UserDefaults.standard.integer(forKey: "steps")
+        // Load the stored step count value for today from Core Data, fallback to 0.
+        self.currentSteps = fetchStepsFromCoreData(for: Date())
         // Request HealthKit authorization to access step count data.
         requestAuthorization()
-        // Start observing HealthKit for real-time updates on step count changes.
+        // Start observing HealthKit for real-time updates.
         startObservingSteps()
     }
     
-    /// Requests HealthKit authorization to read step count data.
     private func requestAuthorization() {
         healthKitManager.requestAuthorization { success, error in
             if success {
-                // If authorized, import historical steps data (e.g., for the past year).
                 self.importHistoricalStepsFromHealthKit()
-            } else {
-                // Handle errors if needed.
             }
         }
     }
     
-    /// Imports historical steps data from HealthKit.
-    /// In this example, it fetches data from the past year.
     func importHistoricalStepsFromHealthKit() {
-        // Calculate the date one year ago from today.
         let startDate = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
         let endDate = Date()
-        
-        // Use the StepsManager to fetch daily step counts for the specified date range.
         stepsManager.fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { stepsData in
-            // Import the fetched steps data into a shared history manager.
             StepsHistoryManager.shared.importHistoricalSteps(stepsData)
+            // Update today's steps from the imported data if today is included
+            if let todayEntry = stepsData.first(where: { $0.date == self.dateString(from: Date()) }) {
+                self.updateSteps(with: todayEntry.steps)
+            }
         }
     }
     
-    /// Updates the stored step count and the published currentSteps property.
-    /// - Parameter newValue: The latest step count value.
     private func updateSteps(with newValue: Int) {
-        // Save the new step count to UserDefaults.
-        UserDefaults.standard.set(newValue, forKey: "steps")
-        // Update the published property on the main thread so that the UI reflects the new value.
+        saveStepsToCoreData(for: Date(), steps: newValue)
         DispatchQueue.main.async {
             self.currentSteps = newValue
         }
     }
     
-    /// Starts observing HealthKit for any changes in step count.
-    /// This method sets up an observer query that triggers whenever new step data is available.
     private func startObservingSteps() {
-        // Ensure the step count quantity type is available.
-        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
-            return
-        }
-        
-        // Create an observer query for step count changes.
+        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else { return }
         observerQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completionHandler, error in
-            guard let self = self else {
-                completionHandler()
-                return
-            }
-            if error != nil {
-                // In case of error, complete the query and return.
-                completionHandler()
-                return
-            }
-            
-            // Fetch the latest step count immediately using an anchored query.
+            guard let self = self else { completionHandler(); return }
+            if error != nil { completionHandler(); return }
             self.fetchLatestSteps { latestSteps in
-                // Update the published step count and save the new value.
                 self.updateSteps(with: latestSteps)
-                // Call the completion handler to let HealthKit know the update is complete.
                 completionHandler()
             }
         }
-        
-        // Execute the observer query if it was successfully created.
         if let query = observerQuery {
             healthKitManager.healthStore.execute(query)
         }
     }
 
-    /// Fetches the latest steps for today using a sample query.
-    /// - Parameter completion: A closure that returns the latest step count.
     private func fetchLatestSteps(completion: @escaping (Int) -> Void) {
-        // Ensure the step count quantity type is available.
         guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
             completion(0)
             return
         }
-        // Define the start of the day for the query.
         let startOfDay = Calendar.current.startOfDay(for: Date())
-        // Create a predicate to fetch samples from the start of the day until now.
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: Date(), options: .strictStartDate)
-        
-        // Create a sample query to fetch all step samples for today.
-        let sampleQuery = HKSampleQuery(sampleType: stepType,
-                                        predicate: predicate,
-                                        limit: HKObjectQueryNoLimit,
-                                        sortDescriptors: nil) { _, samples, error in
-            // Ensure that the query returned valid samples without error.
+        let sampleQuery = HKSampleQuery(sampleType: stepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
             guard let samples = samples as? [HKQuantitySample], error == nil else {
                 completion(0)
                 return
             }
-            // Sum the steps from all samples using the .count unit.
             let steps = samples.reduce(0) { sum, sample in
                 sum + Int(sample.quantity.doubleValue(for: .count()))
             }
             completion(steps)
         }
-        
-        // Execute the sample query on the health store.
         healthKitManager.healthStore.execute(sampleQuery)
+    }
+    
+    // MARK: - Core Data Helpers
+
+    private func dateString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        return formatter.string(from: date)
+    }
+
+    private func fetchStepsFromCoreData(for date: Date) -> Int {
+        let fetchRequest: NSFetchRequest<StepsEntry> = StepsEntry.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "dateString == %@", dateString(from: date))
+        do {
+            let entry = try viewContext.fetch(fetchRequest).first
+            return Int(entry?.steps ?? 0)
+        } catch {
+            return 0
+        }
+    }
+
+    private func saveStepsToCoreData(for date: Date, steps: Int) {
+        viewContext.perform {
+            let fetchRequest: NSFetchRequest<StepsEntry> = StepsEntry.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "dateString == %@", self.dateString(from: date))
+            do {
+                let results = try self.viewContext.fetch(fetchRequest)
+                let obj = results.first ?? StepsEntry(context: self.viewContext)
+                obj.dateString = self.dateString(from: date)
+                obj.steps = Int64(steps)
+                try self.viewContext.save()
+                DispatchQueue.main.async {
+                    self.objectWillChange.send()
+                }
+            } catch {
+                // Handle save error if needed
+            }
+        }
     }
 }

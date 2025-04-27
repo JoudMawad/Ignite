@@ -31,5 +31,8 @@ struct FoodListView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .top)
+        .onAppear {
+            viewModel.loadEntries()
+        }
     }
 }

@@ -8,7 +8,7 @@
 import CoreData
 
 // PersistenceController is responsible for setting up and managing the Core Data stack.
-struct PersistenceController {
+final class PersistenceController {
     // A shared instance for easy, global access to the persistence controller.
     static let shared = PersistenceController()
 
@@ -51,8 +51,39 @@ struct PersistenceController {
                 // If there's an error, crash the app with a detailed error message.
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
+            // Seed default foods into the store
+            self.seedPredefinedIfNeeded()
         })
         // Automatically merge changes from parent contexts into the view context.
         container.viewContext.automaticallyMergesChangesFromParent = true
+    }
+    
+    /// Seeds Core Data with predefined foods if the store is empty.
+    private func seedPredefinedIfNeeded() {
+        let viewContext = container.viewContext
+        viewContext.perform {
+            let request: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
+            let count = (try? viewContext.count(for: request)) ?? 0
+            guard count == 0 else { return }
+            for item in PredefinedFoods.foods {
+                let entity = FoodEntity(context: viewContext)
+                entity.id = item.id
+                entity.name = item.name
+                entity.calories = Double(item.calories)
+                entity.protein = item.protein
+                entity.carbs = item.carbs
+                entity.fat = item.fat
+                entity.grams = item.grams
+                entity.mealType = item.mealType
+                entity.date = Date.distantPast
+                entity.isUserAdded = false
+                entity.barcode = item.barcode
+            }
+            do {
+                try viewContext.save()
+            } catch {
+                print("Error seeding predefined foods on viewContext: \(error)")
+            }
+        }
     }
 }

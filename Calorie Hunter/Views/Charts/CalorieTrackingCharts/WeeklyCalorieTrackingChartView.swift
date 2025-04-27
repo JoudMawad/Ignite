@@ -65,10 +65,3 @@ struct WeeklyCalorieChartView: View {
         }
     }
 }
-
-struct WeeklyCalorieChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        WeeklyCalorieChartView(viewModel: FoodViewModel())
-            .preferredColorScheme(.dark)
-    }
-}

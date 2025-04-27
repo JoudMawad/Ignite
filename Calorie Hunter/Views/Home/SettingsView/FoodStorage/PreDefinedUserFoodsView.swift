@@ -1,9 +1,11 @@
 import SwiftUI
+import CoreData
 
 struct PreDefinedFoodRow: View {
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.managedObjectContext) private var context
     var food: FoodItem
-    @ObservedObject var viewModel: UserPreDefinedFoodsViewModel
+    @ObservedObject var viewModel: FoodListViewModel
     var onDelete: (() -> Void)? = nil
     @State private var isExpanded: Bool = false
 
@@ -192,13 +194,22 @@ struct PreDefinedFoodRow: View {
 struct UserPreDefinedFoodsView: View {
     // Adapt UI styling based on the current color scheme.
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.managedObjectContext) private var context
     // View model managing the list of predefined (user-added) food items.
-    @StateObject private var viewModel = UserPreDefinedFoodsViewModel()
+    @StateObject private var viewModel: FoodListViewModel
     // State to store the search text entered by the user.
     @State private var searchText = ""
     @State private var isShowingScanner = false
     @State private var scannedCode: String? = nil
     @State private var foodToEdit: FoodItem? = nil
+
+    init() {
+        _viewModel = StateObject(
+            wrappedValue: FoodListViewModel(
+                context: PersistenceController.shared.container.viewContext
+            )
+        )
+    }
 
     // MARK: - Subviews for body
     private var headerView: some View {
@@ -285,44 +296,5 @@ struct UserPreDefinedFoodsView: View {
                 }
             }
         }
-    }
-}
-
-// MARK: - Preview with Sample Data
-struct UserPreDefinedFoodsView_Previews: PreviewProvider {
-    static var previews: some View {
-        // Create a preview view model with sample data.
-        let previewViewModel = UserPreDefinedFoodsViewModel()
-
-        previewViewModel.foods = [
-            FoodItem(
-                id: UUID(),
-                name: "Apple",
-                calories: 52,
-                protein: 0.3,
-                carbs: 14.0,
-                fat: 0.2,
-                grams: 100,
-                mealType: "Snack",
-                date: Date(),
-                isUserAdded: true
-            ),
-            FoodItem(
-                id: UUID(),
-                name: "Chicken Breast",
-                calories: 165,
-                protein: 31.0,
-                carbs: 0.0,
-                fat: 3.6,
-                grams: 100,
-                mealType: "Lunch",
-                date: Date(),
-                isUserAdded: true
-            )
-        ]
-
-        // Provide the preview view with the view model as an environment object.
-        return UserPreDefinedFoodsView()
-            .environmentObject(previewViewModel)
     }
 }

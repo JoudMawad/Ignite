@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 /// The main home view that presents the user's dashboard, including welcome text, charts,
 /// steps and burned calories cards, water intake, a food list, and a calendar view.
@@ -22,6 +23,8 @@ struct HomeView: View {
     
     /// Accesses the current color scheme for dynamic styling.
     @Environment(\.colorScheme) var colorScheme
+
+    @Environment(\.managedObjectContext) private var context
 
     // MARK: - Local State Objects
     
@@ -205,6 +208,7 @@ struct HomeView: View {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) {
             let addFoodView = AddFoodView(viewModel: viewModel, preselectedMealType: mealType)
+                .environment(\.managedObjectContext, context)
             let hostingController = UIHostingController(rootView: addFoodView)
             keyWindow.rootViewController?.present(hostingController, animated: true, completion: nil)
         }

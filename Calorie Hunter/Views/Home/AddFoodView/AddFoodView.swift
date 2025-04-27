@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 struct AddFoodView: View {
     // MARK: - Dependencies
@@ -30,37 +31,55 @@ struct AddFoodView: View {
     @State private var viewHeight: CGFloat = 0
     @State private var searchTask: Task<(), Never>? = nil
 
-    // MARK: - Initialization
-    init(viewModel: FoodViewModel, preselectedMealType: String) {
-        self.viewModel = viewModel
-        self.preselectedMealType = preselectedMealType
-    }
+    @Environment(\.managedObjectContext) private var context
+    @FetchRequest(
+      sortDescriptors: [NSSortDescriptor(keyPath: \FoodEntity.name, ascending: true)],
+      animation: .default
+    )
+    private var foodEntities: FetchedResults<FoodEntity>
 
     // MARK: - Computed Collections
+    /// All available foods (predefined + user-added) fetched from Core Data.
     private var combinedFoods: [FoodItem] {
-        PredefinedFoods.foods + PreDefinedUserFoods.shared.foods
+        foodEntities.map { entity in
+            FoodItem(
+                id: entity.id ?? UUID(),
+                name: entity.name ?? "",
+                calories: Int(entity.calories),
+                protein: entity.protein,
+                carbs: entity.carbs,
+                fat: entity.fat,
+                grams: entity.grams,
+                mealType: entity.mealType ?? "",
+                date: entity.date ?? Date(),
+                isUserAdded: entity.isUserAdded,
+                barcode: entity.barcode
+            )
+        }
     }
+
+    // MARK: - Filtered Foods
+    /// Applies search text, scanned code, and usage counts to the combined foods list.
     private var filteredFoods: [FoodItem] {
-        // Determine base list
+        // Determine the base list
         let baseList: [FoodItem]
         if let product = viewModel.currentProduct {
-            // If this product was just saved locally, skip the API result
-            if !combinedFoods.contains(where: { $0.barcode == product.barcode }) {
-                baseList = [product]
-            } else {
-                baseList = [product]
-            }
+            // Show the recently fetched product
+            baseList = [product]
         } else if let code = scannedCode, !code.isEmpty,
                   let local = viewModel.findFoodByBarcode(code) {
+            // Show local match for scanned barcode
             baseList = [local]
         } else if !searchText.isEmpty {
+            // Filter by search text
             baseList = combinedFoods.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText)
             }
         } else {
+            // Default to full list
             baseList = combinedFoods
         }
-        // Sort by usage count descending, then by name
+        // Sort by usage count descending, then name ascending
         return baseList.sorted {
             let countA = usageCounts[$0.name] ?? 0
             let countB = usageCounts[$1.name] ?? 0
@@ -130,6 +149,7 @@ VStack(spacing: 0) {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .padding()
+        
     }
 }
 .background(
@@ -195,7 +215,10 @@ VStack(spacing: 0) {
                         .ignoresSafeArea()
                         .onTapGesture { dismissManualEntry() }
 
-                    ManualEntryView(viewModel: viewModel, scannedBarcode: scannedCode, onSuccessfulDismiss: {
+                    ManualEntryView(
+                        viewModel: FoodListViewModel(context: context),
+                        scannedBarcode: scannedCode,
+                        onSuccessfulDismiss: {
                         dismissManualEntry()
                         scannedCode = nil
                     })
@@ -264,6 +287,9 @@ VStack(spacing: 0) {
 
 struct AddFoodView_Previews: PreviewProvider {
     static var previews: some View {
-        AddFoodView(viewModel: FoodViewModel(), preselectedMealType: "Breakfast")
+        AddFoodView(
+            viewModel: FoodViewModel(context: PersistenceController.shared.container.viewContext),
+            preselectedMealType: "Breakfast"
+        )
     }
 }

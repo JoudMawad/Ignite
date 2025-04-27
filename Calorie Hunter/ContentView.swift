@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 /// The main container view of the app that houses the tab view.
 /// This view sets up the necessary view models and customizes the tab bar appearance.
@@ -6,9 +7,9 @@ struct ContentView: View {
     // MARK: - State Objects
     
     /// View model managing food-related data.
-    @StateObject var viewModel = FoodViewModel()
+    @StateObject var viewModel: FoodViewModel
     /// View model tracking steps.
-    @StateObject var stepsviewModel = StepsViewModel()  // Named with a lower-case 'v' to match HomeView.
+    @StateObject var stepsviewModel = StepsViewModel()  
     /// View model tracking burned calories.
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
     /// View model containing user profile information.
@@ -17,6 +18,10 @@ struct ContentView: View {
     // MARK: - Initialization
     
     init() {
+        // Initialize the food view model with Core Data context
+        let pc = PersistenceController.shared
+        _viewModel = StateObject(wrappedValue: FoodViewModel(context: pc.container.viewContext))
+        
         // Configure the UITabBarAppearance to remove the default shadow and blur.
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -42,18 +47,19 @@ struct ContentView: View {
                 // MARK: Home Page
                 HomeView(
                     viewModel: viewModel,
-                    stepsViewModel: stepsviewModel,  // Correct parameter label.
+                    stepsViewModel: stepsviewModel,
                     burnedCaloriesViewModel: burnedCaloriesViewModel,
                     userProfileViewModel: userProfileViewModel
                 )
+                .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
                 .tabItem {
                     Label("", systemImage: "house.fill")
                 }
                 
                 // MARK: Charts Page
                 ChartsView(
-                    foodViewModel: FoodViewModel(),  // New instance for the charts view.
-                    userProfileViewModel: UserProfileViewModel()  // New instance for charts.
+                    foodViewModel: viewModel,
+                    userProfileViewModel: userProfileViewModel
                 )
                 .tabItem {
                     Label("", systemImage: "chart.line.uptrend.xyaxis")

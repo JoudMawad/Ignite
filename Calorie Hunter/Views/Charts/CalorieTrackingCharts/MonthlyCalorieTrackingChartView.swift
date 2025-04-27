@@ -54,10 +54,3 @@ struct MonthlyCalorieChartView: View {
         }
     }
 }
-
-struct MonthlyCalorieChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        MonthlyCalorieChartView(viewModel: FoodViewModel())
-            .preferredColorScheme(.dark)
-    }
-}

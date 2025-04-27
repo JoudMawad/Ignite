@@ -1,6 +1,7 @@
 // FoodViewModel.swift
 
 import Foundation
+import CoreData
 
 /// FoodViewModel manages a collection of FoodItem objects, including:
 /// - adding/searching by barcode
@@ -10,10 +11,7 @@ import Foundation
 class FoodViewModel: ObservableObject {
     // MARK: - Published Properties
 
-    /// All recorded food items; saved to UserDefaults on change.
-    @Published var foodItems: [FoodItem] = [] {
-        didSet { saveToUserDefaults() }
-    }
+    @Published var foodItems: [FoodItem] = []
 
     /// Today’s total calories.
     @Published var totalCalories: Int = 0
@@ -33,91 +31,80 @@ class FoodViewModel: ObservableObject {
 
     /// Handles history and midnight reset.
     private let calorieHistoryManager = CalorieHistoryManager()
+    private let context: NSManagedObjectContext
 
     // MARK: - Initialization
 
-    init() {
-        loadFromUserDefaults()
+    init(context: NSManagedObjectContext) {
+        self.context = context
+        loadEntries()
         calorieHistoryManager.checkForMidnightReset(foodItems: foodItems)
     }
 
-    // MARK: - Adding Food
-
-    /// Adds a new user‐entered food item, optionally with a scanned barcode.
-    func addFood(
-        name: String,
-        calories: Int,
-        protein: Double,
-        carbs: Double,
-        fat: Double,
-        grams: Double,
-        mealType: String,
-        barcode: String? = nil
-    ) {
-        let newFood = FoodItem(
-            name: name,
-            calories: calories,
-            protein: protein,
-            carbs: carbs,
-            fat: fat,
-            grams: grams,
-            mealType: mealType,
-            date: Date(),
-            isUserAdded: true,
-            barcode: barcode
-        )
-        foodItems.append(newFood)
-        updateTotals()
-    }
-
-    /// Adds a predefined or user‐saved food, scaling nutrition to the grams consumed.
-    /// Carries forward any existing barcode on the source FoodItem.
-    func addPredefinedFood(
-        food: FoodItem,
-        gramsConsumed: Double,
-        mealType: String
-    ) {
-        let adjustedCalories = Int((Double(food.calories) * gramsConsumed) / 100.0)
-        let adjustedProtein  = (food.protein * gramsConsumed) / 100.0
-        let adjustedCarbs    = (food.carbs * gramsConsumed) / 100.0
-        let adjustedFat      = (food.fat * gramsConsumed) / 100.0
-
-        let newFood = FoodItem(
-            name: food.name,
-            calories: adjustedCalories,
-            protein: adjustedProtein,
-            carbs: adjustedCarbs,
-            fat: adjustedFat,
-            grams: gramsConsumed,
-            mealType: mealType,
-            date: Calendar.current.startOfDay(for: Date()),
-            isUserAdded: false,
-            barcode: food.barcode
-        )
-        foodItems.append(newFood)
-        updateTotals()
-    }
-
-    /// Persists a new custom “predefined” food so it appears in your Saved list.
-    func addUserPredefinedFood(food: FoodItem) {
-        PreDefinedUserFoods.shared.addFood(food)
-    }
-
-    // MARK: - Removing Food
-
-    /// Removes a food entry by its UUID and updates totals.
-    func removeFood(by id: UUID) {
-        foodItems.removeAll { $0.id == id }
-        updateTotals()
+    /// Logs a consumption event for a given FoodItem.
+    func logConsumption(of foodItem: FoodItem, grams: Double, mealType: String) {
+        // 1. Find or seed the catalog item
+        let foodReq: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
+        foodReq.predicate = NSPredicate(format: "id == %@", foodItem.id as CVarArg)
+        let foodEntity: FoodEntity
+        if let existing = (try? context.fetch(foodReq))?.first {
+            foodEntity = existing
+        } else {
+            foodEntity = FoodEntity(context: context)
+            foodEntity.id = foodItem.id
+            foodEntity.name = foodItem.name
+            foodEntity.calories = Double(foodItem.calories)
+            foodEntity.protein = foodItem.protein
+            foodEntity.carbs = foodItem.carbs
+            foodEntity.fat = foodItem.fat
+            foodEntity.grams = foodItem.grams
+            foodEntity.mealType = foodItem.mealType
+            foodEntity.date = Date.distantPast
+            foodEntity.isUserAdded = false
+            foodEntity.barcode = foodItem.barcode
+        }
+    
+        // 2. Create a ConsumptionEntity entry
+        let entry = ConsumptionEntity(context: context)
+        entry.id = UUID()
+        entry.food = foodEntity
+        entry.dateEaten = Date()
+        entry.gramsConsumed = grams
+        entry.mealType = mealType
+    
+        // 3. Save and reload diary entries
+        do {
+            try context.save()
+            loadEntries()
+        } catch {
+            print("Error logging consumption: \(error)")
+        }
     }
 
     // MARK: - Barcode Lookup
 
+    // Catalog lookup remains unchanged; no edits needed.
     /// Searches both built-in and user-saved foods for a matching barcode.
     /// - Returns: the first FoodItem with .barcode == code, or nil.
     func findFoodByBarcode(_ code: String) -> FoodItem? {
-        let allFoods = PredefinedFoods.foods + PreDefinedUserFoods.shared.foods
-        return allFoods.first { $0.barcode == code }
+        let request: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "barcode == %@", code)
+        if let e = (try? context.fetch(request))?.first {
+            return FoodItem(
+                id: e.id ?? UUID(),
+                name: e.name ?? "",
+                calories: Int(e.calories),
+                protein: e.protein,
+                carbs: e.carbs,
+                fat: e.fat,
+                grams: e.grams,
+                mealType: e.mealType ?? "",
+                date: e.date ?? Date(),
+                isUserAdded: e.isUserAdded,
+                barcode: e.barcode
+            )
+        }
+        return nil
     }
 
     /// Fetch product data from Open Food Facts API for the given barcode
@@ -148,7 +135,7 @@ class FoodViewModel: ObservableObject {
                 )
                 self.currentProduct = food
                 // Persist fetched product into the user-defined foods list
-                self.addUserPredefinedFood(food: food)
+                self.logConsumption(of: food, grams: 100, mealType: "Scanned")
                 self.errorMessage = nil
             } else {
                 self.currentProduct = nil
@@ -176,7 +163,6 @@ class FoodViewModel: ObservableObject {
             self.totalFat      = todayFoods.reduce(0) { $0 + $1.fat }
 
             self.objectWillChange.send()
-            self.saveToUserDefaults()
         }
     }
 
@@ -197,22 +183,56 @@ class FoodViewModel: ObservableObject {
     func totalCaloriesForPeriod(days: Int) -> [(date: String, calories: Int)] {
         calorieHistoryManager.totalCaloriesForPeriod(days: days)
     }
-
-    // MARK: - Persistence
-
-    /// Saves the foodItems array to UserDefaults.
-    private func saveToUserDefaults() {
-        if let encoded = try? JSONEncoder().encode(foodItems) {
-            UserDefaults.standard.set(encoded, forKey: "foodItems")
+    
+    /// Removes a food entry from today's diary by its UUID (consumption entry).
+    func removeFood(by id: UUID) {
+        let request: NSFetchRequest<ConsumptionEntity> = ConsumptionEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        do {
+            let entries = try context.fetch(request)
+            for entry in entries {
+                context.delete(entry)
+            }
+            try context.save()
+            loadEntries()
+        } catch {
+            print("Error deleting food diary entry: \(error)")
         }
     }
 
-    /// Loads saved foodItems from UserDefaults and updates totals.
-    private func loadFromUserDefaults() {
-        if let data = UserDefaults.standard.data(forKey: "foodItems"),
-           let decoded = try? JSONDecoder().decode([FoodItem].self, from: data) {
-            self.foodItems = decoded
+    /// Loads today’s consumption entries from Core Data.
+    func loadEntries() {
+        let request: NSFetchRequest<ConsumptionEntity> = ConsumptionEntity.fetchRequest()
+        // Only today’s entries
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        request.predicate = NSPredicate(
+            format: "dateEaten >= %@ AND dateEaten < %@",
+            start as NSDate, end as NSDate
+        )
+        do {
+            let entries = try context.fetch(request)
+            self.foodItems = entries.compactMap { entry in
+                guard let fe = entry.food else { return nil }
+                let factor = entry.gramsConsumed / 100.0
+                return FoodItem(
+                    id: entry.id ?? UUID(),
+                    name: fe.name ?? "",
+                    calories: Int(fe.calories * factor),
+                    protein: fe.protein * factor,
+                    carbs: fe.carbs * factor,
+                    fat: fe.fat * factor,
+                    grams: entry.gramsConsumed,
+                    mealType: entry.mealType ?? "",
+                    date: entry.dateEaten ?? Date(),
+                    isUserAdded: true,
+                    barcode: fe.barcode
+                )
+            }
             updateTotals()
+        } catch {
+            print("Error loading diary entries: \(error)")
         }
     }
 }

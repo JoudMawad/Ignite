@@ -54,10 +54,3 @@ struct YearlyCalorieChartView: View {
         }
     }
 }
-
-struct YearlyCalorieChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        YearlyCalorieChartView(viewModel: FoodViewModel())
-            .preferredColorScheme(.dark)
-    }
-}

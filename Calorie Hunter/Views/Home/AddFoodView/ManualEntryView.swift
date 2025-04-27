@@ -1,8 +1,9 @@
 import SwiftUI
+import CoreData
 
 struct ManualEntryView: View {
     // MARK: - Dependencies
-    @ObservedObject var viewModel: FoodViewModel
+    @ObservedObject var viewModel: FoodListViewModel
     @Environment(\.colorScheme) var colorScheme
     var onSuccessfulDismiss: () -> Void
 
@@ -26,10 +27,12 @@ struct ManualEntryView: View {
     @State private var successMessage: String? = nil
     @State private var isShowingScanner: Bool = false
 
+    @Environment(\.managedObjectContext) private var context
+
     let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
     
     init(
-            viewModel: FoodViewModel,
+            viewModel: FoodListViewModel,
             scannedBarcode: String? = nil,
             onSuccessfulDismiss: @escaping () -> Void
         ) {
@@ -161,9 +164,8 @@ struct ManualEntryView: View {
             errorMessages.append("Grams must be exactly 100.")
             return
         }
-        // 3) Duplicate name check
-        let allFoods = PredefinedFoods.foods + PreDefinedUserFoods.shared.foods
-        if allFoods.contains(where: { $0.name.lowercased() == name.lowercased() }) {
+        // 3) Duplicate name check against Core Data
+        if viewModel.foods.contains(where: { $0.name.lowercased() == name.lowercased() }) {
             errorMessages.append("A food with this name already exists.")
             return
         }
@@ -178,7 +180,7 @@ struct ManualEntryView: View {
             mealType: mealType,
             barcode: barcodeCode
         )
-        viewModel.addUserPredefinedFood(food: newFood)
+        viewModel.addFood(newFood)
         successMessage = "Added to storage!"
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             onSuccessfulDismiss()
@@ -261,8 +263,3 @@ extension View {
     }
 }
 #endif
-
-// MARK: - Preview
-#Preview {
-    ManualEntryView(viewModel: FoodViewModel(), onSuccessfulDismiss: {})
-}

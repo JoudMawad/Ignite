@@ -58,8 +58,8 @@ struct FoodRowView: View {
                     guard let gramsValue = Double(gramsInput.replacingOccurrences(of: ",", with: ".")) else {
                         return
                     }
-                    // Add the predefined food using the passed mealType.
-                    viewModel.addPredefinedFood(food: food, gramsConsumed: gramsValue, mealType: mealType)
+                    // Log the food consumption using the new diary method.
+                    viewModel.logConsumption(of: food, grams: gramsValue, mealType: mealType)
                     
                     // Collapse the expanded section and reset the input.
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.1)) {

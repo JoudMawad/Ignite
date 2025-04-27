@@ -148,22 +148,3 @@ struct InfoRow: View {
         }
     }
 }
-
-struct DayDetailCardView_Previews: PreviewProvider {
-    static var previews: some View {
-        let profileVM = UserProfileViewModel()
-        let burnedCaloriesVM = BurnedCaloriesViewModel()
-        let waterVM = WaterViewModel(container: PersistenceController.shared.container)
-        let foodVM = FoodViewModel()
-        
-        NavigationView {
-            DayDetailCardView(
-                date: Date(),
-                userProfileViewModel: profileVM,
-                burnedCaloriesViewModel: burnedCaloriesVM,
-                waterViewModel: waterVM,
-                foodViewModel: foodVM
-            )
-        }
-    }
-}

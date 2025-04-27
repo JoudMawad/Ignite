@@ -115,9 +115,3 @@ struct ChartsView: View {
         }
     }
 }
-
-// MARK: - Preview
-#Preview {
-    ChartsView(foodViewModel: FoodViewModel(),
-               userProfileViewModel: UserProfileViewModel())
-}
