@@ -44,6 +44,23 @@ class CalorieHistoryManager {
             return 0
         }
     }
+    
+    /// Sum up every consumption entry ever saved.
+    func totalLifetimeCalories() -> Int {
+      let req: NSFetchRequest<ConsumptionEntity> = ConsumptionEntity.fetchRequest()
+      do {
+        let entries = try context.fetch(req)
+        return entries.reduce(0) { sum, entry in
+          guard let per100kcal = entry.food?.calories else { return sum }
+          // Calculate calories based on gramsConsumed
+          let kcal = Int(per100kcal * (entry.gramsConsumed / 100.0))
+          return sum + kcal
+        }
+      } catch {
+        print("Error fetching lifetime consumption:", error)
+        return 0
+      }
+    }
 
     func totalCaloriesForPeriod(days: Int) -> [(date: String, calories: Int)] {
         var result: [(String, Int)] = []

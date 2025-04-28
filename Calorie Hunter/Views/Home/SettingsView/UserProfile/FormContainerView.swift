@@ -27,8 +27,7 @@ struct FormContainerView: View {
     
     /// Computes the total calories tracked over a long period (3000 days).
     var totalCaloriesTracked: Int {
-        let period = calorieManager.totalCaloriesForPeriod(days: 3000)
-        return period.reduce(0) { $0 + $1.calories }
+      calorieManager.totalLifetimeCalories()
     }
     
     // MARK: - Weight Goal Achievement Calculation

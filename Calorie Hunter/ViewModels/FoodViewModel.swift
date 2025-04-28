@@ -76,6 +76,7 @@ class FoodViewModel: ObservableObject {
         do {
             try context.save()
             loadEntries()
+            objectWillChange.send()
         } catch {
             print("Error logging consumption: \(error)")
         }
@@ -195,6 +196,7 @@ class FoodViewModel: ObservableObject {
             }
             try context.save()
             loadEntries()
+            objectWillChange.send()
         } catch {
             print("Error deleting food diary entry: \(error)")
         }
