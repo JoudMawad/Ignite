@@ -23,9 +23,11 @@ final class HealthKitManager {
         
         let workoutType = HKObjectType.workoutType()
         
+        // Grant permission to write workouts, active energy, and body mass (weight)
         let typesToShare: Set<HKSampleType> = [
             workoutType,
-            activeEnergyType
+            activeEnergyType,
+            bodyMassType
         ]
         let typesToRead: Set<HKObjectType> = [
             bodyMassType,

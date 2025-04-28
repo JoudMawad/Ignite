@@ -23,38 +23,16 @@ class WeightHistoryManager: ObservableObject {
     ///   - date: The date for which the weight is recorded.
     ///   - weight: The weight value to save.
     func saveWeight(for date: Date, weight: Double) {
-        // Get the start of the day for the given date.
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        // Calculate the end of the day by adding one day to the start.
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return }
-        
-        // Set up a fetch request to see if there's already an entry for this day.
-        let fetchRequest: NSFetchRequest<WeightEntry> = WeightEntry.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
-        
-        do {
-            // Try to fetch any existing weight entries for that day.
-            let results = try context.fetch(fetchRequest)
-            if let entry = results.first {
-                // If an entry exists, update its weight.
-                entry.weight = weight
-            } else {
-                // Otherwise, create a new weight entry.
-                let newEntry = WeightEntry(context: context)
-                newEntry.date = startOfDay
-                newEntry.weight = weight
+
+        // 1) Write to HealthKit
+        WeightManager().saveWeightSample(weight, date: startOfDay) { success, error in
+            if let error = error {
+                print("HealthKit save error: \(error)")
             }
-            // Save changes to Core Data.
-            try context.save()
-            
-            // Notify any observers (like SwiftUI views) about the change.
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
-            }
-        } catch {
-            // Print an error message if something goes wrong.
-            print("Failed to save weight: \(error)")
+            // 2) Upsert Core Data
+            self.upsertCoreDataWeight(on: startOfDay, weight: weight)
         }
     }
     
@@ -63,16 +41,22 @@ class WeightHistoryManager: ObservableObject {
     /// Imports historical weight data from HealthKit.
     /// - Parameter weights: An array of tuples, each containing a date string and a weight value.
     func importHistoricalWeights(_ weights: [(date: String, weight: Double)]) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        // Loop through each weight entry.
-        for entry in weights {
-            // Convert the date string to a Date object.
-            if let date = formatter.date(from: entry.date) {
-                // Save the weight for that date.
-                self.saveWeight(for: date, weight: entry.weight)
-            }
+      let formatter = DateFormatter()
+      formatter.dateFormat = "yyyy-MM-dd"
+
+      for entry in weights {
+        guard let date = formatter.date(from: entry.date) else { continue }
+
+        // See if we already have a record for that exact day
+        let existing = WeightHistoryManager.shared
+                          .weightForPeriod(days: 365)
+                          .first { $0.date == entry.date }
+
+        // Only write if it’s missing or the value changed
+        if existing == nil || existing!.weight != entry.weight {
+          saveWeight(for: date, weight: entry.weight)
         }
+      }
     }
     
     // MARK: - Fetch Weight Entries
@@ -129,6 +113,33 @@ class WeightHistoryManager: ObservableObject {
             DispatchQueue.main.async {
                 self.importHistoricalWeights(historicalWeights)
             }
+        }
+    }
+    
+    /// Upserts a WeightEntry in Core Data for a given day.
+    private func upsertCoreDataWeight(on day: Date, weight: Double) {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: day)
+        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+
+        let fetchRequest: NSFetchRequest<WeightEntry> = WeightEntry.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "date >= %@ AND date < %@", start as NSDate, end as NSDate)
+
+        do {
+            let results = try context.fetch(fetchRequest)
+            let entry = results.first ?? WeightEntry(context: context)
+            entry.date = start
+            entry.weight = weight
+
+            // Ensure local changes trump any external ones
+            context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+            try context.save()
+
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+            }
+        } catch {
+            print("Failed to upsert WeightEntry: \(error)")
         }
     }
 }

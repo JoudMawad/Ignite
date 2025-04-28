@@ -116,4 +116,28 @@ final class WeightManager {
         // Execute the observer query.
         healthStore.execute(query)
     }
+    
+    func saveWeightSample(_ weight: Double,
+                            date: Date,
+                            completion: @escaping (Bool, Error?) -> Void) {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
+          completion(false, nil); return
+        }
+        // 1. Build the HKQuantity & Sample
+        let qty = HKQuantity(unit: HKUnit.gramUnit(with: .kilo), doubleValue: weight)
+        let sample = HKQuantitySample(
+          type: type,
+          quantity: qty,
+          start: date,
+          end: date,
+          metadata: nil
+        )
+
+        // 2. Save to HealthKit
+        healthStore.save(sample) { success, error in
+          DispatchQueue.main.async {
+            completion(success, error)
+          }
+        }
+      }
 }

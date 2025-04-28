@@ -141,25 +141,24 @@ class UserProfileViewModel: ObservableObject {
             if let existingProfile = profiles.first {
                 DispatchQueue.main.async {
                     self.profile = existingProfile
+                    // goals
                     self.dailyCalorieGoalValue = Int(existingProfile.dailyCalorieGoal)
+                    // sync weights into your @Published state
+                    self.startWeightValue   = existingProfile.startWeight
+                    self.currentWeightValue = existingProfile.currentWeight
+                    self.goalWeightValue    = existingProfile.goalWeight
                 }
             } else {
-                // No profile exists: create a new one with default values.
                 let newProfile = UserProfile(context: context)
-                newProfile.name = ""
-                newProfile.gender = ""
-                newProfile.age = 0
-                newProfile.height = 0
-                newProfile.dailyCalorieGoal = 1500
-                newProfile.dailyStepsGoal = 0
-                newProfile.startWeight = 0.0
-                newProfile.currentWeight = 0.0
-                newProfile.goalWeight = 0.0
-                newProfile.profileImageData = nil
+                // ... your default assignments ...
                 try context.save()
                 DispatchQueue.main.async {
                     self.profile = newProfile
                     self.dailyCalorieGoalValue = 1500
+                    // initialize the weight values, too
+                    self.startWeightValue   = newProfile.startWeight
+                    self.currentWeightValue = newProfile.currentWeight
+                    self.goalWeightValue    = newProfile.goalWeight
                 }
             }
         } catch {
@@ -276,14 +275,17 @@ class UserProfileViewModel: ObservableObject {
     }
 
     /// Returns and sets the user's current weight.
+    /// Writing here updates the profile, Core Data, and HealthKit.
     var currentWeight: Double {
-        get { currentWeightValue }
-        set {
-            objectWillChange.send()
-            currentWeightValue = newValue
-            profile?.currentWeight = newValue
-            saveProfile()
-        }
+      get { currentWeightValue }
+      set {
+        // Round to 2 decimal places
+        let rounded = (newValue * 100).rounded() / 100
+        guard rounded != currentWeightValue else { return }
+        // Push through your existing helper which writes to CoreData + HealthKit
+        currentWeightValue = rounded
+        updateCurrentWeight(rounded)
+      }
     }
 
     /// Returns and sets the user's goal weight.
