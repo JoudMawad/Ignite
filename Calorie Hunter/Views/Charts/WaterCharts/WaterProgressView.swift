@@ -7,9 +7,9 @@ struct WaterProgressView: View {
     /// The user's daily water goal in liters.
     var dailyGoal: Double
     
-    // Compute the water amount for the current day.
+    // Compute the water amount for the current day, using the view model's published value.
     private var currentWater: Double {
-        waterViewModel.waterAmount(for: Date())
+        waterViewModel.currentWaterAmount
     }
     
     // Calculate the progress as a fraction of current water vs. the daily goal.

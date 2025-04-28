@@ -1,6 +1,7 @@
 import Foundation
 import CoreData
 import Combine
+import HealthKit
 
 // ViewModel responsible for managing and updating water intake data using Core Data.
 // It conforms to ObservableObject to enable SwiftUI views to automatically update when changes occur.
@@ -9,11 +10,33 @@ class WaterViewModel: ObservableObject {
     private let container: NSPersistentContainer
     // Published array of DailyWaterIntakeEntity objects that represents water intake records.
     @Published var dailyIntakes: [DailyWaterIntakeEntity] = []
+    /// Today’s total water intake for UI binding
+    @Published var currentWaterAmount: Double = 0.0
     
     // Initializer that accepts a Core Data container and triggers an initial fetch of data.
     init(container: NSPersistentContainer) {
         self.container = container
         fetchDailyIntakes()
+        // Seed today’s total from Core Data
+        currentWaterAmount = waterAmount(for: Date())
+        // Authorize & import from HealthKit
+        HealthKitManager.shared.requestAuthorization { success, _ in
+            guard success else { return }
+            HealthKitManager.shared.enableBackgroundDeliveryForAll()
+            // Fetch last 7 days of daily totals
+            let end = Date()
+            let start = Calendar.current.date(byAdding: .day, value: -6, to: end)!
+            HealthKitManager.shared.fetchDailyWater(startDate: start, endDate: end) { samples in
+                DispatchQueue.main.async {
+                    let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"
+                    for (dateStr, amount) in samples {
+                        if let d = df.date(from: dateStr) {
+                            self.setWaterAmount(to: amount, for: d)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     // MARK: - Data Fetching
@@ -27,6 +50,8 @@ class WaterViewModel: ObservableObject {
             // Ensure that UI updates occur on the main thread.
             DispatchQueue.main.async {
                 self.dailyIntakes = entries
+                // Update today’s total for the UI
+                self.currentWaterAmount = self.waterAmount(for: Date())
             }
         } catch {
             print("Error fetching daily intakes: \(error)")
@@ -79,6 +104,7 @@ class WaterViewModel: ObservableObject {
                 // After saving, refresh the dailyIntakes to reflect the changes in the UI.
                 DispatchQueue.main.async {
                     self.fetchDailyIntakes()
+                    // Removed HealthKit save for total water here.
                 }
             } catch {
                 print("Error setting water intake: \(error)")
@@ -117,6 +143,13 @@ class WaterViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.fetchDailyIntakes()
                     print("Saved water intake: \(self.waterAmount(for: date))")
+                    // Write only the incremental delta to HealthKit
+                    let deltaLiters = delta
+                    HealthKitManager.shared.saveWaterSample(deltaLiters, date: Date()) { success, error in
+                        if let error = error {
+                            print("HealthKit save error:", error)
+                        }
+                    }
                 }
             } catch {
                 print("Error updating water intake: \(error)")

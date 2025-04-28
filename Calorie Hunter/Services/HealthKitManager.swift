@@ -12,10 +12,11 @@ final class HealthKitManager {
     /// Requests authorization from the user to read key HealthKit data types.
     /// - Parameter completion: A closure that receives a success flag and an optional error.
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        // Define the data types we want to read: body mass, step count, and active energy burned.
+        // Define the data types we want to read: body mass, step count, active energy burned, and dietary water.
         guard let bodyMassType = HKObjectType.quantityType(forIdentifier: .bodyMass),
               let stepType = HKObjectType.quantityType(forIdentifier: .stepCount),
-              let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
+              let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+              let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
             // If any of the required types are not available, complete with false.
             completion(false, nil)
             return
@@ -23,17 +24,19 @@ final class HealthKitManager {
         
         let workoutType = HKObjectType.workoutType()
         
-        // Grant permission to write workouts, active energy, and body mass (weight)
+        // Grant permission to write workouts, active energy, body mass (weight), and water
         let typesToShare: Set<HKSampleType> = [
             workoutType,
             activeEnergyType,
-            bodyMassType
+            bodyMassType,
+            waterType
         ]
         let typesToRead: Set<HKObjectType> = [
             bodyMassType,
             stepType,
             activeEnergyType,
-            workoutType
+            workoutType,
+            waterType
         ]
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             completion(success, error)
@@ -47,6 +50,8 @@ final class HealthKitManager {
         enableBackgroundDelivery(for: .activeEnergyBurned)
         // Enable background delivery for step count data.
         enableBackgroundDelivery(for: .stepCount)
+        // Enable background delivery for Water data.
+        enableBackgroundDelivery(for: .dietaryWater)
     }
     
     /// Deletes all workout samples between two dates from HealthKit.
@@ -173,5 +178,51 @@ final class HealthKitManager {
                 }
             }
         }
+    }
+    /// Writes a water intake sample (in liters) to HealthKit, appending a new sample for each call.
+    func saveWaterSample(_ liters: Double, date: Date, completion: @escaping (Bool, Error?) -> Void) {
+        guard let waterType = HKQuantityType.quantityType(forIdentifier: .dietaryWater) else {
+            completion(false, nil)
+            return
+        }
+        let quantity = HKQuantity(unit: .liter(), doubleValue: liters)
+        let sample = HKQuantitySample(type: waterType,
+                                      quantity: quantity,
+                                      start: date,
+                                      end: date)
+        healthStore.save(sample) { success, error in
+            DispatchQueue.main.async {
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Fetches daily total water intake between two dates.
+    func fetchDailyWater(startDate: Date, endDate: Date, completion: @escaping ([(date: String, amount: Double)]) -> Void) {
+        guard let waterType = HKQuantityType.quantityType(forIdentifier: .dietaryWater) else {
+            completion([])
+            return
+        }
+        let interval = DateComponents(day: 1)
+        let anchorDate = Calendar.current.startOfDay(for: startDate)
+        let query = HKStatisticsCollectionQuery(
+            quantityType: waterType,
+            quantitySamplePredicate: nil,
+            options: .cumulativeSum,
+            anchorDate: anchorDate,
+            intervalComponents: interval
+        )
+        query.initialResultsHandler = { _, results, _ in
+            var data: [(String, Double)] = []
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            results?.enumerateStatistics(from: startDate, to: endDate) { statistics, _ in
+                let dateStr = formatter.string(from: statistics.startDate)
+                let amount = statistics.sumQuantity()?.doubleValue(for: .liter()) ?? 0
+                data.append((dateStr, amount))
+            }
+            DispatchQueue.main.async { completion(data) }
+        }
+        healthStore.execute(query)
     }
 }
