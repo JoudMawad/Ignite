@@ -96,8 +96,7 @@ struct HomeView: View {
                         userProfileViewModel: userProfileViewModel,
                         stepsViewModel: stepsViewModel,
                         burnedCaloriesViewModel: burnedCaloriesViewModel,
-                        waterViewModel: waterViewModel,
-                        foodViewModel: viewModel
+                        waterViewModel: waterViewModel
                     )
                     
                 }

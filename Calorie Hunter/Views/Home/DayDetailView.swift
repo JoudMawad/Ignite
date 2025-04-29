@@ -1,9 +1,38 @@
+
 import SwiftUI
+import CoreData
+
+// MARK: - Additional Views
 
 /// A detailed day view card that displays information for a selected day.
 /// The card shows the full date along with nutritional and activity data,
 /// and it features an animated appearance with scaling and blur effects.
 struct DayDetailCardView: View {
+    // MARK: - Explicit Initializer
+    init(date: Date,
+         userProfileViewModel: UserProfileViewModel,
+         burnedCaloriesViewModel: BurnedCaloriesViewModel,
+         waterViewModel: WaterViewModel,
+         context: NSManagedObjectContext) {
+        self.date = date
+        self.userProfileViewModel = userProfileViewModel
+        self.burnedCaloriesViewModel = burnedCaloriesViewModel
+        self.waterViewModel = waterViewModel
+        _dateFoodViewModel = StateObject(wrappedValue: DateFoodViewModel(date: date, context: context))
+    }
+    // MARK: - Static Properties
+    
+    private static let isoFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+    private static let displayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        return f
+    }()
+    
     // MARK: - Input Properties
     
     /// The specific date for which to display detailed information.
@@ -18,29 +47,20 @@ struct DayDetailCardView: View {
     /// The view model that tracks water intake.
     @ObservedObject var waterViewModel: WaterViewModel
     
-    /// The view model that manages food-related data.
-    @ObservedObject var foodViewModel: FoodViewModel
 
     // MARK: - Environment
     
     /// Access the current color scheme to adjust styling dynamically.
     @Environment(\.colorScheme) var colorScheme
-    
-    // MARK: - Animation State
-    
-    /// Starting scale for the card animation.
-    @State private var cardScale: CGFloat = 0.3
-    
-    /// Starting blur for the card animation.
-    @State private var cardBlur: CGFloat = 10.0
+    @Environment(\.managedObjectContext) private var context
+    @State private var showContent: Bool = false
+    @StateObject private var dateFoodViewModel: DateFoodViewModel
 
     // MARK: - Computed Properties
     
     /// Formats the given date as a string ("yyyy-MM-dd") for history lookups.
     private var formattedDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        Self.isoFormatter.string(from: date)
     }
     
     /// Retrieves the burned calories for the given date from history.
@@ -69,50 +89,75 @@ struct DayDetailCardView: View {
         return String(format: "%.1f L", waterAmount)
     }
     
-    /// Returns a formatted string for the total calories consumed on the given date.
-    private var caloriesText: String {
-        return "\(foodViewModel.totalCaloriesForDate(date)) kcal"
+    // caloriesText is now replaced by values from dateFoodViewModel.
+
+    // MARK: - Net Calorie Calculations
+    /// Numeric calories consumed on this date.
+    private var consumedCaloriesValue: Double {
+        Double(dateFoodViewModel.totalCalories)
+    }
+    /// Numeric burned calories for this date.
+    private var burnedCaloriesValue: Double {
+        if let historyValue = burnedCaloriesForDate {
+            return historyValue
+        } else if Calendar.current.isDateInToday(date) {
+            return burnedCaloriesViewModel.currentBurnedCalories
+        } else {
+            return 0.0
+        }
+    }
+    /// Net calories = consumed − burned.
+    private var netCaloriesValue: Double {
+        consumedCaloriesValue - burnedCaloriesValue
+    }
+    /// Remaining calories = goal − net.
+    private var remainingCaloriesValue: Double {
+        Double(userProfileViewModel.dailyCalorieGoal) - netCaloriesValue
     }
     
     // MARK: - Body
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // Display the full date in a bold, medium-sized font.
             Text(formattedFullDate(date))
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.primary)
-                .padding(.top, -8)
+                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .padding(.top, 8)
+                .opacity(showContent ? 1 : 0)
             
             // A divider to separate the date header from the details.
             Divider()
-                .background(.primary)
+                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .opacity(showContent ? 1 : 0)
             
             // Info rows displaying nutritional and activity data.
             VStack(spacing: 12) {
-                InfoRow(title: "Calories:", value: caloriesText)
-                InfoRow(title: "Burned Calories:", value: burnedCaloriesText)
+                InfoRow(title: "Goal:", value: "\(userProfileViewModel.dailyCalorieGoal) kcal")
+                InfoRow(title: "Consumed:", value: "\(Int(consumedCaloriesValue)) kcal")
+                InfoRow(title: "Burned:", value: "\(Int(burnedCaloriesValue)) kcal")
+                InfoRow(title: "Net:", value: "\(Int(netCaloriesValue)) kcal")
+                InfoRow(title: "Remaining:", value: "\(Int(remainingCaloriesValue)) kcal")
                 InfoRow(title: "Water:", value: waterText)
             }
+            .opacity(showContent ? 1 : 0)
             .padding(.horizontal)
+
+            // Food sections for this day
+            DateFoodSectionsView(date: date, context: context)
+                .opacity(showContent ? 1 : 0)
+                .animation(.easeInOut(duration: 0.3), value: showContent)
+                .padding(.top, 8)
         }
-        .padding(20)
-        .background(
-            // Card background with rounded corners and a soft shadow.
-            RoundedRectangle(cornerRadius: 55, style: .continuous)
-                .fill(colorScheme == .dark ? Color.black : Color.white)
-                .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 6)
-        )
-        .padding(.horizontal, 45)
-        // Apply scale and blur effects for the card's expanding animation.
-        .scaleEffect(cardScale)
-        .blur(radius: cardBlur)
+        .padding()
+        .animation(.easeInOut(duration: 0.4), value: showContent)
         .onAppear {
-            // Animate the card to full scale and remove blur when it appears.
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0.3)) {
-                cardScale = 1.0
-                cardBlur = 0.0
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                showContent = true
             }
+        }
+        .onDisappear {
+            showContent = false
         }
     }
     
@@ -122,9 +167,7 @@ struct DayDetailCardView: View {
     /// - Parameter date: The date to format.
     /// - Returns: A string representing the date.
     private func formattedFullDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        Self.displayFormatter.string(from: date)
     }
 }
 
@@ -139,11 +182,11 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .foregroundColor(.primary)
+                .foregroundColor(colorScheme == .dark ? .black : .white)
                 .font(.system(size: 20, weight: .medium))
             Spacer()
             Text(value)
-                .foregroundColor(.primary)
+                .foregroundColor(colorScheme == .dark ? .black : .white)
                 .font(.system(size: 20, weight: .medium))
         }
     }

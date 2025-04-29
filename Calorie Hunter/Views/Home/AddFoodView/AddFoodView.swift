@@ -1,3 +1,4 @@
+// AddFoodView.swift
 import SwiftUI
 import CoreData
 
@@ -33,7 +34,7 @@ struct AddFoodView: View {
 
     @Environment(\.managedObjectContext) private var context
     @FetchRequest(
-      sortDescriptors: [NSSortDescriptor(keyPath: \FoodEntity.name, ascending: true)],
+    sortDescriptors: [NSSortDescriptor(keyPath: \FoodEntity.name, ascending: true)],
       animation: .default
     )
     private var foodEntities: FetchedResults<FoodEntity>
@@ -104,64 +105,62 @@ struct AddFoodView: View {
                         .padding(.top, 30)
 
                     // Search Bar Card (expandable)
-VStack(spacing: 0) {
-    HStack(spacing: 0) {
-        TextField("Search food...", text: $searchText)
-            .submitLabel(.search)
-            .onSubmit {
-                viewModel.currentProduct = nil
-            }
-            .onChange(of: searchText) { _, _ in
-                viewModel.currentProduct = nil
-                // Reset scan state and previous errors/results
-                scannedCode = nil
-                viewModel.errorMessage = nil
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
+                    VStack(spacing: 0) {
+                        HStack(spacing: 0) {
+                            TextField("Search food...", text: $searchText)
+                                .submitLabel(.search)
+                                .onSubmit {
+                                    viewModel.currentProduct = nil
+                                }
+                                .onChange(of: searchText) { _, _ in
+                                    viewModel.currentProduct = nil
+                                    scannedCode = nil
+                                    viewModel.errorMessage = nil
+                                }
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 16)
 
-        Button(action: {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                isShowingScanner.toggle()
-            }
-        }) {
-            Image(systemName: "barcode.viewfinder")
-                .font(.system(size: 20))
-                .foregroundColor(.primary)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 16)
-        }
-    }
-    .frame(maxWidth: .infinity)
-    .background(Color.clear)
+                            Button(action: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    isShowingScanner.toggle()
+                                }
+                            }) {
+                                Image(systemName: "barcode.viewfinder")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.primary)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 16)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .background(Color.clear)
 
-    if isShowingScanner {
-        VStack(spacing: 12) {
-            Text("Align barcode in the box")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-            BarcodeScannerView { code in
-                handleScanned(code)
-            }
-            .frame(height: 200)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .padding()
-        
-    }
-}
-.background(
-    RoundedRectangle(cornerRadius: 20)
-        .fill(colorScheme == .dark ? Color(.systemGray6) : Color.white)
-        .shadow(color: Color.primary.opacity(0.15), radius: 6, x: 0, y: 2)
-)
-.padding(.horizontal, 23)
-.padding(.top, 25)
-.animation(.spring(response: 0.4, dampingFraction: 0.8), value: isShowingScanner)
+                        if isShowingScanner {
+                            VStack(spacing: 12) {
+                                Text("Align barcode in the box")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                                BarcodeScannerView { code in
+                                    handleScanned(code)
+                                }
+                                .frame(height: 200)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .padding()
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+                            .shadow(color: Color.primary.opacity(0.15), radius: 6, x: 0, y: 2)
+                    )
+                    .padding(.horizontal, 23)
+                    .padding(.top, 25)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isShowingScanner)
 
-                    // MARK: - Fetched Product Quantity Input
+                    // Fetched Product Quantity Input
                     if let product = viewModel.currentProduct,
                        !combinedFoods.contains(where: { $0.barcode == product.barcode }) {
                         FoodRowView(food: product, viewModel: viewModel, mealType: preselectedMealType)
@@ -181,9 +180,7 @@ VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 0) {
                             ForEach(filteredFoods, id: \.id) { food in
-                                FoodRowView(food: food,
-                                            viewModel: viewModel,
-                                            mealType: preselectedMealType)
+                                FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
                                     .background(colorScheme == .dark ? Color.black : Color.white)
                             }
                         }
@@ -219,9 +216,10 @@ VStack(spacing: 0) {
                         viewModel: FoodListViewModel(context: context),
                         scannedBarcode: scannedCode,
                         onSuccessfulDismiss: {
-                        dismissManualEntry()
-                        scannedCode = nil
-                    })
+                            dismissManualEntry()
+                            scannedCode = nil
+                        }
+                    )
                     .frame(height: viewHeight * 1.6)
                     .frame(maxWidth: .infinity, alignment: .bottom)
                     .offset(y: cardOffset - keyboardManager.keyboardHeight + 50)
@@ -234,26 +232,19 @@ VStack(spacing: 0) {
 
     // MARK: - Scanning Handler
     private func handleScanned(_ code: String) {
-        withAnimation(.spring()) {
-            isShowingScanner = false
-        }
-        // Reset previous scan results
+        withAnimation(.spring()) { isShowingScanner = false }
         viewModel.currentProduct = nil
         viewModel.errorMessage = nil
         searchText = ""
-        // If product already saved locally, show it and skip API lookup
         if let _ = viewModel.findFoodByBarcode(code) {
             scannedCode = code
             return
         }
-
         Task {
             await viewModel.fetchProduct(barcode: code)
             if viewModel.currentProduct != nil {
-                // Product definition already saved; show it for manual addition
                 scannedCode = code
             } else {
-                // Fallback to manual entry when not found
                 scannedCode = code
                 presentManualEntry()
             }

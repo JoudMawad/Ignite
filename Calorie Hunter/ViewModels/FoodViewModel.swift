@@ -8,7 +8,8 @@ import CoreData
 /// - tracking today’s nutritional totals
 /// - persisting food entries
 /// - rolling calories into history at midnight
-class FoodViewModel: ObservableObject {
+@MainActor
+final class FoodViewModel: ObservableObject, FoodAddingViewModel {
     // MARK: - Published Properties
 
     @Published var foodItems: [FoodItem] = []
@@ -26,6 +27,39 @@ class FoodViewModel: ObservableObject {
     @Published var currentProduct: FoodItem?
     /// Error message if fetching fails
     @Published var errorMessage: String?
+
+    // MARK: - FoodAddingViewModel Conformance
+    /// All available foods fetched from Core Data.
+    var allFoods: [FoodItem] {
+        let request: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \FoodEntity.name, ascending: true)]
+        do {
+            let entities = try context.fetch(request)
+            return entities.map { e in
+                FoodItem(
+                    id: e.id ?? UUID(),
+                    name: e.name ?? "",
+                    calories: Int(e.calories),
+                    protein: e.protein,
+                    carbs: e.carbs,
+                    fat: e.fat,
+                    grams: e.grams,
+                    mealType: e.mealType ?? "",
+                    date: e.date ?? Date(),
+                    isUserAdded: e.isUserAdded,
+                    barcode: e.barcode
+                )
+            }
+        } catch {
+            print("Error fetching all foods: \(error)")
+            return []
+        }
+    }
+
+    /// Finds a food by barcode.
+    func findFood(byBarcode code: String) -> FoodItem? {
+        return findFoodByBarcode(code)
+    }
 
     // MARK: - Internal Managers
 

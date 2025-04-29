@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 /// A calendar view that displays the days of the current month in a grid layout,
 /// allows month navigation, and shows detailed information for a selected day.
@@ -17,13 +18,12 @@ struct CalendarView: View {
     /// The view model for tracking water intake.
     @ObservedObject var waterViewModel: WaterViewModel
     
-    /// The view model for managing food-related data.
-    @ObservedObject var foodViewModel: FoodViewModel
 
     // MARK: - Environment
     
     /// Access the current color scheme (light or dark) for styling.
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.managedObjectContext) private var context
 
     // MARK: - State Properties
     
@@ -63,111 +63,75 @@ struct CalendarView: View {
     // MARK: - Body
     
     var body: some View {
-        ZStack {
-            VStack {
-                // MARK: - Month Header
-                
+        // One single “card” container
+        VStack {
+            if let date = selectedDate {
+                DayDetailCardView(
+                    date: date,
+                    userProfileViewModel: userProfileViewModel,
+                    burnedCaloriesViewModel: burnedCaloriesViewModel,
+                    waterViewModel: waterViewModel,
+                    context: context
+                )
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            } else {
+                // Calendar Header
                 HStack {
-                    // Button to navigate to the previous month.
-                    Button(action: { changeMonth(by: -1) }) {
+                    Button { changeMonth(by: -1) } label: {
                         Image(systemName: "chevron.left")
+                            .foregroundColor(colorScheme == .dark ? .black : .white)
                     }
-                    .foregroundColor(colorScheme == .dark ? .black : .white)
-                    
                     Spacer()
-                    
-                    // Display the current month and year.
                     Text(monthYearString(from: currentDate))
                         .font(.headline)
                         .foregroundColor(colorScheme == .dark ? .black : .white)
-                        .padding()
-                    
                     Spacer()
-                    
-                    // Button to navigate to the next month.
-                    Button(action: { changeMonth(by: 1) }) {
+                    Button { changeMonth(by: 1) } label: {
                         Image(systemName: "chevron.right")
+                            .foregroundColor(colorScheme == .dark ? .black : .white)
                     }
-                    .foregroundColor(colorScheme == .dark ? .black : .white)
-                }                
-                // MARK: - Calendar Grid
+                }
+                .padding()
                 
-                // Define a grid layout with 7 columns (one per weekday).
+                // Calendar Grid
                 let columns = Array(repeating: GridItem(.flexible()), count: 7)
                 LazyVGrid(columns: columns, spacing: 10) {
-                    // Weekday header labels.
-                    ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
+                    let weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                    ForEach(weekDays, id: \.self) { day in
                         Text(day)
                             .font(.subheadline)
                             .foregroundColor(colorScheme == .dark ? .black : .white)
                             .frame(maxWidth: .infinity)
                     }
-                    
-                    // Calendar days. Use indices of daysInMonth array to support nil placeholders.
-                    ForEach(daysInMonth.indices, id: \.self) { index in
-                        if let date = daysInMonth[index] {
-                            // Each day is a button that, when tapped, shows the day detail card.
-                            Button(action: {
-                                // Animate the selection of a date.
-                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                    selectedDate = date
+                    ForEach(daysInMonth.indices, id: \.self) { idx in
+                        if let day = daysInMonth[idx] {
+                            Button {
+                                withAnimation {
+                                    selectedDate = day
                                 }
-                            }) {
-                                Text("\(Calendar.current.component(.day, from: date))")
-                                    .font(.system(size: 20, weight: .medium))
+                            } label: {
+                                Text("\(Calendar.current.component(.day, from: day))")
                                     .frame(maxWidth: .infinity, minHeight: 40)
                                     .foregroundColor(colorScheme == .dark ? .black : .white)
+                                    
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
-                            // Empty placeholder for grid spacing.
-                            Color.clear.frame(maxWidth: .infinity, minHeight: 40)
+                            Color.clear.frame(height: 40)
                         }
                     }
                 }
                 .padding()
-            }
-            
-            
-            .padding()
-            // Blur the calendar grid when the day detail card is visible.
-            .blur(radius: selectedDate != nil ? 10 : 0)
-            .animation(.easeInOut(duration: 0.5), value: selectedDate)
-            
-            // MARK: - Day Detail Overlay
-            
-            // If a date is selected, display a detail card overlay.
-            if let date = selectedDate {
-                // Semi-transparent background that dismisses the detail card when tapped.
-                (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1))
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                            selectedDate = nil
-                        }
-                    }
-                
-                // Center the detail card vertically with a scale transition effect.
-                VStack {
-                    Spacer()
-                    DayDetailCardView(
-                        date: date,
-                        userProfileViewModel: userProfileViewModel,
-                        burnedCaloriesViewModel: burnedCaloriesViewModel,
-                        waterViewModel: waterViewModel,
-                        foodViewModel: foodViewModel
-                    )
-                    Spacer()
-                }
-                .padding()
-                .transition(.blurScale)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+        .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.primary)
+                .fill(colorScheme == .dark ? Color.white : Color.black)
                 .shadow(radius: 3)
         )
+        .animation(.easeInOut, value: selectedDate)
     }
     
     // MARK: - Helper Methods
@@ -187,5 +151,13 @@ struct CalendarView: View {
         if let newDate = Calendar.current.date(byAdding: .month, value: value, to: currentDate) {
             currentDate = newDate
         }
+    }
+    /// Formats the given date to a medium style string for the detail header.
+    /// - Parameter date: The date to format.
+    /// - Returns: A medium-style date string.
+    private func dateFormattedFull(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
     }
 }
