@@ -1,4 +1,3 @@
-
 import SwiftUI
 import CoreData
 
@@ -8,17 +7,22 @@ import CoreData
 /// The card shows the full date along with nutritional and activity data,
 /// and it features an animated appearance with scaling and blur effects.
 struct DayDetailCardView: View {
+    /// Callback for going back to the calendar
+    let onBack: () -> Void
+
     // MARK: - Explicit Initializer
     init(date: Date,
          userProfileViewModel: UserProfileViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
          waterViewModel: WaterViewModel,
-         context: NSManagedObjectContext) {
+         context: NSManagedObjectContext,
+         onBack: @escaping () -> Void) {
         self.date = date
         self.userProfileViewModel = userProfileViewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.waterViewModel = waterViewModel
         _dateFoodViewModel = StateObject(wrappedValue: DateFoodViewModel(date: date, context: context))
+        self.onBack = onBack
     }
     // MARK: - Static Properties
     
@@ -93,8 +97,13 @@ struct DayDetailCardView: View {
 
     // MARK: - Net Calorie Calculations
     /// Numeric calories consumed on this date.
+    ///
+    /// userProfileViewModel.dailyCalorieGoal + burnedCaloriesValue
     private var consumedCaloriesValue: Double {
         Double(dateFoodViewModel.totalCalories)
+    }
+    private var goalCaloriesValue: Double {
+        Double(burnedCaloriesValue) + Double(userProfileViewModel.dailyCalorieGoal)
     }
     /// Numeric burned calories for this date.
     private var burnedCaloriesValue: Double {
@@ -119,12 +128,25 @@ struct DayDetailCardView: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // Display the full date in a bold, medium-sized font.
-            Text(formattedFullDate(date))
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(colorScheme == .dark ? .black : .white)
-                .padding(.top, 8)
-                .opacity(showContent ? 1 : 0)
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundColor(colorScheme == .dark ? .black : .white)
+                    Spacer()
+                    Text(formattedFullDate(date))
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(colorScheme == .dark ? .black : .white)
+                        .opacity(showContent ? 1 : 0)
+                    Spacer()
+                }
+                Spacer()
+            }
+            .padding(.bottom, 4)
+            .padding(.horizontal)
+            .padding(.top, 8)
+
+            
             
             // A divider to separate the date header from the details.
             Divider()
@@ -133,12 +155,13 @@ struct DayDetailCardView: View {
             
             // Info rows displaying nutritional and activity data.
             VStack(spacing: 12) {
-                InfoRow(title: "Goal:", value: "\(userProfileViewModel.dailyCalorieGoal) kcal")
-                InfoRow(title: "Consumed:", value: "\(Int(consumedCaloriesValue)) kcal")
-                InfoRow(title: "Burned:", value: "\(Int(burnedCaloriesValue)) kcal")
-                InfoRow(title: "Net:", value: "\(Int(netCaloriesValue)) kcal")
-                InfoRow(title: "Remaining:", value: "\(Int(remainingCaloriesValue)) kcal")
-                InfoRow(title: "Water:", value: waterText)
+                    InfoRow(title: "Your Goal was:", value: "\(Int(goalCaloriesValue)) kcal")
+                    InfoRow(title: "You have Consumed:", value: "\(Int(consumedCaloriesValue)) kcal")
+                
+                    InfoRow(title: "Youe have Burned:", value: "\(Int(burnedCaloriesValue)) kcal")
+                
+                InfoRow(title: "Your Net Calorie Intake:", value: "\(Int(netCaloriesValue)) kcal")
+                InfoRow(title: "You Drank:", value: waterText)
             }
             .opacity(showContent ? 1 : 0)
             .padding(.horizontal)
@@ -149,7 +172,7 @@ struct DayDetailCardView: View {
                 .animation(.easeInOut(duration: 0.3), value: showContent)
                 .padding(.top, 8)
         }
-        .padding()
+        .padding(.vertical, 12)
         .animation(.easeInOut(duration: 0.4), value: showContent)
         .onAppear {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -175,19 +198,56 @@ struct DayDetailCardView: View {
 struct InfoRow: View {
     var title: String
     var value: String
-    
+
     /// Adjusts the text color based on the current color scheme.
     @Environment(\.colorScheme) var colorScheme
-    
+
+    private var iconName: String {
+        let lower = title.lowercased()
+        if lower.contains("goal") { return "target" }
+        else if lower.contains("consumed") { return "fork.knife" }
+        else if lower.contains("burned") { return "flame.fill" }
+        else if lower.contains("net") { return "chart.bar.fill" }
+        else if lower.contains("drank") { return "drop.fill" }
+        else { return "info.circle" }
+    }
+
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Image(systemName: iconName)
+                .font(.title3)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
             Text(title)
-                .foregroundColor(colorScheme == .dark ? .black : .white)
-                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .font(.system(size: 18, weight: .medium))
             Spacer()
             Text(value)
-                .foregroundColor(colorScheme == .dark ? .black : .white)
-                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .font(.system(size: 18, weight: .medium))
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(radius: 3)
+        )
+        .padding(.horizontal)
+    }
+}
+
+// MARK: - Previews
+struct DayDetailCardView_Previews: PreviewProvider {
+    static var previews: some View {
+        // Create an in-memory Core Data context for previews
+        let context = PersistenceController.shared.container.viewContext
+        DayDetailCardView(
+            date: Date(),
+            userProfileViewModel: UserProfileViewModel(),
+            burnedCaloriesViewModel: BurnedCaloriesViewModel(),
+            waterViewModel: WaterViewModel(container: PersistenceController.shared.container),
+            context: context,
+            onBack: {}
+        )
+        .environment(\.managedObjectContext, context)
     }
 }

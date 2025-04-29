@@ -18,13 +18,13 @@ struct CalendarView: View {
     /// The view model for tracking water intake.
     @ObservedObject var waterViewModel: WaterViewModel
     
-
+    
     // MARK: - Environment
     
     /// Access the current color scheme (light or dark) for styling.
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) private var context
-
+    
     // MARK: - State Properties
     
     /// Holds the currently displayed date (used for calculating the month to display).
@@ -32,7 +32,7 @@ struct CalendarView: View {
     
     /// Stores the date selected by the user for displaying detailed day information.
     @State private var selectedDate: Date? = nil
-
+    
     // MARK: - Computed Properties
     
     /// Computes the array of days for the current month as an optional Date.
@@ -71,7 +71,12 @@ struct CalendarView: View {
                     userProfileViewModel: userProfileViewModel,
                     burnedCaloriesViewModel: burnedCaloriesViewModel,
                     waterViewModel: waterViewModel,
-                    context: context
+                    context: context,
+                    onBack: {
+                        withAnimation {
+                            selectedDate = nil
+                        }
+                    }
                 )
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             } else {
@@ -113,7 +118,7 @@ struct CalendarView: View {
                                 Text("\(Calendar.current.component(.day, from: day))")
                                     .frame(maxWidth: .infinity, minHeight: 40)
                                     .foregroundColor(colorScheme == .dark ? .black : .white)
-                                    
+                                
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
@@ -121,11 +126,10 @@ struct CalendarView: View {
                         }
                     }
                 }
-                .padding()
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding()
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(colorScheme == .dark ? Color.white : Color.black)
@@ -159,5 +163,20 @@ struct CalendarView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - Previews
+struct CalendarView_Previews: PreviewProvider {
+    static var previews: some View {
+        // In-memory Core Data context for previews
+        let context = PersistenceController.shared.container.viewContext
+        CalendarView(
+            userProfileViewModel: UserProfileViewModel(),
+            stepsViewModel: StepsViewModel(),
+            burnedCaloriesViewModel: BurnedCaloriesViewModel(),
+            waterViewModel: WaterViewModel(container: PersistenceController.shared.container)
+        )
+        .environment(\.managedObjectContext, context)
     }
 }
