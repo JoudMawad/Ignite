@@ -48,7 +48,9 @@ struct FoodSection: View {
     /// Header view for this food section.
     private var headerView: some View {
         HStack {
-            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+            Image(systemName: "chevron.down")
+                .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7), value: isExpanded)
                 .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
             Text(mealType)
                 .font(.system(size: 25, weight: .bold, design: .rounded))
