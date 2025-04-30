@@ -48,24 +48,40 @@ struct FoodSection: View {
     /// Header view for this food section.
     private var headerView: some View {
         HStack {
-            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+            Image(systemName: "chevron.down")
+                .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7), value: isExpanded)
                 .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
             Text(mealType)
                 .font(.system(size: 25, weight: .bold, design: .rounded))
             Spacer()
-            Text("\(totalCalories) kcal")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+            if !isExpanded {
+                Text("\(totalCalories) kcal")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
             if isExpanded && !items.isEmpty {
-                Button(isEditing ? "Done" : "Edit") {
-                    withAnimation { isEditing.toggle() }
+                Button(action: { withAnimation { isEditing.toggle() } }) {
+                    Text(isEditing ? "Done" : "Edit")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.primary)
+                        .foregroundColor(colorScheme == .dark ? .black : .white)
+                        .clipShape(Capsule())
                 }
-                .foregroundColor(.primary)
+                .padding(.trailing, 5)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+                .animation(.easeOut(duration: 0.3), value: isExpanded)
             }
             Button(action: { addFoodAction(mealType) }) {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
-                    .font(.system(size: 20))
+                Label("Add", systemImage: "plus")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color.primary)
+                    .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
+                    .clipShape(Capsule())
             }
             .padding(.trailing, 5)
         }
@@ -92,7 +108,6 @@ struct FoodSection: View {
                 sectionContent // << Move content to a private property
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: isExpanded ? .none : 50)
         .background(Color.clear)
         .padding(.horizontal)
     }
