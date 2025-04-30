@@ -4,6 +4,7 @@ import SwiftUI
 struct FoodRowView<VM: FoodAddingViewModel>: View {
     let food: FoodItem
     @ObservedObject var viewModel: VM
+    @Environment(\.colorScheme) var colorScheme
     let mealType: String
 
     @State private var isExpanded = false
@@ -28,34 +29,46 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(Color(.systemBackground))
+            .background(Color(.clear))
 
             VStack(spacing: 8) {
                 TextField("Grams Consumed", text: $gramsInput)
                     .keyboardType(.decimalPad)
                     .padding(8)
-                    .background(Color(.systemBackground))
+                    .background(Color(.clear))
                     .cornerRadius(8)
-
-                Button("Add") {
+                
+                Button(action: {
                     guard let gramsValue = Double(gramsInput.replacingOccurrences(of: ",", with: ".")) else { return }
                     viewModel.logConsumption(of: food, grams: gramsValue, mealType: mealType)
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                         isExpanded = false
                     }
                     gramsInput = ""
+                }){
+                    
+                    Label("Add", systemImage: "plus")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(Color.primary)
+                        .foregroundColor( colorScheme == .dark ? .black : .white)
+                        .clipShape(Capsule())
+                    
                 }
             }
             .padding()
-            .background(Color(.systemBackground))
+            .background(Color(.clear))
             .cornerRadius(8)
             .frame(maxHeight: isExpanded ? .none : 0)
             .opacity(isExpanded ? 1 : 0)
             .clipped()
-
-            Divider().background(Color(.systemBackground))
+                
+                
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isExpanded)
         .padding(.horizontal)
+        
+        .shadow(color: .green.opacity(0.5), radius: 1, x: 0, y: 1)
     }
 }
