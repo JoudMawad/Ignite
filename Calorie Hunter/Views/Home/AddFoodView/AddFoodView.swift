@@ -184,7 +184,6 @@ struct AddFoodView: View {
                                     .background(colorScheme == .dark ? Color.black : Color.white)
                             }
                         }
-                        .padding(.horizontal, 23)
                         .padding(.top, isShowingScanner ? 13 : 13)
                     }
                     .frame(maxHeight: 550)
