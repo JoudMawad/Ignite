@@ -161,13 +161,6 @@ struct DayDetailCardView: View {
             .padding(.bottom, 4)
             .padding(.horizontal)
             .padding(.top, 8)
-
-            
-            
-            // A divider to separate the date header from the details.
-            Divider()
-                .foregroundColor(colorScheme == .dark ? .black : .white)
-                .opacity(showContent ? 1 : 0)
             
             // Info rows displaying nutritional and activity data.
             VStack(spacing: 12) {
