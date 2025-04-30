@@ -11,37 +11,7 @@ struct DateFoodSectionsView: View {
     @State private var showingAddFoodSheet = false
     @State private var selectedMealType: String? = nil
     private let sectionNames = ["Breakfast", "Lunch", "Dinner", "Snack"]
-    private let columnsPerRow = 2
     
-    private var sectionRows: [[String]] {
-        var rows: [[String]] = []
-        var buffer: [String] = []
-        for meal in sectionNames {
-            if expandedSections.contains(meal) {
-                // Flush buffered collapsed items into rows of columnsPerRow
-                var idx = 0
-                while idx < buffer.count {
-                    let end = min(idx + columnsPerRow, buffer.count)
-                    rows.append(Array(buffer[idx..<end]))
-                    idx += columnsPerRow
-                }
-                buffer.removeAll()
-                // Expanded section occupies its own full-width row
-                rows.append([meal])
-            } else {
-                buffer.append(meal)
-            }
-        }
-        // Flush any remaining collapsed items
-        var idx = 0
-        while idx < buffer.count {
-            let end = min(idx + columnsPerRow, buffer.count)
-            rows.append(Array(buffer[idx..<end]))
-            idx += columnsPerRow
-        }
-        return rows
-    }
-
     @ViewBuilder
     private func sectionCard(mealType: String) -> some View {
         let itemsForSection = viewModel.foodEntries.filter { $0.mealType == mealType }
@@ -60,9 +30,8 @@ struct DateFoodSectionsView: View {
               selectedMealType = mealType
             }
         )
-        .aspectRatio(isExpanded ? nil : 1, contentMode: .fit)
         .frame(maxWidth: .infinity)
-        .gridCellColumns(isExpanded ? columnsPerRow : 1)
+        .frame(height: isExpanded ? nil : 100)
     }
 
     init(date: Date, context: NSManagedObjectContext) {
@@ -72,18 +41,12 @@ struct DateFoodSectionsView: View {
 
     var body: some View {
         ScrollView {
-            Grid(horizontalSpacing: 8, verticalSpacing: 8) {
-                ForEach(sectionRows, id: \.self) { row in
-                    GridRow {
-                        ForEach(row, id: \.self) { mealType in
-                            sectionCard(mealType: mealType)
-                        }
-                    }
+            VStack(spacing: 16) {
+                ForEach(sectionNames, id: \.self) { meal in
+                    sectionCard(mealType: meal)
                 }
             }
-            .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7, blendDuration: 0), value: expandedSections)
             .padding()
-            .padding(.horizontal, 1)
         }
         .sheet(item: $selectedMealType) { meal in
           AddFoodForDateView(
@@ -126,10 +89,11 @@ struct SectionCardView: View {
                     .foregroundColor(.gray)
                     .padding(.bottom, 10)
                 Button(action: onToggle) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    Image(systemName: "chevron.down")
                         .font(.system(size: 18))
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                        .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7), value: isExpanded)
                         .tint(Color.primary)
-                   
                 }
                 Spacer()
             }
@@ -169,7 +133,6 @@ struct SectionCardView: View {
         }
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity)
-        .aspectRatio(isExpanded ? nil : 1, contentMode: .fit)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(colorScheme == .dark ? Color.black : Color.white)

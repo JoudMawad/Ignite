@@ -121,4 +121,8 @@ class StepsViewModel: ObservableObject {
             }
         }
     }
+    
+    func steps(for date: Date) -> Int {
+          fetchStepsFromCoreData(for: date)
+      }
 }

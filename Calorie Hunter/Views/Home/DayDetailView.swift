@@ -1,5 +1,7 @@
 import SwiftUI
 import CoreData
+import HealthKit
+import Combine
 
 // MARK: - Additional Views
 
@@ -7,6 +9,8 @@ import CoreData
 /// The card shows the full date along with nutritional and activity data,
 /// and it features an animated appearance with scaling and blur effects.
 struct DayDetailCardView: View {
+    /// Ensures the burned-calories animation runs only once per session.
+    private static var hasAnimatedBurnedCalories = false
     /// Callback for going back to the calendar
     let onBack: () -> Void
 
@@ -15,12 +19,14 @@ struct DayDetailCardView: View {
          userProfileViewModel: UserProfileViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
          waterViewModel: WaterViewModel,
+         stepsViewModel: StepsViewModel,
          context: NSManagedObjectContext,
          onBack: @escaping () -> Void) {
         self.date = date
         self.userProfileViewModel = userProfileViewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.waterViewModel = waterViewModel
+        self.stepsViewModel = stepsViewModel
         _dateFoodViewModel = StateObject(wrappedValue: DateFoodViewModel(date: date, context: context))
         self.onBack = onBack
     }
@@ -50,7 +56,9 @@ struct DayDetailCardView: View {
     
     /// The view model that tracks water intake.
     @ObservedObject var waterViewModel: WaterViewModel
-    
+
+    /// The view model that tracks steps.
+    @ObservedObject var stepsViewModel: StepsViewModel
 
     // MARK: - Environment
     
@@ -58,6 +66,7 @@ struct DayDetailCardView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) private var context
     @State private var showContent: Bool = false
+    @State private var animatedCalories: Double = 0
     @StateObject private var dateFoodViewModel: DateFoodViewModel
 
     // MARK: - Computed Properties
@@ -95,16 +104,23 @@ struct DayDetailCardView: View {
     
     // caloriesText is now replaced by values from dateFoodViewModel.
 
-    // MARK: - Net Calorie Calculations
-    /// Numeric calories consumed on this date.
-    ///
-    /// userProfileViewModel.dailyCalorieGoal + burnedCaloriesValue
+    // MARK: - Values
+
     private var consumedCaloriesValue: Double {
         Double(dateFoodViewModel.totalCalories)
     }
     private var goalCaloriesValue: Double {
         Double(burnedCaloriesValue) + Double(userProfileViewModel.dailyCalorieGoal)
     }
+    
+    private var dailyStepsGoal: Int {
+        userProfileViewModel.dailyStepsGoalValue
+    }
+    private var stepsValue: Int {
+        let stepsOnDate = stepsViewModel.steps(for: date)
+        return stepsOnDate
+    }
+    
     /// Numeric burned calories for this date.
     private var burnedCaloriesValue: Double {
         if let historyValue = burnedCaloriesForDate {
@@ -155,13 +171,45 @@ struct DayDetailCardView: View {
             
             // Info rows displaying nutritional and activity data.
             VStack(spacing: 12) {
-                    InfoRow(title: "Your Goal was:", value: "\(Int(goalCaloriesValue)) kcal")
-                    InfoRow(title: "You have Consumed:", value: "\(Int(consumedCaloriesValue)) kcal")
+                MetricCardView(
+                    iconName: "fork.knife",
+                    title: "Calories Consumed",
+                    valueText: "\(Int(consumedCaloriesValue)) kcal",
+                    current: consumedCaloriesValue,
+                    goal: goalCaloriesValue,
+                    gradientColors: [Color.blue, Color.purple]
+                )
                 
-                    InfoRow(title: "Youe have Burned:", value: "\(Int(burnedCaloriesValue)) kcal")
+                MetricCardView(
+                    iconName: "flame.fill",
+                    title: "Burned Calories",
+                    valueText: "\(Int(burnedCaloriesValue)) kcal",
+                    current: burnedCaloriesValue,
+                    goal: Double(userProfileViewModel.dailyBurnedCaloriesGoalValue),
+                    gradientColors: [Color.pink, Color.orange]
+                )
                 
-                InfoRow(title: "Your Net Calorie Intake:", value: "\(Int(netCaloriesValue)) kcal")
-                InfoRow(title: "You Drank:", value: waterText)
+                MetricCardView(
+                    iconName: "figure.walk",
+                    title: "Steps",
+                    valueText: "\(stepsViewModel.currentSteps)",
+                    current: Double(stepsValue),
+                    goal: Double(userProfileViewModel.dailyStepsGoalValue),
+                    gradientColors: [Color.cyan, Color.green]
+                )
+                
+                MetricCardView(
+                    iconName: "drop.fill",
+                    title: "Water Intake",
+                    valueText: "\(Int(waterViewModel.waterAmount(for: date))) L",
+                    current: waterViewModel.waterAmount(for: date),
+                    goal: 2.8, // replace with your actual water goal property or value
+                    gradientColors: [Color.blue, Color.cyan]
+                )
+                
+                
+             //   InfoRow(title: "Your Net Calorie Intake:", value: "\(Int(netCaloriesValue)) kcal")
+                
             }
             .opacity(showContent ? 1 : 0)
             .padding(.horizontal)
@@ -194,47 +242,6 @@ struct DayDetailCardView: View {
     }
 }
 
-/// A subview representing a single information row with a title and value.
-struct InfoRow: View {
-    var title: String
-    var value: String
-
-    /// Adjusts the text color based on the current color scheme.
-    @Environment(\.colorScheme) var colorScheme
-
-    private var iconName: String {
-        let lower = title.lowercased()
-        if lower.contains("goal") { return "target" }
-        else if lower.contains("consumed") { return "fork.knife" }
-        else if lower.contains("burned") { return "flame.fill" }
-        else if lower.contains("net") { return "chart.bar.fill" }
-        else if lower.contains("drank") { return "drop.fill" }
-        else { return "info.circle" }
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: iconName)
-                .font(.title3)
-                .foregroundColor(colorScheme == .dark ? .white : .black)
-            Text(title)
-                .foregroundColor(colorScheme == .dark ? .white : .black)
-                .font(.system(size: 18, weight: .medium))
-            Spacer()
-            Text(value)
-                .foregroundColor(colorScheme == .dark ? .white : .black)
-                .font(.system(size: 18, weight: .medium))
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(radius: 3)
-        )
-        .padding(.horizontal)
-    }
-}
-
 // MARK: - Previews
 struct DayDetailCardView_Previews: PreviewProvider {
     static var previews: some View {
@@ -245,6 +252,7 @@ struct DayDetailCardView_Previews: PreviewProvider {
             userProfileViewModel: UserProfileViewModel(),
             burnedCaloriesViewModel: BurnedCaloriesViewModel(),
             waterViewModel: WaterViewModel(container: PersistenceController.shared.container),
+            stepsViewModel: StepsViewModel(),
             context: context,
             onBack: {}
         )

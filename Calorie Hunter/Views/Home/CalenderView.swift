@@ -70,7 +70,7 @@ struct CalendarView: View {
                     date: date,
                     userProfileViewModel: userProfileViewModel,
                     burnedCaloriesViewModel: burnedCaloriesViewModel,
-                    waterViewModel: waterViewModel,
+                    waterViewModel: waterViewModel, stepsViewModel: stepsViewModel,
                     context: context,
                     onBack: {
                         withAnimation {
