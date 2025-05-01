@@ -1,12 +1,13 @@
 import SwiftUI
 import UIKit
+import HealthKit // if not already present for other imports
 
 struct WaterProgressView: View {
     // ViewModel to manage and update water intake data.
     @ObservedObject var waterViewModel: WaterViewModel
     
-    /// The user's daily water goal in liters.
-    var dailyGoal: Double
+    /// The user profile view model, to track dynamic goal changes.
+    @ObservedObject var profileViewModel: UserProfileViewModel
     
     /// Haptic feedback generator for tap interactions.
     private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -19,8 +20,8 @@ struct WaterProgressView: View {
     // Calculate the progress as a fraction of current water vs. the daily goal.
     // The result is clamped between 0 and 1.
     private var progress: CGFloat {
-        guard dailyGoal > 0 else { return 0 }
-        return min(max(CGFloat(currentWater / dailyGoal), 0), 1)
+        guard profileViewModel.dailyWaterGoalValue > 0 else { return 0 }
+        return min(max(CGFloat(currentWater / profileViewModel.dailyWaterGoalValue), 0), 1)
     }
     
     var body: some View {
@@ -89,7 +90,7 @@ struct WaterProgressView: View {
                 .frame(width: 295, height: 8)
                 
                 // Display the daily water goal formatted to one decimal place.
-                Text("\(String(format: "%.1f", dailyGoal))L")
+                Text("\(String(format: "%.1f", profileViewModel.dailyWaterGoalValue))L")
                     .font(.caption)
                     .foregroundColor(.gray)
             }

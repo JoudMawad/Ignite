@@ -59,7 +59,7 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
                     Label("Add", systemImage: "plus")
                         .font(.caption.bold())
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
+                        .padding(20)
                         .background(Color.primary)
                         .foregroundColor( colorScheme == .dark ? .black : .white)
                         .clipShape(Capsule())
@@ -72,6 +72,7 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
             .frame(maxHeight: isExpanded ? .none : 0)
             .opacity(isExpanded ? 1 : 0)
             .clipped()
+            
                 
                 
         }

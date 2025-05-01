@@ -193,9 +193,12 @@ struct HomeView: View {
     }
     
     /// The water intake section, showing daily water progress.
-    private var waterSection: some View {
-        WaterProgressView(waterViewModel: waterViewModel, dailyGoal: 2.8)
-    }
+private var waterSection: some View {
+    WaterProgressView(
+        waterViewModel: waterViewModel,
+        profileViewModel: userProfileViewModel
+    )
+}
     
     /// The food list section that displays a list of foods and provides an action to add more food.
     private var foodListSection: some View {

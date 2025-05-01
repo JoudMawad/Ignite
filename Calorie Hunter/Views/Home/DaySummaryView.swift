@@ -79,7 +79,7 @@ struct DaySummaryView: View {
             }
 
             // See full overview
-            Button("See Full Overview") {
+            /*Button("See Full Overview") {
                 tapFeedback.impactOccurred()
                 onFullOverview()
             }
@@ -88,7 +88,7 @@ struct DaySummaryView: View {
             .foregroundColor(.primary)
             .font(.system(size: 12, weight: .semibold, design: .rounded))
 
-            Spacer()
+            Spacer()*/
         }
     }
 

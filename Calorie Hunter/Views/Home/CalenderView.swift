@@ -69,6 +69,21 @@ struct CalendarView: View {
                         showFullOverview = true
                     }
                 )
+                .transition(.move(edge: .bottom))
+                .fullScreenCover(isPresented: $showFullOverview) {
+                    DayDetailCardView(
+                        date: date,
+                        userProfileViewModel: userProfileViewModel,
+                        burnedCaloriesViewModel: burnedCaloriesViewModel,
+                        waterViewModel: waterViewModel,
+                        stepsViewModel: stepsViewModel,
+                        context: context
+                    ) {
+                        // Dismiss both the full overview and the summary
+                        showFullOverview = false
+                        selectedDate = nil
+                    }
+                }
             }
             
             // Calendar view on top, only when no date is selected

@@ -230,6 +230,9 @@ struct AddFoodView: View {
                 }
             }
             .navigationBarHidden(true)
+            .onTapGesture {
+                UIApplication.shared.endEditing()
+            }
         }
     }
 
