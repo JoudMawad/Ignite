@@ -93,6 +93,7 @@ struct CalendarView: View {
                     calendarGrid
                 }
                 .padding(.vertical, 20)
+                .padding(.bottom, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
                         .fill(colorScheme == .dark ? .white : .black)
