@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct FoodSection: View {
     // ViewModel to access food data and actions.
@@ -15,6 +16,10 @@ struct FoodSection: View {
 
     // State to track if the section is in edit mode.
     @State private var isEditing = false
+
+    /// Haptic feedback generator for the Edit button.
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
+    /// Also used for the Add button haptic feedback.
 
     /// Filters only user‐added foods for this meal type eaten today.
     var filteredItems: [FoodItem] {
@@ -61,7 +66,12 @@ struct FoodSection: View {
                     .foregroundColor(.gray)
             }
             if isExpanded && !items.isEmpty {
-                Button(action: { withAnimation { isEditing.toggle() } }) {
+                Button(action: {
+                    tapFeedback.impactOccurred()
+                    withAnimation {
+                        isEditing.toggle()
+                    }
+                }) {
                     Text(isEditing ? "Done" : "Edit")
                         .font(.caption.bold())
                         .padding(.horizontal, 12)
@@ -74,7 +84,10 @@ struct FoodSection: View {
                 .transition(.move(edge: .trailing).combined(with: .opacity))
                 .animation(.easeOut(duration: 0.3), value: isExpanded)
             }
-            Button(action: { addFoodAction(mealType) }) {
+            Button(action: {
+                tapFeedback.impactOccurred()
+                addFoodAction(mealType)
+            }) {
                 Label("Add", systemImage: "plus")
                     .font(.caption.bold())
                     .padding(.horizontal, 8)

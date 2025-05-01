@@ -7,6 +7,7 @@
 
 
 import SwiftUI
+import UIKit
 import HealthKit
 
 // MARK: - Subviews
@@ -105,6 +106,9 @@ struct ActivityDetailView: View {
     let saveAction: () -> Void
     let cancelAction: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    
+    /// Haptic feedback for the cancel button in activity detail.
+    private let cancelTapFeedback = UIImpactFeedbackGenerator(style: .light)
 
     var body: some View {
         VStack(spacing: 14) {
@@ -130,6 +134,7 @@ struct ActivityDetailView: View {
             }
             HStack(spacing: 20) {
                 Button("Cancel") {
+                    cancelTapFeedback.impactOccurred()
                     cancelAction()
                 }
                 .buttonStyle(.bordered)
@@ -156,6 +161,13 @@ struct AddExerciseView: View {
     @EnvironmentObject var userProfile: UserProfileViewModel
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+
+    /// Haptic feedback for save/cancel actions.
+    private let successFeedback = UINotificationFeedbackGenerator()
+    private let errorFeedback   = UINotificationFeedbackGenerator()
+    private let tapFeedback     = UIImpactFeedbackGenerator(style: .light)
+    /// Haptic feedback for the cancel button in activity detail.
+    private let cancelTapFeedback = UIImpactFeedbackGenerator(style: .light)
 
     // MARK: - Search / View State
     @State private var searchText: String = ""
@@ -249,6 +261,7 @@ struct AddExerciseView: View {
 
                 // Done button
                 Button("Done") {
+                    tapFeedback.impactOccurred()
                     dismiss()
                 }
                 .buttonStyle(.bordered)
@@ -263,13 +276,19 @@ struct AddExerciseView: View {
 
     // MARK: - Helpers
     private func saveExercise(_ activity: HKWorkoutActivityType) {
-        guard let dur = Double(duration), dur > 0 else { return }
+        // Validate duration
+        guard let dur = Double(duration), dur > 0 else {
+            errorFeedback.notificationOccurred(.error)
+            return
+        }
+        // Compute distance in meters if applicable
         let distanceMeters: Double? = {
             if let distKm = Double(distance), distanceBasedActivities.contains(activity) {
                 return distKm * 1000
             }
             return nil
         }()
+        // Perform save
         viewModel.addExercise(
             type: activity,
             startDate: Date(),
@@ -277,6 +296,8 @@ struct AddExerciseView: View {
             distance: distanceMeters,
             userProfile: userProfile
         )
+        // Success haptic and dismiss
+        successFeedback.notificationOccurred(.success)
         dismiss()
     }
 }

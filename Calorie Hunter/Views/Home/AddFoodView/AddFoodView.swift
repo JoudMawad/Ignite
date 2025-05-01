@@ -1,6 +1,7 @@
 // AddFoodView.swift
 import SwiftUI
 import CoreData
+import UIKit
 
 struct AddFoodView: View {
     // MARK: - Dependencies
@@ -31,6 +32,9 @@ struct AddFoodView: View {
     @State private var overlayOpacity: Double = 0.25
     @State private var viewHeight: CGFloat = 0
     @State private var searchTask: Task<(), Never>? = nil
+    /// Haptic feedback generators for barcode scanning results.
+    private let successFeedback = UINotificationFeedbackGenerator()
+    private let errorFeedback   = UINotificationFeedbackGenerator()
 
     @Environment(\.managedObjectContext) private var context
     @FetchRequest(
@@ -241,6 +245,12 @@ struct AddFoodView: View {
         }
         Task {
             await viewModel.fetchProduct(barcode: code)
+            // Provide haptic feedback based on API result
+            if viewModel.currentProduct != nil {
+                successFeedback.notificationOccurred(.success)
+            } else {
+                errorFeedback.notificationOccurred(.error)
+            }
             if viewModel.currentProduct != nil {
                 scannedCode = code
             } else {

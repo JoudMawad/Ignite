@@ -22,7 +22,7 @@ struct StepsCardView: View {
                 // Walk icon indicating the steps metric.
                 Image(systemName: "figure.walk")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                    .foregroundColor(.green)
                 
                 // Title label for the card.
                 Text("Steps")

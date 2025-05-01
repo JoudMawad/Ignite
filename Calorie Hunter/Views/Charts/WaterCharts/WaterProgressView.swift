@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct WaterProgressView: View {
     // ViewModel to manage and update water intake data.
@@ -6,6 +7,9 @@ struct WaterProgressView: View {
     
     /// The user's daily water goal in liters.
     var dailyGoal: Double
+    
+    /// Haptic feedback generator for tap interactions.
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
     
     // Compute the water amount for the current day, using the view model's published value.
     private var currentWater: Double {
@@ -36,6 +40,7 @@ struct WaterProgressView: View {
                 // Buttons to adjust the water intake.
                 HStack(spacing: 16) {
                     Button {
+                        tapFeedback.impactOccurred()
                         // Decrease water intake by 0.1L for today.
                         waterViewModel.adjustWaterAmount(by: -0.1, for: Date())
                     } label: {
@@ -45,6 +50,7 @@ struct WaterProgressView: View {
                     }
                     
                     Button {
+                        tapFeedback.impactOccurred()
                         // Increase water intake by 0.1L for today.
                         waterViewModel.adjustWaterAmount(by: 0.1, for: Date())
                     } label: {

@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import UIKit
 
 /// The main container view of the app that houses the tab view.
 /// This view sets up the necessary view models and customizes the tab bar appearance.
@@ -9,11 +10,16 @@ struct ContentView: View {
     /// View model managing food-related data.
     @StateObject var viewModel: FoodViewModel
     /// View model tracking steps.
-    @StateObject var stepsviewModel = StepsViewModel()  
+    @StateObject var stepsviewModel = StepsViewModel()
     /// View model tracking burned calories.
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
     /// View model containing user profile information.
     @StateObject var userProfileViewModel = UserProfileViewModel()
+    
+    /// Tracks the selected tab index for haptic feedback.
+    @State private var selectedTab: Int = 0
+    /// Light tap haptic feedback generator for tab taps.
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
     
     // MARK: - Initialization
     
@@ -43,7 +49,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             // Main TabView that switches between the Home and Charts pages.
-            TabView {
+            TabView(selection: $selectedTab) {
                 // MARK: Home Page
                 HomeView(
                     viewModel: viewModel,
@@ -55,6 +61,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("", systemImage: "house.fill")
                 }
+                .tag(0)
                 
                 // MARK: Charts Page
                 ChartsView(
@@ -64,11 +71,15 @@ struct ContentView: View {
                 .tabItem {
                     Label("", systemImage: "chart.line.uptrend.xyaxis")
                 }
+                .tag(1)
             }
             // Extend the background color to the edges to prevent any unwanted white separators.
             .background(Color.primary.edgesIgnoringSafeArea(.all))
             // Tint the tab icons and text to ensure visibility across color schemes.
             .tint(.primary)
+            .onChange(of: selectedTab) {
+                tapFeedback.impactOccurred()
+            }
         }
     }
 }

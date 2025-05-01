@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct FormContainerView: View {
     // ViewModel holding user profile data.
@@ -7,6 +8,9 @@ struct FormContainerView: View {
     @Environment(\.colorScheme) var colorScheme
     // Binding to control the presentation of an image picker.
     @Binding var isShowingImagePicker: Bool
+    
+    /// Haptic feedback generator for navigation taps.
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
     
     // MARK: - Computed Properties for Name
     /// Extracts the first name from the full name.
@@ -93,6 +97,11 @@ struct FormContainerView: View {
                             }
                             .frame(width: 390, height: 100)
                         }
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                tapFeedback.impactOccurred()
+                            }
+                        )
                         .buttonStyle(PlainButtonStyle())
                         
                         // Health Goals Section as a tappable NavigationLink.
@@ -108,6 +117,11 @@ struct FormContainerView: View {
                             }
                             .frame(width: 380, height: 100)
                         }
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                tapFeedback.impactOccurred()
+                            }
+                        )
                         .buttonStyle(PlainButtonStyle())
                     }
                     

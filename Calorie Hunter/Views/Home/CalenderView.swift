@@ -1,182 +1,278 @@
 import SwiftUI
 import CoreData
+import UIKit
 
-/// A calendar view that displays the days of the current month in a grid layout,
-/// allows month navigation, and shows detailed information for a selected day.
+/// Shared haptic feedback generators.
+private let successFeedback = UINotificationFeedbackGenerator()
+private let errorFeedback   = UINotificationFeedbackGenerator()
+
 struct CalendarView: View {
-    // MARK: - Observed Objects
-    
-    /// The view model for managing user profile data.
+    // MARK: – Observed ViewModels
     @ObservedObject var userProfileViewModel: UserProfileViewModel
-    
-    /// The view model for tracking user steps.
     @ObservedObject var stepsViewModel: StepsViewModel
-    
-    /// The view model for tracking burned calories.
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
-    
-    /// The view model for tracking water intake.
     @ObservedObject var waterViewModel: WaterViewModel
-    
-    
-    // MARK: - Environment
-    
-    /// Access the current color scheme (light or dark) for styling.
+
+    // MARK: – Environment
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) private var context
-    
-    // MARK: - State Properties
-    
-    /// Holds the currently displayed date (used for calculating the month to display).
+
+    // MARK: – State
     @State private var currentDate = Date()
-    
-    /// Stores the date selected by the user for displaying detailed day information.
     @State private var selectedDate: Date? = nil
-    
-    // MARK: - Computed Properties
-    
-    /// Computes the array of days for the current month as an optional Date.
-    /// Nils are inserted at the beginning and end to align the grid with weekdays.
+    @State private var showFullOverview: Bool = false
+
+    private let goalsManager = GoalsManager.shared
+
+    /// Namespace for matched-geometry effect when expanding a day cell.
+    @Namespace private var dayTransition
+
+    /// Haptic feedback generator for calendar navigation taps.
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
+
+    // MARK: - Appearance
+    /// Diameter for the status indicator circle.
+    private let statusCircleDiameter: CGFloat = 9
+
+    /// Width and height for each calendar cell
+    private let cellSize: CGFloat = 44
+
+    // MARK: – Computed
     private var daysInMonth: [Date?] {
-        let calendar = Calendar.current
-        // Get the first day of the current month.
-        guard let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentDate)) else {
-            return []
+        let cal = Calendar.current
+        guard let first = cal.date(from: cal.dateComponents([.year, .month], from: currentDate)) else { return [] }
+        let range = cal.range(of: .day, in: .month, for: currentDate)!
+        var days: [Date?] = Array(repeating: nil, count: cal.component(.weekday, from: first) - 1)
+        for d in 1...range.count {
+            days.append(cal.date(byAdding: .day, value: d - 1, to: first))
         }
-        // Get the range of days in the current month.
-        let range = calendar.range(of: .day, in: .month, for: currentDate)!
-        // Prepend nils so that the first day is positioned correctly according to its weekday.
-        var days: [Date?] = Array(repeating: nil, count: calendar.component(.weekday, from: firstOfMonth) - 1)
-        // Append actual dates for each day in the month.
-        for day in 1...range.count {
-            if let date = calendar.date(byAdding: .day, value: day - 1, to: firstOfMonth) {
-                days.append(date)
-            }
-        }
-        // Append nils to complete the grid row if needed.
-        while days.count % 7 != 0 {
-            days.append(nil)
-        }
+        while days.count % 7 != 0 { days.append(nil) }
         return days
     }
-    
-    // MARK: - Body
-    
+
+    // MARK: – Body
     var body: some View {
-        // One single “card” container
-        VStack {
+        ZStack {
+            // Summary view behind calendar
             if let date = selectedDate {
-                DayDetailCardView(
+                DaySummaryView(
                     date: date,
-                    userProfileViewModel: userProfileViewModel,
-                    burnedCaloriesViewModel: burnedCaloriesViewModel,
-                    waterViewModel: waterViewModel, stepsViewModel: stepsViewModel,
+                    userProfileVM: userProfileViewModel,
+                    burnedCaloriesVM: burnedCaloriesViewModel,
+                    waterVM: waterViewModel,
+                    stepsVM: stepsViewModel,
                     context: context,
-                    onBack: {
-                        withAnimation {
+                    onClose: {
+                        withAnimation { selectedDate = nil }
+                    },
+                    onFullOverview: {
+                        showFullOverview = true
+                    }
+                )
+            }
+            
+            // Calendar view on top, only when no date is selected
+            if selectedDate == nil {
+                VStack(spacing: 10) {
+                    calendarHeader
+                    calendarGrid
+                }
+                .padding(.vertical, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(colorScheme == .dark ? .white : .black)
+                )
+                .transition(.move(edge: .top))
+                .fullScreenCover(isPresented: $showFullOverview) {
+                    if let date = selectedDate {
+                        DayDetailCardView(
+                            date: date,
+                            userProfileViewModel: userProfileViewModel,
+                            burnedCaloriesViewModel: burnedCaloriesViewModel,
+                            waterViewModel: waterViewModel,
+                            stepsViewModel: stepsViewModel,
+                            context: context
+                        ) {
+                            showFullOverview = false
                             selectedDate = nil
                         }
                     }
-                )
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-            } else {
-                // Calendar Header
-                HStack {
-                    Button { changeMonth(by: -1) } label: {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(colorScheme == .dark ? .black : .white)
-                    }
-                    Spacer()
-                    Text(monthYearString(from: currentDate))
-                        .font(.headline)
-                        .foregroundColor(colorScheme == .dark ? .black : .white)
-                    Spacer()
-                    Button { changeMonth(by: 1) } label: {
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(colorScheme == .dark ? .black : .white)
-                    }
                 }
-                .padding()
-                
-                // Calendar Grid
-                let columns = Array(repeating: GridItem(.flexible()), count: 7)
-                LazyVGrid(columns: columns, spacing: 10) {
-                    let weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-                    ForEach(weekDays, id: \.self) { day in
-                        Text(day)
-                            .font(.subheadline)
-                            .foregroundColor(colorScheme == .dark ? .black : .white)
-                            .frame(maxWidth: .infinity)
-                    }
-                    ForEach(daysInMonth.indices, id: \.self) { idx in
-                        if let day = daysInMonth[idx] {
-                            Button {
-                                withAnimation {
-                                    selectedDate = day
-                                }
-                            } label: {
-                                Text("\(Calendar.current.component(.day, from: day))")
-                                    .frame(maxWidth: .infinity, minHeight: 40)
-                                    .foregroundColor(colorScheme == .dark ? .black : .white)
-                                
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        } else {
-                            Color.clear.frame(height: 40)
-                        }
-                    }
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(colorScheme == .dark ? Color.white : Color.black)
-                .shadow(radius: 3)
+                .fill(colorScheme == .dark ? .white : .black)
         )
-        .animation(.easeInOut, value: selectedDate)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(radius: 3)
+        .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7), value: selectedDate)
     }
-    
-    // MARK: - Helper Methods
-    
-    /// Formats a given date into a "Month Year" string.
-    /// - Parameter date: The date to format.
-    /// - Returns: A string representation in "LLLL yyyy" format.
+
+    // MARK: – Subviews
+    private var calendarHeader: some View {
+            
+        HStack {
+            Button {
+                tapFeedback.impactOccurred()
+                changeMonth(by: -1)
+            } label: {
+                Image(systemName: "chevron.left")
+                  .font(.system(size: 20, weight: .bold, design: .rounded))
+                  .foregroundColor(colorScheme == .dark ? .black : .white)
+            }
+            Spacer()
+            Text(monthYearString(from: currentDate))
+              .font(.system(size: 24, weight: .bold, design: .rounded))
+              .foregroundColor(colorScheme == .dark ? .black : .white)
+            Spacer()
+            Button {
+                tapFeedback.impactOccurred()
+                changeMonth(by: 1)
+            } label: {
+                Image(systemName: "chevron.right")
+                  .font(.system(size: 20, weight: .bold, design: .rounded))
+                  .foregroundColor(colorScheme == .dark ? .black : .white)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 9)
+    }
+
+    private var calendarGrid: some View {
+        let columns = Array(repeating: GridItem(.flexible()), count: 7)
+        return LazyVGrid(columns: columns, spacing: 10) {
+            let weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+            ForEach(weekdays, id: \.self) { wd in
+                Text(wd)
+                  .font(.system(size: 14, weight: .bold))
+                  .frame(width: cellSize, height: cellSize * 0.6)
+                  .foregroundColor(colorScheme == .dark ? .black : .white)
+            }
+            ForEach(daysInMonth.indices, id: \.self) { idx in
+                if let day = daysInMonth[idx] {
+                    // Determine if the day is strictly before today
+                    let startOfDay = Calendar.current.startOfDay(for: Date())
+                    let isPastDay = day < startOfDay
+
+                    Group {
+                        if isPastDay {
+                            Button {
+                                tapFeedback.impactOccurred()
+                                withAnimation(.interactiveSpring(response: 0.5, dampingFraction: 0.7)) {
+                                    selectedDate = day
+                                }
+                            } label: {
+                                ZStack {
+                                    Capsule()
+                                      .fill(
+                                        Calendar.current.isDateInToday(day)
+                                          ? Color.blue.opacity(0.3)
+                                          : Color.gray.opacity(0.3)
+                                      )
+                                      .matchedGeometryEffect(id: "\(day)-bg", in: dayTransition)
+                                    VStack(spacing: 4) {
+                                        Text("\(Calendar.current.component(.day, from: day))")
+                                          .font(.system(size: 14, weight: .bold))
+                                          .foregroundColor(colorScheme == .dark ? .black : .white)
+                                        if day <= startOfDay {
+                                            if consumedCaloriesValue(for: day) == 0 {
+                                                Circle()
+                                                  .stroke(Color.gray, lineWidth: 2)
+                                                  .frame(width: statusCircleDiameter, height: statusCircleDiameter)
+                                            } else {
+                                                Circle()
+                                                  .fill(isConsumedUnderGoal(for: day) ? Color.green : Color.red)
+                                                  .frame(width: statusCircleDiameter, height: statusCircleDiameter)
+                                            }
+                                        }
+                                    }
+                                    .matchedGeometryEffect(id: day, in: dayTransition)
+                                }
+                                .frame(width: cellSize, height: cellSize)
+                            }
+                        } else {
+                            // Not past: show cell without tappable behavior
+                            ZStack {
+                                Capsule()
+                                  .fill(
+                                    Calendar.current.isDateInToday(day)
+                                      ? Color.blue.opacity(0.3)
+                                      : Color.gray.opacity(0.3)
+                                  )
+                                  .matchedGeometryEffect(id: "\(day)-bg", in: dayTransition)
+                                VStack(spacing: 4) {
+                                    Text("\(Calendar.current.component(.day, from: day))")
+                                      .font(.system(size: 14, weight: .bold))
+                                      .foregroundColor(colorScheme == .dark ? .black : .white)
+                                    // Show status only for past or today
+                                    if day <= startOfDay {
+                                        if consumedCaloriesValue(for: day) == 0 {
+                                            Circle()
+                                              .stroke(Color.gray, lineWidth: 2)
+                                              .frame(width: statusCircleDiameter, height: statusCircleDiameter)
+                                        } else {
+                                            Circle()
+                                              .fill(isConsumedUnderGoal(for: day) ? Color.green : Color.red)
+                                              .frame(width: statusCircleDiameter, height: statusCircleDiameter)
+                                        }
+                                    }
+                                }
+                                .matchedGeometryEffect(id: day, in: dayTransition)
+                            }
+                            .frame(width: cellSize, height: cellSize)
+                            .onTapGesture {
+                                errorFeedback.notificationOccurred(.error)
+                            }
+                        }
+                    }
+                } else {
+                    Color.clear.frame(width: cellSize, height: cellSize)
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+    }
+
+    // MARK: – Helpers
     private func monthYearString(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter.string(from: date)
+        let f = DateFormatter(); f.dateFormat = "LLLL yyyy"
+        return f.string(from: date)
     }
-    
-    /// Changes the current displayed month by a given value.
-    /// - Parameter value: The number of months to add (or subtract if negative).
-    private func changeMonth(by value: Int) {
-        if let newDate = Calendar.current.date(byAdding: .month, value: value, to: currentDate) {
-            currentDate = newDate
+    private func changeMonth(by n: Int) {
+        if let d = Calendar.current.date(byAdding: .month, value: n, to: currentDate) {
+            currentDate = d
         }
     }
-    /// Formats the given date to a medium style string for the detail header.
-    /// - Parameter date: The date to format.
-    /// - Returns: A medium-style date string.
     private func dateFormattedFull(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        let f = DateFormatter(); f.dateStyle = .medium
+        return f.string(from: date)
+    }
+    private func consumedCaloriesValue(for date: Date) -> Double {
+        Double(DateFoodViewModel(date: date, context: context).totalCalories)
+    }
+    private func burnedCaloriesValue(for date: Date) -> Double {
+        let iso = DateFormatter.isoDate.string(from: date)
+        let history = BurnedCaloriesHistoryManager.shared.burnedCaloriesForPeriod(days: 30)
+        if let e = history.first(where: { $0.date == iso }) { return e.burnedCalories }
+        else if Calendar.current.isDateInToday(date) { return burnedCaloriesViewModel.currentBurnedCalories }
+        else { return 0 }
+    }
+    private func isConsumedUnderGoal(for date: Date) -> Bool {
+        consumedCaloriesValue(for: date) <= goalsManager.goalValue(for: .calories, on: date)
     }
 }
 
-// MARK: - Previews
 struct CalendarView_Previews: PreviewProvider {
     static var previews: some View {
-        // In-memory Core Data context for previews
-        let context = PersistenceController.shared.container.viewContext
         CalendarView(
             userProfileViewModel: UserProfileViewModel(),
             stepsViewModel: StepsViewModel(),
             burnedCaloriesViewModel: BurnedCaloriesViewModel(),
             waterViewModel: WaterViewModel(container: PersistenceController.shared.container)
         )
-        .environment(\.managedObjectContext, context)
+        .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
     }
 }

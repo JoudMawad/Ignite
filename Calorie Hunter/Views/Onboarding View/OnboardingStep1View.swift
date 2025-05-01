@@ -23,6 +23,8 @@ struct OnboardingStep1View: View {
     @State private var showContent = false
     /// Toggles the display of the "Next" button.
     @State private var showContent1 = false
+    /// Temporary selection for gender; starts empty so no segment is pre‑selected.
+    @State private var localGender: String = ""
     /// Tracks if the title animation has completed to prevent repeat triggering.
     @State private var hasCompletedAnimation = false
     /// Controls navigation to the next onboarding step.
@@ -43,7 +45,7 @@ struct OnboardingStep1View: View {
     /// Checks that Name and Gender are not empty and Age is greater than 0.
     var isStep1Valid: Bool {
         return !viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               !viewModel.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               !localGender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                viewModel.age > 0
     }
     
@@ -95,8 +97,11 @@ struct OnboardingStep1View: View {
                             title: "Gender",
                             systemImageName: "person.2.fill",
                             options: ["Male", "Female", "Other"],
-                            selection: $viewModel.gender
+                            selection: $localGender
                         )
+                        .onChange(of: localGender) {
+                            viewModel.gender = localGender
+                        }
                         // Numeric input for the user's age.
                         OnboardingInputCellInt(
                             title: "Age",

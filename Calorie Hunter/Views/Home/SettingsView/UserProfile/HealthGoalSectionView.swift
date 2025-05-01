@@ -50,6 +50,15 @@ struct HealthGoalsSectionView: View {
                         value: $viewModel.dailyBurnedCaloriesGoal
                     )
                 }
+
+                AnimatedCard {
+                    OnboardingInputCellDouble(
+                        title: "Water Goal (L)",
+                        placeholder: String(viewModel.dailyWaterGoal),
+                        systemImageName: "drop.fill",
+                        value: $viewModel.dailyWaterGoal
+                    )
+                }
                 
                 AnimatedCard {
                                             CalorieGoalSliderView(

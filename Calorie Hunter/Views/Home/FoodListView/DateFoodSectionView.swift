@@ -80,11 +80,12 @@ struct SectionCardView: View {
     let onAdd: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading) {
             VStack {
                 Spacer()
                 Text(mealType)
                     .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
                 Text("\(calories) kcal")
                     .foregroundColor(.gray)
                     .padding(.bottom, 10)
@@ -93,7 +94,7 @@ struct SectionCardView: View {
                         .font(.system(size: 18))
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                         .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7), value: isExpanded)
-                        .tint(Color.primary)
+                        .tint(colorScheme == .dark ? Color.black : Color.white)
                 }
                 Spacer()
             }
@@ -135,7 +136,7 @@ struct SectionCardView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(colorScheme == .dark ? Color.black : Color.white)
+                .fill(.primary)
                 .matchedGeometryEffect(id: mealType, in: namespace)
                 .shadow(radius: 3)
         )

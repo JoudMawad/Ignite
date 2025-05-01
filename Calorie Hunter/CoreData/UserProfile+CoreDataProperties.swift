@@ -39,4 +39,8 @@ extension UserProfile {
     @NSManaged public var dailyStepsGoal: Int32
     // The user's daily burned calories goal.
     @NSManaged public var dailyBurnedCaloriesGoal: Int32
+    // The user's daily Water Intake goal.
+    @NSManaged public var dailyWaterGoal: Double
+    
+    
 }

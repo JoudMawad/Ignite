@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import CoreData
 
 /// The main home view that presents the user's dashboard, including welcome text, charts,
@@ -33,6 +34,9 @@ struct HomeView: View {
     
     /// Tracks whether the settings view should be presented.
     @State private var showSettings = false
+    
+    /// Haptic feedback for toolbar button taps.
+    private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
     
     /// ViewModel for tracking exercises.
     @StateObject private var exerciseViewModel = ExerciseViewModel()
@@ -108,6 +112,7 @@ struct HomeView: View {
                 // Toolbar item for the settings gear button.
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        tapFeedback.impactOccurred()
                         showSettings.toggle()
                     } label: {
                         Image(systemName: "gearshape.fill")

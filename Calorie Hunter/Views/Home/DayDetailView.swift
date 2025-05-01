@@ -3,18 +3,22 @@ import CoreData
 import HealthKit
 import Combine
 
-// MARK: - Additional Views
-
-/// A detailed day view card that displays information for a selected day.
-/// The card shows the full date along with nutritional and activity data,
-/// and it features an animated appearance with scaling and blur effects.
 struct DayDetailCardView: View {
-    /// Ensures the burned-calories animation runs only once per session.
     private static var hasAnimatedBurnedCalories = false
-    /// Callback for going back to the calendar
+
+    let date: Date
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
+    @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
+    @ObservedObject var waterViewModel: WaterViewModel
+    @ObservedObject var stepsViewModel: StepsViewModel
+    let context: NSManagedObjectContext
     let onBack: () -> Void
 
-    // MARK: - Explicit Initializer
+    @Environment(\.colorScheme) var colorScheme
+    @State private var showContent = false
+    @State private var animatedCalories: Double = 0
+    @StateObject private var dateFoodViewModel: DateFoodViewModel
+
     init(date: Date,
          userProfileViewModel: UserProfileViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
@@ -27,228 +31,123 @@ struct DayDetailCardView: View {
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.waterViewModel = waterViewModel
         self.stepsViewModel = stepsViewModel
+        self.context = context
         _dateFoodViewModel = StateObject(wrappedValue: DateFoodViewModel(date: date, context: context))
         self.onBack = onBack
     }
-    // MARK: - Static Properties
-    
+
     private static let isoFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
     }()
     private static let displayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        return f
+        let f = DateFormatter(); f.dateStyle = .medium; return f
     }()
-    
-    // MARK: - Input Properties
-    
-    /// The specific date for which to display detailed information.
-    let date: Date
-    
-    /// The view model providing user profile information.
-    @ObservedObject var userProfileViewModel: UserProfileViewModel
-    
-    /// The view model that tracks burned calories.
-    @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
-    
-    /// The view model that tracks water intake.
-    @ObservedObject var waterViewModel: WaterViewModel
 
-    /// The view model that tracks steps.
-    @ObservedObject var stepsViewModel: StepsViewModel
-
-    // MARK: - Environment
-    
-    /// Access the current color scheme to adjust styling dynamically.
-    @Environment(\.colorScheme) var colorScheme
-    @Environment(\.managedObjectContext) private var context
-    @State private var showContent: Bool = false
-    @State private var animatedCalories: Double = 0
-    @StateObject private var dateFoodViewModel: DateFoodViewModel
-
-    // MARK: - Computed Properties
-    
-    /// Formats the given date as a string ("yyyy-MM-dd") for history lookups.
-    private var formattedDateString: String {
-        Self.isoFormatter.string(from: date)
-    }
-    
-    /// Retrieves the burned calories for the given date from history.
-    private var burnedCaloriesForDate: Double? {
-        // Retrieve a 30-day period of burned calories history.
-        let history = BurnedCaloriesHistoryManager.shared.burnedCaloriesForPeriod(days: 30)
-        // Match the formatted date string.
-        return history.first(where: { $0.date == formattedDateString })?.burnedCalories
-    }
-    
-    /// Returns a displayable string for burned calories, based on available data.
-    private var burnedCaloriesText: String {
-        if let burned = burnedCaloriesForDate {
-            return "\(Int(burned)) kcal"
-        } else if Calendar.current.isDateInToday(date) {
-            // If today's data isn't in history, use the current value from the view model.
-            return "\(Int(burnedCaloriesViewModel.currentBurnedCalories)) kcal"
-        } else {
-            return "Data unavailable"
-        }
-    }
-    
-    /// Returns a formatted string for the water consumption on the given date.
-    private var waterText: String {
-        let waterAmount = waterViewModel.waterAmount(for: date)
-        return String(format: "%.1f L", waterAmount)
-    }
-    
-    // caloriesText is now replaced by values from dateFoodViewModel.
-
-    // MARK: - Values
-
-    private var consumedCaloriesValue: Double {
+    // MARK: – Computed
+    private var consumedCalories: Double {
         Double(dateFoodViewModel.totalCalories)
     }
-    private var goalCaloriesValue: Double {
-        Double(burnedCaloriesValue) + Double(userProfileViewModel.dailyCalorieGoal)
-    }
-    
-    private var dailyStepsGoal: Int {
-        userProfileViewModel.dailyStepsGoalValue
-    }
-    private var stepsValue: Int {
-        let stepsOnDate = stepsViewModel.steps(for: date)
-        return stepsOnDate
-    }
-    
-    /// Numeric burned calories for this date.
-    private var burnedCaloriesValue: Double {
-        if let historyValue = burnedCaloriesForDate {
-            return historyValue
+    private var burnedCalories: Double {
+        if let hist = BurnedCaloriesHistoryManager.shared
+            .burnedCaloriesForPeriod(days: 30)
+            .first(where: { $0.date == Self.isoFormatter.string(from: date) })?
+            .burnedCalories {
+            return hist
         } else if Calendar.current.isDateInToday(date) {
             return burnedCaloriesViewModel.currentBurnedCalories
-        } else {
-            return 0.0
-        }
+        } else { return 0 }
     }
-    /// Net calories = consumed − burned.
-    private var netCaloriesValue: Double {
-        consumedCaloriesValue - burnedCaloriesValue
+    private var netCalories: Double {
+        consumedCalories - burnedCalories
     }
-    /// Remaining calories = goal − net.
-    private var remainingCaloriesValue: Double {
-        Double(userProfileViewModel.dailyCalorieGoal) - netCaloriesValue
+    private var remainingCalories: Double {
+        Double(userProfileViewModel.dailyCalorieGoal) - netCalories
     }
-    
-    // MARK: - Body
-    
+    private var fullDateText: String {
+        Self.displayFormatter.string(from: date)
+    }
+
     var body: some View {
-        VStack(spacing: 12) {
+        ScrollView {
+            // Top bar
             HStack {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .foregroundColor(colorScheme == .dark ? .black : .white)
-                    Spacer()
-                    Text(formattedFullDate(date))
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(colorScheme == .dark ? .black : .white)
-                        .opacity(showContent ? 1 : 0)
-                    Spacer()
+                      .font(.title2)
+                      .foregroundColor(.primary)
                 }
                 Spacer()
+                Text(fullDateText)
+                  .font(.system(size: 20, weight: .bold))
+                  .foregroundColor(.primary)
+                Spacer()
             }
-            .padding(.bottom, 4)
             .padding(.horizontal)
             .padding(.top, 8)
-            
-            // Info rows displaying nutritional and activity data.
-            VStack(spacing: 12) {
-                MetricCardView(
-                    iconName: "fork.knife",
-                    title: "Calories Consumed",
-                    valueText: "\(Int(consumedCaloriesValue)) kcal",
-                    current: consumedCaloriesValue,
-                    goal: goalCaloriesValue,
-                    gradientColors: [Color.blue, Color.purple]
-                )
-                
-                MetricCardView(
-                    iconName: "flame.fill",
-                    title: "Burned Calories",
-                    valueText: "\(Int(burnedCaloriesValue)) kcal",
-                    current: burnedCaloriesValue,
-                    goal: Double(userProfileViewModel.dailyBurnedCaloriesGoalValue),
-                    gradientColors: [Color.pink, Color.orange]
-                )
-                
-                MetricCardView(
-                    iconName: "figure.walk",
-                    title: "Steps",
-                    valueText: "\(stepsViewModel.currentSteps)",
-                    current: Double(stepsValue),
-                    goal: Double(userProfileViewModel.dailyStepsGoalValue),
-                    gradientColors: [Color.cyan, Color.green]
-                )
-                
-                MetricCardView(
-                    iconName: "drop.fill",
-                    title: "Water Intake",
-                    valueText: "\(Int(waterViewModel.waterAmount(for: date))) L",
-                    current: waterViewModel.waterAmount(for: date),
-                    goal: 2.8, // replace with your actual water goal property or value
-                    gradientColors: [Color.blue, Color.cyan]
-                )
-                
-                
-             //   InfoRow(title: "Your Net Calorie Intake:", value: "\(Int(netCaloriesValue)) kcal")
-                
-            }
-            .opacity(showContent ? 1 : 0)
-            .padding(.horizontal)
 
-            // Food sections for this day
-            DateFoodSectionsView(date: date, context: context)
-                .opacity(showContent ? 1 : 0)
-                .animation(.easeInOut(duration: 0.3), value: showContent)
-                .padding(.top, 8)
+            // Cards grid
+            
+            VStack( spacing: 25) {
+                
+                DateFoodSectionsView(date: date, context: context)
+                
+                    MetricCardView(
+                        iconName: "fork.knife",
+                        title: "Consumed",
+                        valueText: "\(Int(consumedCalories)) kcal",
+                        current: consumedCalories,
+                        goal: GoalsManager.shared.goalValue(for: .calories, on: date),
+                        gradientColors: [Color.orange, Color.red]
+                    )
+                    MetricCardView(
+                        iconName: "flame.fill",
+                        title: "Burned",
+                        valueText: "\(Int(burnedCalories)) kcal",
+                        current: burnedCalories,
+                        goal: GoalsManager.shared.goalValue(for: .burnedCalories, on: date),
+                        gradientColors: [Color.pink, Color.orange]
+                    )
+                    MetricCardView(
+                        iconName: "figure.walk",
+                        title: "Steps",
+                        valueText: "\(stepsViewModel.steps(for: date))",
+                        current: Double(stepsViewModel.steps(for: date)),
+                        goal: GoalsManager.shared.goalValue(for: .steps, on: date),
+                        gradientColors: [Color.cyan, Color.green]
+                    )
+                    MetricCardView(
+                        iconName: "drop.fill",
+                        title: "Water",
+                        valueText: String(format: "%.1f L", waterViewModel.waterAmount(for: date)),
+                        current: waterViewModel.waterAmount(for: date),
+                        goal: GoalsManager.shared.goalValue(for: .water, on: date),
+                        gradientColors: [Color.blue, Color.cyan]
+                    )
+                }
+                .padding()
+            
+            
         }
-        .padding(.vertical, 12)
-        .animation(.easeInOut(duration: 0.4), value: showContent)
         .onAppear {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                 showContent = true
             }
         }
-        .onDisappear {
-            showContent = false
-        }
-    }
-    
-    // MARK: - Helper Methods
-    
-    /// Formats the date to a medium style string for display.
-    /// - Parameter date: The date to format.
-    /// - Returns: A string representing the date.
-    private func formattedFullDate(_ date: Date) -> String {
-        Self.displayFormatter.string(from: date)
     }
 }
 
-// MARK: - Previews
 struct DayDetailCardView_Previews: PreviewProvider {
     static var previews: some View {
-        // Create an in-memory Core Data context for previews
-        let context = PersistenceController.shared.container.viewContext
+        let ctx = PersistenceController.shared.container.viewContext
         DayDetailCardView(
             date: Date(),
             userProfileViewModel: UserProfileViewModel(),
             burnedCaloriesViewModel: BurnedCaloriesViewModel(),
             waterViewModel: WaterViewModel(container: PersistenceController.shared.container),
             stepsViewModel: StepsViewModel(),
-            context: context,
+            context: ctx,
             onBack: {}
         )
-        .environment(\.managedObjectContext, context)
+        .environment(\.managedObjectContext, ctx)
     }
 }

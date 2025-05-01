@@ -84,6 +84,46 @@ final class PersistenceController {
             } catch {
                 print("Error seeding predefined foods on viewContext: \(error)")
             }
+            
+            let goalRequest: NSFetchRequest<DailyGoal> = DailyGoal.fetchRequest()
+            let goalCount = (try? viewContext.count(for: goalRequest)) ?? 0
+            guard goalCount == 0 else { return }
+
+            let calendar = Calendar.current
+            let daysToBackfill = 30
+            let types: [GoalType] = [.steps, .calories, .water]
+            let defaults: [GoalType: Double] = [
+                .steps: 10_000,
+                .calories: 2_000,
+                .water: 2.0
+            ]
+
+            for offset in 0..<daysToBackfill {
+                guard let date = calendar.date(byAdding: .day, value: -offset, to: Date()) else { continue }
+                let dateString = DateFormatter.isoDate.string(from: date)
+
+                // Skip if a goal already exists for this date
+                let fetch: NSFetchRequest<DailyGoal> = DailyGoal.fetchRequest()
+                fetch.predicate = NSPredicate(format: "dateString == %@", dateString)
+                if (try? viewContext.count(for: fetch)) ?? 0 > 0 { continue }
+
+                for type in types {
+                    let goal = DailyGoal(context: viewContext)
+                    goal.dateString = dateString
+                    goal.goalType   = type.rawValue
+                    goal.value      = defaults[type] ?? 0
+                }
+            }
+
+            do {
+                try viewContext.save()
+            } catch {
+                print("Error seeding DailyGoal backfill: \(error)")
+            }
+            
         }
+        
     }
 }
+
+

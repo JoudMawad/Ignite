@@ -20,6 +20,7 @@ class UserProfileViewModel: ObservableObject {
     @Published var dailyCalorieGoalValue: Int = 1500
     @Published var dailyStepsGoalValue: Int = 10000
     @Published var dailyBurnedCaloriesGoalValue: Int = 500
+    @Published var dailyWaterGoalValue: Double = 2.0
     @Published var startWeightValue: Double = 70.0
     @Published var currentWeightValue: Double = 70.0
     @Published var goalWeightValue: Double = 65.0
@@ -32,6 +33,8 @@ class UserProfileViewModel: ObservableObject {
     
     // The Core Data context for fetching and saving the user profile.
     private var context: NSManagedObjectContext
+    /// Manager for daily goal history.
+    private let goalsManager = GoalsManager.shared
 
     /// Initializes the view model with a Core Data context.
     /// It loads the user profile and sets up observers for Core Data changes and HealthKit updates.
@@ -93,6 +96,14 @@ class UserProfileViewModel: ObservableObject {
                 }
             }
             
+            // Update daily water goal if it has changed.
+            let newWaterGoal = profile.dailyWaterGoal
+            if newWaterGoal != dailyWaterGoalValue {
+                DispatchQueue.main.async {
+                    self.dailyWaterGoalValue = newWaterGoal
+                }
+            }
+            
             // Update start weight.
             let newStartWeight = profile.startWeight
             if newStartWeight != startWeightValue {
@@ -141,8 +152,11 @@ class UserProfileViewModel: ObservableObject {
             if let existingProfile = profiles.first {
                 DispatchQueue.main.async {
                     self.profile = existingProfile
-                    // goals
-                    self.dailyCalorieGoalValue = Int(existingProfile.dailyCalorieGoal)
+                    // Initialize goals for today based on stored profile values
+                    self.goalsManager.updateGoal(Double(existingProfile.dailyCalorieGoal), for: GoalType.calories, on: Date())
+                    self.goalsManager.updateGoal(Double(existingProfile.dailyStepsGoal), for: GoalType.steps, on: Date())
+                    self.goalsManager.updateGoal(Double(existingProfile.dailyBurnedCaloriesGoal), for: GoalType.burnedCalories, on: Date())
+                    self.dailyWaterGoalValue = existingProfile.dailyWaterGoal
                     // sync weights into your @Published state
                     self.startWeightValue   = existingProfile.startWeight
                     self.currentWeightValue = existingProfile.currentWeight
@@ -154,7 +168,11 @@ class UserProfileViewModel: ObservableObject {
                 try context.save()
                 DispatchQueue.main.async {
                     self.profile = newProfile
-                    self.dailyCalorieGoalValue = 1500
+                    // Seed today's goals from newly created profile defaults
+                    self.goalsManager.updateGoal(Double(newProfile.dailyCalorieGoal), for: GoalType.calories, on: Date())
+                    self.goalsManager.updateGoal(Double(newProfile.dailyStepsGoal), for: GoalType.steps, on: Date())
+                    self.goalsManager.updateGoal(Double(newProfile.dailyBurnedCaloriesGoal), for: GoalType.burnedCalories, on: Date())
+                    self.dailyWaterGoalValue = 2.0
                     // initialize the weight values, too
                     self.startWeightValue   = newProfile.startWeight
                     self.currentWeightValue = newProfile.currentWeight
@@ -328,6 +346,17 @@ class UserProfileViewModel: ObservableObject {
             objectWillChange.send()
             dailyBurnedCaloriesGoalValue = newValue
             profile?.dailyBurnedCaloriesGoal = Int32(newValue)
+            saveProfile()
+        }
+    }
+    
+    /// Returns and sets the user's daily water goal.
+    var dailyWaterGoal: Double {
+        get { dailyWaterGoalValue }
+        set {
+            objectWillChange.send()
+            dailyWaterGoalValue = newValue
+            profile?.dailyWaterGoal = newValue
             saveProfile()
         }
     }

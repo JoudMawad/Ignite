@@ -36,3 +36,13 @@ struct AddFoodForDateView: View {
         }
     }
 }
+
+extension DateFormatter {
+    /// Formatter for ISO-style date strings ("yyyy-MM-dd").
+    static let isoDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone.current
+        return formatter
+    }()
+}

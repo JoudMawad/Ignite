@@ -19,7 +19,7 @@ struct BurnedCaloriesCardView: View {
             HStack(alignment: .top, spacing: 4) {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                    .foregroundColor(.red)
                 
                 Text("Burned Calories")
                     .font(.system(size: 15, weight: .bold))

@@ -1,5 +1,6 @@
 import SwiftUI
 import HealthKit
+import UIKit
 
 struct ExerciseCardView: View {
     @ObservedObject var viewModel: ExerciseViewModel
@@ -8,6 +9,10 @@ struct ExerciseCardView: View {
 
     @State private var showAddSheet = false
     @State private var isEditing = false
+
+    /// Haptics for button interactions.
+    private let tapFeedback   = UIImpactFeedbackGenerator(style: .light)
+    private let errorFeedback = UINotificationFeedbackGenerator()
 
     /// Exercises occurring today.
     private var todayExercises: [Exercise] {
@@ -35,11 +40,21 @@ struct ExerciseCardView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .layoutPriority(1)
             Spacer()
-            Button(action: { showAddSheet = true }) {
+            Button(action: {
+                tapFeedback.impactOccurred()
+                showAddSheet = true
+            }) {
                 Image(systemName: "plus.circle")
                     .font(.title2)
             }
-            Button(action: { isEditing.toggle() }) {
+            Button(action: {
+                if todayExercises.isEmpty {
+                    errorFeedback.notificationOccurred(.error)
+                } else {
+                    tapFeedback.impactOccurred()
+                    isEditing.toggle()
+                }
+            }) {
                 Image(systemName: isEditing ? "checkmark.circle" : "pencil.circle")
                     .font(.title2)
                     .foregroundColor(colorScheme == .dark ? .black : .white)

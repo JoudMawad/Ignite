@@ -45,11 +45,19 @@ struct MetricCardView: View {
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundColor(colorScheme == .dark ? .black : .white)
             GradientProgressBar(
-                current: current,
+                current: animatedValue,
                 goal: goal,
                 gradientColors: gradientColors
             )
         }
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(colorScheme == .dark ? Color.white : Color.black)
+                .shadow(radius: 3)
+                .frame(maxWidth: .infinity)
+                .frame(height: 120)
+        )
         .onAppear {
             animatedValue = 0
             withAnimation(.easeInOut(duration: 1)) {
