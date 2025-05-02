@@ -65,19 +65,26 @@ final class PersistenceController {
             let request: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
             let count = (try? viewContext.count(for: request)) ?? 0
             guard count == 0 else { return }
-            for item in PredefinedFoods.foods {
-                let entity = FoodEntity(context: viewContext)
-                entity.id = item.id
-                entity.name = item.name
-                entity.calories = Double(item.calories)
-                entity.protein = item.protein
-                entity.carbs = item.carbs
-                entity.fat = item.fat
-                entity.grams = item.grams
-                entity.mealType = item.mealType
-                entity.date = Date.distantPast
-                entity.isUserAdded = false
-                entity.barcode = item.barcode
+            let predefinedLists = [
+                PredefinedMeatFoods.foods,
+                PredefinedFruitsFoods.foods,
+                PredefinedVegetableFoods.foods
+            ]
+            for list in predefinedLists {
+                for item in list {
+                    let entity = FoodEntity(context: viewContext)
+                    entity.id = item.id
+                    entity.name = item.name
+                    entity.calories = Double(item.calories)
+                    entity.protein = item.protein
+                    entity.carbs = item.carbs
+                    entity.fat = item.fat
+                    entity.grams = item.grams
+                    entity.mealType = item.mealType
+                    entity.date = Date.distantPast
+                    entity.isUserAdded = false
+                    entity.barcode = item.barcode
+                }
             }
             do {
                 try viewContext.save()
