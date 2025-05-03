@@ -96,6 +96,26 @@ struct AddFoodView: View {
         }
     }
 
+    // MARK: - Pagination State
+    @State private var displayedFoods: [FoodItem] = []
+    private let batchSize = 20
+
+    private func resetDisplayedFoods() {
+        displayedFoods = Array(filteredFoods.prefix(batchSize))
+    }
+
+    private func loadMoreFoodsIfNeeded(currentItem: FoodItem) {
+        guard let index = displayedFoods.firstIndex(where: { $0.id == currentItem.id }) else { return }
+        // When the last displayed item appears, load the next batch
+        if index == displayedFoods.count - 1 {
+            let nextIndex = displayedFoods.count
+            let endIndex = min(filteredFoods.count, nextIndex + batchSize)
+            if nextIndex < endIndex {
+                displayedFoods.append(contentsOf: filteredFoods[nextIndex..<endIndex])
+            }
+        }
+    }
+
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -180,17 +200,26 @@ struct AddFoodView: View {
                             .padding(.vertical, 8)
                     }
 
-                    // Food List
+                    // MARK: - Food List with Pagination
                     ScrollView {
-                        VStack(spacing: 0) {
-                            ForEach(filteredFoods, id: \.id) { food in
+                        LazyVStack(spacing: 0) {
+                            ForEach(displayedFoods, id: \.id) { food in
                                 FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
                                     .background(colorScheme == .dark ? Color.black : Color.white)
+                                    .onAppear {
+                                        loadMoreFoodsIfNeeded(currentItem: food)
+                                    }
                             }
                         }
                         .padding(.top, isShowingScanner ? 13 : 13)
                     }
                     .frame(maxHeight: 550)
+                    .onAppear {
+                        resetDisplayedFoods()
+                    }
+                    .onChange(of: searchText) { _ in resetDisplayedFoods() }
+                    .onChange(of: scannedCode) { _ in resetDisplayedFoods() }
+                    .onChange(of: viewModel.currentProduct) { _ in resetDisplayedFoods() }
 
                     Spacer()
 
