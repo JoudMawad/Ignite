@@ -13,13 +13,15 @@ struct CalendarView: View {
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
     @ObservedObject var waterViewModel: WaterViewModel
 
+    /// Binding to the selected date in the parent view.
+    @Binding var selectedDate: Date?
+
     // MARK: – Environment
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.managedObjectContext) private var context
 
     // MARK: – State
     @State private var currentDate = Date()
-    @State private var selectedDate: Date? = nil
     @State private var showFullOverview: Bool = false
 
     private let goalsManager = GoalsManager.shared
@@ -29,6 +31,20 @@ struct CalendarView: View {
 
     /// Haptic feedback generator for calendar navigation taps.
     private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
+    
+    init(
+      selectedDate: Binding<Date?>,
+      userProfileViewModel: UserProfileViewModel,
+      stepsViewModel: StepsViewModel,
+      burnedCaloriesViewModel: BurnedCaloriesViewModel,
+      waterViewModel: WaterViewModel
+    ) {
+      self._selectedDate = selectedDate
+      self.userProfileViewModel = userProfileViewModel
+      self.stepsViewModel = stepsViewModel
+      self.burnedCaloriesViewModel = burnedCaloriesViewModel
+      self.waterViewModel = waterViewModel
+    }
 
     // MARK: - Appearance
     /// Diameter for the status indicator circle.
@@ -284,6 +300,7 @@ struct CalendarView: View {
 struct CalendarView_Previews: PreviewProvider {
     static var previews: some View {
         CalendarView(
+            selectedDate: .constant(nil),
             userProfileViewModel: UserProfileViewModel(),
             stepsViewModel: StepsViewModel(),
             burnedCaloriesViewModel: BurnedCaloriesViewModel(),

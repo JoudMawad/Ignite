@@ -34,6 +34,7 @@ struct HomeView: View {
     
     /// Tracks whether the settings view should be presented.
     @State private var showSettings = false
+    @State private var selectedDate: Date? = nil
     
     /// Haptic feedback for toolbar button taps.
     private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -65,7 +66,8 @@ struct HomeView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
+            ScrollViewReader { proxy in
+                ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     
                     // MARK: - Welcome Section
@@ -97,16 +99,26 @@ struct HomeView: View {
                     
                     // MARK: - Calendar Section
                     CalendarView(
+                        selectedDate: $selectedDate,
                         userProfileViewModel: userProfileViewModel,
                         stepsViewModel: stepsViewModel,
                         burnedCaloriesViewModel: burnedCaloriesViewModel,
                         waterViewModel: waterViewModel
                     )
+                    .id("CalendarCard")
                     
                 }
                 .padding(.horizontal)
                 .padding(.top, 20)
                 .padding(.bottom, 40)
+            }
+                .onChange(of: selectedDate) { _, new in
+                    if new == nil {
+                        withAnimation {
+                            proxy.scrollTo("CalendarCard", anchor: .top)
+                        }
+                    }
+                }
             }
             .toolbar {
                 // Toolbar item for the settings gear button.
