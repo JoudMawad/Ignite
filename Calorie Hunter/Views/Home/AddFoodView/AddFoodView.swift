@@ -217,9 +217,15 @@ struct AddFoodView: View {
                     .onAppear {
                         resetDisplayedFoods()
                     }
-                    .onChange(of: searchText) { _ in resetDisplayedFoods() }
-                    .onChange(of: scannedCode) { _ in resetDisplayedFoods() }
-                    .onChange(of: viewModel.currentProduct) { _ in resetDisplayedFoods() }
+                    .onChange(of: searchText) {
+                        resetDisplayedFoods()
+                    }
+                    .onChange(of: scannedCode) {
+                        resetDisplayedFoods()
+                    }
+                    .onChange(of: viewModel.currentProduct) {
+                        resetDisplayedFoods()
+                    }
 
                     Spacer()
 
