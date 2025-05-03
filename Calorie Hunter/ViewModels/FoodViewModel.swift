@@ -72,10 +72,9 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
     init(context: NSManagedObjectContext) {
         self.context = context
         loadEntries()
-        calorieHistoryManager.checkForMidnightReset(foodItems: foodItems)
     }
 
-    /// Logs a consumption event for a given FoodItem.
+    /// Logs a consumption event for a given FoodItem and updates today’s history entry.
     func logConsumption(of foodItem: FoodItem, grams: Double, mealType: String) {
         // 1. Find or seed the catalog item
         let foodReq: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
@@ -97,7 +96,7 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
             foodEntity.isUserAdded = false
             foodEntity.barcode = foodItem.barcode
         }
-    
+
         // 2. Create a ConsumptionEntity entry
         let entry = ConsumptionEntity(context: context)
         entry.id = UUID()
@@ -105,14 +104,41 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
         entry.dateEaten = Date()
         entry.gramsConsumed = grams
         entry.mealType = mealType
-    
-        // 3. Save and reload diary entries
+
         do {
+            // 3. Save the consumption and reload diary entries
             try context.save()
             loadEntries()
             objectWillChange.send()
+
+            // 4. Compute today’s total calories
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: Date())
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            let consumptionReq: NSFetchRequest<ConsumptionEntity> = ConsumptionEntity.fetchRequest()
+            consumptionReq.predicate = NSPredicate(format: "dateEaten >= %@ AND dateEaten < %@", startOfDay as NSDate, endOfDay as NSDate)
+            let todaysEntries = try context.fetch(consumptionReq)
+            let todaysCalories = todaysEntries.reduce(0) { sum, entry in
+                guard let per100 = entry.food?.calories else { return sum }
+                return sum + Int(per100 * (entry.gramsConsumed / 100.0))
+            }
+
+            // 5. Format today’s date string
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let dateString = formatter.string(from: Date())
+
+            // 6. Fetch or create the CalorieEntry for today
+            let historyReq: NSFetchRequest<CalorieEntry> = CalorieEntry.fetchRequest()
+            historyReq.predicate = NSPredicate(format: "dateString == %@", dateString)
+            let historyEntry = (try? context.fetch(historyReq))?.first ?? CalorieEntry(context: context)
+            historyEntry.dateString = dateString
+            historyEntry.calories = Int32(todaysCalories)
+
+            // 7. Save the updated history
+            try context.save()
         } catch {
-            print("Error logging consumption: \(error)")
+            print("Error logging consumption or updating history: \(error)")
         }
     }
 
@@ -213,9 +239,9 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
     func totalCaloriesForDate(_ date: Date) -> Int {
         calorieHistoryManager.totalCaloriesForDate(date)
     }
-
-    /// Fetches historical totals for a range (e.g., week, month).
-    func totalCaloriesForPeriod(days: Int) -> [(date: String, calories: Int)] {
+    
+    /// Returns the total calories for each of the last `days` days.
+    func totalCalories(forLast days: Int) -> [(date: String, calories: Int)] {
         calorieHistoryManager.totalCaloriesForPeriod(days: days)
     }
     

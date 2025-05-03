@@ -6,12 +6,10 @@ struct YearlyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
     // Adapts styling based on the current light or dark mode.
     @Environment(\.colorScheme) var colorScheme
-    // Manager for retrieving historical calorie data.
-    private let historyManager = CalorieHistoryManager()
     
     /// Retrieves raw calorie data for the past 365 days.
     var calorieData: [(date: String, calories: Int)] {
-        historyManager.totalCaloriesForPeriod(days: 365)
+        viewModel.totalCalories(forLast: 365)
     }
     
     /// Groups the raw calorie data into 90-day intervals.

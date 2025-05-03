@@ -6,12 +6,10 @@ struct WeeklyCalorieChartView: View {
     @ObservedObject var viewModel: FoodViewModel
     // Adapt UI styling based on light/dark mode.
     @Environment(\.colorScheme) var colorScheme
-    // Manager responsible for retrieving historical calorie data.
-    private let historyManager = CalorieHistoryManager()
     
     /// Retrieves calorie data for the last 7 days.
     var calorieData: [(date: String, calories: Int)] {
-        historyManager.totalCaloriesForPeriod(days: 7)
+        viewModel.totalCalories(forLast: 7)
     }
     
     /// Formats the raw calorie data to map each day of the week to its calorie count.

@@ -8,30 +8,6 @@ class CalorieHistoryManager {
         self.context = context
     }
 
-    func checkForMidnightReset(foodItems: [FoodItem]) {
-        saveDailyCalories(foodItems: foodItems)
-    }
-
-    private func saveDailyCalories(foodItems: [FoodItem]) {
-        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-        let yesterdayFoods = foodItems.filter { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
-        let yesterdayCalories = yesterdayFoods.reduce(0) { $0 + $1.calories }
-        let dateString = formatDate(yesterday)
-
-        let fetchRequest: NSFetchRequest<CalorieEntry> = CalorieEntry.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "dateString == %@", dateString)
-        do {
-            let results = try context.fetch(fetchRequest)
-            let entry = results.first ?? CalorieEntry(context: context)
-            entry.dateString = dateString
-            entry.calories = Int32(yesterdayCalories)
-            try context.save()
-            print("Saved \(yesterdayCalories) kcal for \(dateString)")
-        } catch {
-            print("Error saving calorie entry: \(error)")
-        }
-    }
-
     func totalCaloriesForDate(_ date: Date) -> Int {
         let dateString = formatDate(date)
         let fetchRequest: NSFetchRequest<CalorieEntry> = CalorieEntry.fetchRequest()
