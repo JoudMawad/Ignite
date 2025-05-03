@@ -75,6 +75,53 @@ final class StepsManager {
         self.healthStore.execute(query)
     }
     
+    func fetchHistoricalWalkingDistance(startDate: Date,
+                                        endDate: Date,
+                                        completion: @escaping ([(date: String, distanceInMeters: Double)]) -> Void)
+    {
+        guard let distType = HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning) else {
+            completion([])
+            return
+        }
+        let interval = DateComponents(day: 1)
+        let anchor = Calendar.current.startOfDay(for: startDate)
+        let query = HKStatisticsCollectionQuery(quantityType: distType,
+                                                quantitySamplePredicate: nil,
+                                                options: .cumulativeSum,
+                                                anchorDate: anchor,
+                                                intervalComponents: interval)
+        query.initialResultsHandler = { _, results, error in
+            guard error == nil, let stats = results else {
+                completion([])
+                return
+            }
+            var dailyDistances: [(String, Double)] = []
+            let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"; fmt.timeZone = .current
+            stats.enumerateStatistics(from: startDate, to: endDate) { stat, _ in
+                let dateStr = fmt.string(from: stat.startDate)
+                let meters = stat.sumQuantity()?.doubleValue(for: HKUnit.meter()) ?? 0
+                dailyDistances.append((date: dateStr, distanceInMeters: meters))
+            }
+            completion(dailyDistances)
+        }
+        healthStore.execute(query)
+    }
+    
+    /// Fetches and imports daily walking/running distances into Core Data.
+    /// - Parameters:
+    ///   - startDate: The first day to pull data for.
+    ///   - endDate: The last day to pull data for.
+    ///   - completion: Called when the import is complete.
+    func updateHistoricalDistances(startDate: Date,
+                                   endDate: Date,
+                                   completion: @escaping () -> Void) {
+        fetchHistoricalWalkingDistance(startDate: startDate, endDate: endDate) { fetchedDistances in
+            // Persist into Core Data via your history manager
+            StepsHistoryManager.shared.importHistoricalDistances(fetchedDistances)
+            completion()
+        }
+    }
+    
     /// Updates the local historical steps data by fetching new data from HealthKit and saving it.
     /// - Parameters:
     ///   - startDate: The start of the period to update.

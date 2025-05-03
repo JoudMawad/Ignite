@@ -31,6 +31,39 @@ class StepsHistoryManager: ObservableObject {
         }
     }
     
+    func importHistoricalDistances(_ data: [(date: String, distanceInMeters: Double)]) {
+      viewContext.perform {
+        for (date, meters) in data {
+          let req: NSFetchRequest<DistanceEntry> = DistanceEntry.fetchRequest()
+          req.predicate = NSPredicate(format: "dateString == %@", date)
+          let entry = (try? self.viewContext.fetch(req))?.first ?? DistanceEntry(context: self.viewContext)
+          entry.dateString = date
+          entry.distance = meters
+        }
+        self.saveContext()
+      }
+    }
+    
+
+    
+    /// Returns the walking/running distance (in meters) for each of the last `days` days.
+    func distancesForPeriod(days: Int) -> [(date: String, distance: Double)] {
+        var results: [(String, Double)] = []
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = .current
+
+        for i in 0..<days {
+            let date = Calendar.current.date(byAdding: .day, value: -i, to: Date())!
+            let ds = fmt.string(from: date)
+            let req: NSFetchRequest<DistanceEntry> = DistanceEntry.fetchRequest()
+            req.predicate = NSPredicate(format: "dateString == %@", ds)
+            let entry = (try? viewContext.fetch(req))?.first
+            results.append((ds, entry?.distance ?? 0))
+        }
+        return results.reversed()
+    }
+    
     /// Returns the step counts for the last given number of days.
     /// - Parameter days: The number of days to retrieve.
     /// - Returns: An array of tuples (date, steps) in chronological order.

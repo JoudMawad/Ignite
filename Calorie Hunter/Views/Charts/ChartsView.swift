@@ -108,6 +108,14 @@ struct ChartsView: View {
                         AnyView(YearlyStepsChartView(stepsManager: StepsHistoryManager.shared))
                     ])
                     .scrollVisualEffect()
+
+                    // MARK: Distance Charts Carousel with visual effect
+                    ChartCarouselView(charts: [
+                        AnyView(WeeklyDistanceChartView(stepsManager: StepsHistoryManager.shared)),
+                        AnyView(MonthlyDistanceChartView(stepsManager: StepsHistoryManager.shared)),
+                        AnyView(YearlyDistanceChartView(stepsManager: StepsHistoryManager.shared))
+                    ])
+                    .scrollVisualEffect()
                 }
                 // Ensure the background covers the full scrollable area.
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))

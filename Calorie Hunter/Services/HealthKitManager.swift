@@ -15,6 +15,7 @@ final class HealthKitManager {
         // Define the data types we want to read: body mass, step count, active energy burned, and dietary water.
         guard let bodyMassType = HKObjectType.quantityType(forIdentifier: .bodyMass),
               let stepType = HKObjectType.quantityType(forIdentifier: .stepCount),
+              let walkingdistance = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning),
               let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
               let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
             // If any of the required types are not available, complete with false.
@@ -34,6 +35,7 @@ final class HealthKitManager {
         let typesToRead: Set<HKObjectType> = [
             bodyMassType,
             stepType,
+            walkingdistance,
             activeEnergyType,
             workoutType,
             waterType
