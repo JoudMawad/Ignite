@@ -9,14 +9,6 @@ struct Calorie_HunterApp: App {
     
     // Control the display of the splash screen
     @State private var showSplash = true
-
-    init() {
-        HealthKitManager.shared.requestAuthorization { success, error in
-            if success {
-                HealthKitManager.shared.enableBackgroundDeliveryForAll()
-            }
-        }
-    }
     
     var body: some Scene {
         WindowGroup {
@@ -30,7 +22,7 @@ struct Calorie_HunterApp: App {
                         set: { _ in }
                     )) {
                         NavigationStack {
-                            OnboardingStep1View(viewModel: UserProfileViewModel())
+                            OnboardingStep1View(viewModel: userProfileVM)
                         }
                     }
                 

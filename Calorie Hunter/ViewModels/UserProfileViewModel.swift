@@ -1,10 +1,3 @@
-//
-//  UserPreDefinedFoodsViewModel.swift
-//  Calorie Hunter
-//
-//  Created by Jude Mawad on 04.03.25.
-//
-
 import SwiftUI
 import CoreData
 
@@ -12,6 +5,18 @@ import CoreData
 // including personal details, goals, and weight information.
 // It loads and saves profile data from Core Data and listens to HealthKit updates.
 class UserProfileViewModel: ObservableObject {
+    // Debounce helper for auto-saving
+    private var saveWorkItem: DispatchWorkItem?
+    private func scheduleSave() {
+        // Cancel any pending save
+        saveWorkItem?.cancel()
+        // Create a new work item to perform the save after a short delay
+        let item = DispatchWorkItem { [weak self] in
+            self?.saveProfile()
+        }
+        saveWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)
+    }
     // Published property for the entire user profile.
     @Published var profile: UserProfile?
     
@@ -41,6 +46,29 @@ class UserProfileViewModel: ObservableObject {
     init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
         self.context = context
         loadProfile()
+        if self.profile == nil {
+            let blank = UserProfile(context: context)
+            // satisfy the model’s “required” flags
+            blank.name                 = ""
+            blank.gender               = ""
+            blank.age                  = 0
+            blank.height               = 0
+            blank.startWeight          = 0.0
+            blank.currentWeight        = 0.0
+            blank.goalWeight           = 0.0
+            blank.dailyCalorieGoal     = 0
+            blank.dailyStepsGoal       = 0
+            blank.dailyBurnedCaloriesGoal = 0
+            blank.dailyWaterGoal       = 0.0
+
+            do {
+               try context.save()
+            } catch {
+               print("Error creating stub profile: \(error)")
+            }
+
+            self.profile = blank
+        }
         // Observe Core Data changes so that if the profile updates, the published properties can be refreshed.
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(contextObjectsDidChange(_:)),
@@ -143,8 +171,25 @@ class UserProfileViewModel: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: reimportWorkItem!)
     }
     
+    func createProfile(name: String, gender: String, age: Int32, height: Int32, startWeight: Double, currentWeight: Double, goalWeight: Double, dailyGoals: (calories: Int32, steps: Int32, burned: Int32, water: Double)) {
+        let p = UserProfile(context: context)
+        p.name   = name
+        p.gender = gender
+        p.age    = age
+        p.height = height
+        p.startWeight               = startWeight
+        p.currentWeight             = currentWeight
+        p.goalWeight                = goalWeight
+        p.dailyCalorieGoal          = dailyGoals.calories
+        p.dailyStepsGoal            = dailyGoals.steps
+        p.dailyBurnedCaloriesGoal   = dailyGoals.burned
+        p.dailyWaterGoal            = dailyGoals.water
+        try? context.save()
+        self.profile = p
+    }
+    
     /// Loads the user profile from Core Data.
-    /// If no profile exists, it creates a new one with default values.
+    /// If no profile exists, waits for the user to call createProfile(...) before saving.
     func loadProfile() {
         let request: NSFetchRequest<UserProfile> = UserProfile.fetchRequest()
         do {
@@ -163,21 +208,7 @@ class UserProfileViewModel: ObservableObject {
                     self.goalWeightValue    = existingProfile.goalWeight
                 }
             } else {
-                let newProfile = UserProfile(context: context)
-                // ... your default assignments ...
-                try context.save()
-                DispatchQueue.main.async {
-                    self.profile = newProfile
-                    // Seed today's goals from newly created profile defaults
-                    self.goalsManager.updateGoal(Double(newProfile.dailyCalorieGoal), for: GoalType.calories, on: Date())
-                    self.goalsManager.updateGoal(Double(newProfile.dailyStepsGoal), for: GoalType.steps, on: Date())
-                    self.goalsManager.updateGoal(Double(newProfile.dailyBurnedCaloriesGoal), for: GoalType.burnedCalories, on: Date())
-                    self.dailyWaterGoalValue = 2.0
-                    // initialize the weight values, too
-                    self.startWeightValue   = newProfile.startWeight
-                    self.currentWeightValue = newProfile.currentWeight
-                    self.goalWeightValue    = newProfile.goalWeight
-                }
+                self.profile = nil
             }
         } catch {
             print("Error loading profile: \(error)")
@@ -186,8 +217,11 @@ class UserProfileViewModel: ObservableObject {
     
     /// Saves the current user profile to Core Data.
     func saveProfile() {
+        // Only save if there are changes
+        guard context.hasChanges else { return }
         do {
             try context.save()
+            print("✅ Profile saved")
         } catch {
             print("Error saving profile: \(error)")
         }
@@ -251,9 +285,9 @@ class UserProfileViewModel: ObservableObject {
     var name: String {
         get { profile?.name ?? "" }
         set {
-            objectWillChange.send()  // Notify SwiftUI of the upcoming change.
+            objectWillChange.send()
             profile?.name = newValue
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -267,8 +301,9 @@ class UserProfileViewModel: ObservableObject {
     var age: Int {
         get { Int(profile?.age ?? 25) }
         set {
+            objectWillChange.send()
             profile?.age = Int32(newValue)
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -276,8 +311,9 @@ class UserProfileViewModel: ObservableObject {
     var height: Int {
         get { Int(profile?.height ?? 170) }
         set {
+            objectWillChange.send()
             profile?.height = Int32(newValue)
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -288,7 +324,7 @@ class UserProfileViewModel: ObservableObject {
             objectWillChange.send()
             startWeightValue = newValue
             profile?.startWeight = newValue
-            saveProfile()
+            scheduleSave()
         }
     }
 
@@ -313,7 +349,7 @@ class UserProfileViewModel: ObservableObject {
             objectWillChange.send()
             goalWeightValue = newValue
             profile?.goalWeight = newValue
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -321,10 +357,10 @@ class UserProfileViewModel: ObservableObject {
     var dailyCalorieGoal: Int {
         get { dailyCalorieGoalValue }
         set {
-            objectWillChange.send()  // Force immediate UI update.
+            objectWillChange.send()
             dailyCalorieGoalValue = newValue
             profile?.dailyCalorieGoal = Int32(newValue)
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -332,10 +368,10 @@ class UserProfileViewModel: ObservableObject {
     var dailyStepsGoal: Int {
         get { dailyStepsGoalValue }
         set {
-            objectWillChange.send()  // Notify immediately.
+            objectWillChange.send()
             dailyStepsGoalValue = newValue
             profile?.dailyStepsGoal = Int32(newValue)
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -346,7 +382,7 @@ class UserProfileViewModel: ObservableObject {
             objectWillChange.send()
             dailyBurnedCaloriesGoalValue = newValue
             profile?.dailyBurnedCaloriesGoal = Int32(newValue)
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -357,7 +393,7 @@ class UserProfileViewModel: ObservableObject {
             objectWillChange.send()
             dailyWaterGoalValue = newValue
             profile?.dailyWaterGoal = newValue
-            saveProfile()
+            scheduleSave()
         }
     }
     
@@ -365,8 +401,9 @@ class UserProfileViewModel: ObservableObject {
     var gender: String {
         get { profile?.gender ?? "Male" }
         set {
+            objectWillChange.send()
             profile?.gender = newValue
-            saveProfile()
+            scheduleSave()
         }
     }
 }

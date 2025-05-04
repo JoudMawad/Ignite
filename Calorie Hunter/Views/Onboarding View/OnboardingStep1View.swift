@@ -12,6 +12,11 @@ struct OnboardingStep1View: View {
     /// A view model dedicated to handling profile image logic.
     @StateObject var imageVM = ProfileImageViewModel()
     
+    // Local staging state for onboarding inputs
+    @State private var stagingName: String = ""
+    @State private var stagingGender: String = ""
+    @State private var stagingAge: Int = 0
+    
     // MARK: - Environment
     
     /// Access the current color scheme for dynamic styling.
@@ -23,8 +28,6 @@ struct OnboardingStep1View: View {
     @State private var showContent = false
     /// Toggles the display of the "Next" button.
     @State private var showContent1 = false
-    /// Temporary selection for gender; starts empty so no segment is pre‑selected.
-    @State private var localGender: String = ""
     /// Tracks if the title animation has completed to prevent repeat triggering.
     @State private var hasCompletedAnimation = false
     /// Controls navigation to the next onboarding step.
@@ -44,15 +47,16 @@ struct OnboardingStep1View: View {
     
     /// Checks that Name and Gender are not empty and Age is greater than 0.
     var isStep1Valid: Bool {
-        return !viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               !localGender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               viewModel.age > 0
+        return !stagingName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               !stagingGender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               stagingAge > 0
     }
     
     // MARK: - Body
     
     var body: some View {
         ZStack {
+            // Initialize staging from view model
             // Main content wrapped in a VStack.
             VStack {
                 Spacer()
@@ -90,24 +94,21 @@ struct OnboardingStep1View: View {
                             title: "Name",
                             placeholder: "....",
                             systemImageName: "person.fill",
-                            value: $viewModel.name
+                            value: $stagingName
                         )
                         // Picker input for selecting gender.
                         OnboardingInputCellPicker(
                             title: "Gender",
                             systemImageName: "person.2.fill",
                             options: ["Male", "Female", "Other"],
-                            selection: $localGender
+                            selection: $stagingGender
                         )
-                        .onChange(of: localGender) {
-                            viewModel.gender = localGender
-                        }
                         // Numeric input for the user's age.
                         OnboardingInputCellInt(
                             title: "Age",
                             placeholder: "....",
                             systemImageName: "number.circle",
-                            value: $viewModel.age
+                            value: $stagingAge
                         )
                     }
                     // Fade in the input fields using an opacity transition.
@@ -131,6 +132,9 @@ struct OnboardingStep1View: View {
                             // Provide haptic feedback for success.
                             let successFeedback = UINotificationFeedbackGenerator()
                             successFeedback.notificationOccurred(.success)
+                            viewModel.name   = stagingName
+                            viewModel.gender = stagingGender
+                            viewModel.age    = stagingAge
                             // Proceed to the next onboarding step.
                             navigateToStep2 = true
                         } else {
@@ -152,6 +156,8 @@ struct OnboardingStep1View: View {
                             .cornerRadius(8)
                             .padding(.horizontal, 40)
                     }
+                    .disabled(!isStep1Valid)
+                    .opacity(isStep1Valid ? 1 : 0.5)
                     .transition(.opacity)
                     .blur(radius: buttonBlur)
                     .onAppear {
@@ -197,6 +203,11 @@ struct OnboardingStep1View: View {
                 // Ensure the alert appears above other content.
                 .zIndex(1)
             }
+        }
+        .onAppear {
+            stagingName   = viewModel.name
+            stagingGender = viewModel.gender
+            stagingAge    = viewModel.age
         }
         // MARK: Navigation to Next Onboarding Step
         .navigationDestination(isPresented: $navigateToStep2) {

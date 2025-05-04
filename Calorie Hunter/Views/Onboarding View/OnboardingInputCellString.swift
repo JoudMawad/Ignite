@@ -17,6 +17,14 @@ struct OnboardingInputCellString: View {
     /// A binding to the string value entered by the user.
     @Binding var value: String
     
+    // Local text state for editing
+    @State private var text: String = ""
+    
+    /// Commit the current text into the bound string value.
+    private func commit() {
+        value = text
+    }
+    
     // MARK: - Environment & Focus State
     
     /// Access the current color scheme (light or dark) for dynamic styling.
@@ -43,16 +51,29 @@ struct OnboardingInputCellString: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(colorScheme == .dark ? .black : .white)
             
-            // A TextField bound directly to the string value.
-            TextField(placeholder, text: $value)
-                .tint(Color.blue) // Set the cursor and accent color.
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 10)
-                .padding(.bottom, 10)
-                // Text color changes based on the current color scheme.
-                .foregroundColor(colorScheme == .dark ? .black : .white)
-                .focused($isFocused)
-                .frame(height: 30)
+            // A TextField bound to the local text state with commit handling.
+            TextField(placeholder, text: $text, onEditingChanged: { began in
+                if !began {
+                    commit()
+                }
+            })
+            .submitLabel(.done)
+            .onSubmit { commit() }
+            .tint(Color.blue) // Set the cursor and accent color.
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 10)
+            // Text color changes based on the current color scheme.
+            .foregroundColor(colorScheme == .dark ? .black : .white)
+            .focused($isFocused)
+            .frame(height: 30)
+            .onAppear {
+                // Initialize the text field from the bound string value
+                text = value
+            }
+            .onChange(of: value) {
+                text = value
+            }
         }
         .frame(width: 200, height: 100) // Define a fixed overall size for the cell.
         .background(

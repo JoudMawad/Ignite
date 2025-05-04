@@ -17,6 +17,9 @@ struct OnboardingInputCellInt: View {
     /// A binding to the integer value being input by the user.
     @Binding var value: Int
     
+    // Local text state for editing
+    @State private var text: String = ""
+    
     // MARK: - Environment & Focus State
     
     /// Provides the current color scheme for dynamic styling.
@@ -37,6 +40,13 @@ struct OnboardingInputCellInt: View {
         // Disable grouping separators (e.g., no commas in thousands)
         formatter.usesGroupingSeparator = false
         return formatter
+    }
+    
+    /// Parse the current text and update the bound integer value.
+    private func commit() {
+        if let number = numberFormatter.number(from: text)?.intValue {
+            value = number
+        }
     }
 
     // MARK: - Body
@@ -64,14 +74,28 @@ struct OnboardingInputCellInt: View {
                         .font(.system(size: 18, weight: .regular))
                 }
                 // The TextField binds directly to the integer value using the configured formatter.
-                TextField("", value: $value, formatter: numberFormatter)
-                    .tint(Color.blue) // Sets the accent and cursor color.
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 10)
-                    .foregroundColor(colorScheme == .dark ? .black : .white)
-                    .focused($isFocused) // Connects the focus state.
+                TextField("", text: $text, onEditingChanged: { began in
+                    if !began {
+                        commit()
+                    }
+                })
+                .submitLabel(.done)
+                .onSubmit { commit() }
+                .tint(Color.blue) // Sets the accent and cursor color.
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 10)
+                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .focused($isFocused) // Connects the focus state.
+            }
+            .onAppear {
+                // Initialize the text field from the bound Int value
+                text = numberFormatter.string(from: NSNumber(value: value)) ?? ""
+            }
+            .onChange(of: value) {
+                // Keep text in sync if value changes externally
+                text = numberFormatter.string(from: NSNumber(value: value)) ?? ""
             }
             .frame(height: 30) // Fixes the height of the input container.
         }

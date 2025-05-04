@@ -17,6 +17,8 @@ struct OnboardingStep3View: View {
     
     /// Access the current color scheme for dynamic styling.
     @Environment(\.colorScheme) var colorScheme
+    /// Handler to dismiss this view when onboarding is complete.
+    @Environment(\.dismiss) var dismiss
     
     // MARK: - Local State
     
@@ -34,16 +36,31 @@ struct OnboardingStep3View: View {
     /// Initial blur value for the button to be animated away.
     @State private var buttonBlur: CGFloat = 10
 
+    // Local staging state for onboarding inputs
+    @State private var stagingGoalWeight: Double = 0
+    @State private var stagingStepsGoal: Int = 0
+    @State private var stagingBurnedCaloriesGoal: Int = 0
+    @State private var stagingCalorieGoal: Int = 0
+
     // MARK: - Validation
     
     /// Validates that the goal weight and daily calorie goal are greater than zero.
     var isStep3Valid: Bool {
-        viewModel.goalWeight > 0 && viewModel.dailyCalorieGoal > 0
+        stagingGoalWeight > 0 && stagingCalorieGoal > 0
     }
     
     // MARK: - Body
     
     var body: some View {
+        ZStack {
+            // Initialize staging from view model
+        }
+        .onAppear {
+            stagingGoalWeight = viewModel.goalWeight
+            stagingStepsGoal = viewModel.dailyStepsGoal
+            stagingBurnedCaloriesGoal = viewModel.dailyBurnedCaloriesGoal
+            stagingCalorieGoal = viewModel.dailyCalorieGoal
+        }
         ZStack {
             VStack {
                 Spacer()
@@ -76,7 +93,7 @@ struct OnboardingStep3View: View {
                             title: "Weight Goal",
                             placeholder: "....",
                             systemImageName: "target",
-                            value: $viewModel.goalWeight
+                            value: $stagingGoalWeight
                         )
                        
                         // Input field for setting the daily steps goal (Int value).
@@ -84,14 +101,14 @@ struct OnboardingStep3View: View {
                             title: "Steps Goal",
                             placeholder: "....",
                             systemImageName: "figure.walk",
-                            value: $viewModel.dailyStepsGoal
+                            value: $stagingStepsGoal
                         )
                         // Input field for setting the daily burned calories goal (Int value).
                         OnboardingInputCellInt(
                             title: "Calories Burned",
                             placeholder: "....",
                             systemImageName: "flame",
-                            value: $viewModel.dailyBurnedCaloriesGoal
+                            value: $stagingBurnedCaloriesGoal
                         )
                         
                                                     CalorieGoalSliderView(
@@ -100,7 +117,7 @@ struct OnboardingStep3View: View {
                                                         weight: viewModel.startWeight,
                                                         gender: viewModel.gender
                                                     ) { newGoal in
-                                                        viewModel.dailyCalorieGoal = newGoal
+                                                        stagingCalorieGoal = newGoal
                                                     }
                     }
                     .transition(.opacity) // Fade in the input fields.
@@ -123,8 +140,13 @@ struct OnboardingStep3View: View {
                         if isStep3Valid {
                             let successFeedback = UINotificationFeedbackGenerator()
                             successFeedback.notificationOccurred(.success)
+                            viewModel.goalWeight = stagingGoalWeight
+                            viewModel.dailyStepsGoal = stagingStepsGoal
+                            viewModel.dailyBurnedCaloriesGoal = stagingBurnedCaloriesGoal
+                            viewModel.dailyCalorieGoal = stagingCalorieGoal
                             // Complete onboarding by updating persistent storage.
                             hasCompletedOnboarding = true
+                            dismiss()
                         } else {
                             let errorFeedback = UINotificationFeedbackGenerator()
                             errorFeedback.notificationOccurred(.error)
@@ -143,6 +165,8 @@ struct OnboardingStep3View: View {
                             .cornerRadius(8)
                             .padding(.horizontal, 40)
                     }
+                    .disabled(!isStep3Valid)
+                    .opacity(isStep3Valid ? 1 : 0.5)
                     .transition(.opacity) // Fade in the button.
                     .blur(radius: buttonBlur) // Apply an initial blur.
                     .onAppear {

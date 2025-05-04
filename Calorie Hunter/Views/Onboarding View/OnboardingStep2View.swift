@@ -32,17 +32,22 @@ struct OnboardingStep2View: View {
     /// Blur amount applied to the button during animation.
     @State private var buttonBlur: CGFloat = 10
 
+    // Local staging state for onboarding inputs
+    @State private var stagingHeight: Int = 0
+    @State private var stagingWeight: Double = 0
+
     // MARK: - Validation
     
     /// Ensures that both height and current weight are greater than 0.
     var isStep2Valid: Bool {
-        viewModel.height > 0 && viewModel.currentWeight > 0
+        stagingHeight > 0 && stagingWeight > 0
     }
     
     // MARK: - Body
     
     var body: some View {
         ZStack {
+            // Initialize staging from view model
             VStack {
                 Spacer()
                 
@@ -73,19 +78,15 @@ struct OnboardingStep2View: View {
                                 title: "Height (cm)",
                                 placeholder: "....",
                                 systemImageName: "ruler.fill",
-                                value: $viewModel.height
+                                value: $stagingHeight
                             )
                             // Input cell for the user's weight.
                             OnboardingInputCellDouble(
                                 title: "Weight (kg)",
                                 placeholder: "....",
                                 systemImageName: "scalemass",
-                                value: $viewModel.currentWeight
+                                value: $stagingWeight
                             )
-                            // Automatically set the start weight when the current weight changes.
-                            .onChange(of: viewModel.currentWeight) { newValue, _ in
-                                viewModel.startWeight = newValue
-                            }
                         }
                         .transition(.opacity) // Fade in the input fields.
                         .blur(radius: inputBlur) // Start with a blur that animates out.
@@ -110,6 +111,9 @@ struct OnboardingStep2View: View {
                             // Haptic feedback for success.
                             let successFeedback = UINotificationFeedbackGenerator()
                             successFeedback.notificationOccurred(.success)
+                            viewModel.height = stagingHeight
+                            viewModel.currentWeight = stagingWeight
+                            viewModel.startWeight = stagingWeight
                             // Trigger navigation to Step 3.
                             navigateToStep3 = true
                         } else {
@@ -131,6 +135,8 @@ struct OnboardingStep2View: View {
                             .cornerRadius(8)
                             .padding(.horizontal, 40)
                     }
+                    .disabled(!isStep2Valid)
+                    .opacity(isStep2Valid ? 1 : 0.5)
                     .transition(.opacity) // Fade in the button.
                     .blur(radius: buttonBlur) // Start with a blur that animates out.
                     .onAppear {
@@ -171,6 +177,10 @@ struct OnboardingStep2View: View {
                 .transition(.blurScale) // Use a custom transition for the alert.
                 .zIndex(1) // Ensure the alert appears above all other content.
             }
+        }
+        .onAppear {
+            stagingHeight = viewModel.height
+            stagingWeight = viewModel.currentWeight
         }
         // MARK: Navigation to Next Step
         .navigationDestination(isPresented: $navigateToStep3) {

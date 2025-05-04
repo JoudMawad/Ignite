@@ -79,6 +79,10 @@ struct OnboardingInputCellDouble: View {
                 // Initialize the text field from the bound Double value
                 text = numberFormatter.string(from: NSNumber(value: value)) ?? ""
             }
+            .onChange(of: value) {
+                // Update text when the bound value changes externally
+                text = numberFormatter.string(from: NSNumber(value: value)) ?? ""
+            }
         }
         .frame(width: 200, height: 100)
         .background(
