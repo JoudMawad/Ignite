@@ -1,8 +1,25 @@
+
 import SwiftUI
 import HealthKit
 
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        // Request HealthKit authorization before any UI is shown
+        guard HKHealthStore.isHealthDataAvailable() else { return true }
+        HealthKitManager.shared.requestAuthorization { success, _ in
+            if success {
+                HealthKitManager.shared.enableBackgroundDeliveryForAll()
+            }
+        }
+        return true
+    }
+}
+
 @main
 struct Calorie_HunterApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
     @StateObject var userProfileVM = UserProfileViewModel()

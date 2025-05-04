@@ -48,13 +48,6 @@ struct ContentView: View {
         .background(Color.primary.edgesIgnoringSafeArea(.all))
         .tint(.primary)
         .onChange(of: selectedTab) { tapFeedback.impactOccurred() }
-        .onAppear {
-            HealthKitManager.shared.requestAuthorization { success, _ in
-                if success {
-                    HealthKitManager.shared.enableBackgroundDeliveryForAll()
-                }
-            }
-        }
     }
 }
 

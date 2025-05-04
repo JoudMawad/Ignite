@@ -195,8 +195,26 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
                     barcode: barcode
                 )
                 self.currentProduct = food
-                // Persist fetched product into the user-defined foods list
-                self.logConsumption(of: food, grams: 100, mealType: "Scanned")
+                // Persist fetched product into your Core Data catalog (but don't log it as eaten yet)
+                            do {
+                                let req: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
+                                req.predicate = NSPredicate(format: "barcode == %@", barcode)
+                                let entity = (try context.fetch(req)).first ?? FoodEntity(context: context)
+                                entity.id         = food.id
+                                entity.name       = food.name
+                                entity.calories   = Double(food.calories)
+                                entity.protein    = food.protein
+                                entity.carbs      = food.carbs
+                                entity.fat        = food.fat
+                                entity.grams      = food.grams
+                                entity.mealType   = food.mealType
+                                entity.date       = food.date
+                                entity.isUserAdded = false
+                                entity.barcode    = food.barcode
+                                try context.save()
+                            } catch {
+                                print("Error saving scanned product: \(error)")
+                            }
                 self.errorMessage = nil
             } else {
                 self.currentProduct = nil
