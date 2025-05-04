@@ -41,9 +41,13 @@ struct WaterProgressView: View {
                 // Buttons to adjust the water intake.
                 HStack(spacing: 16) {
                     Button {
-                        tapFeedback.impactOccurred()
-                        // Decrease water intake by 0.1L for today.
-                        waterViewModel.adjustWaterAmount(by: -0.1, for: Date())
+                        if currentWater >= 0.1 {
+                            tapFeedback.impactOccurred()
+                            waterViewModel.adjustWaterAmount(by: -0.1, for: Date())
+                        } else {
+                            let warningFeedback = UINotificationFeedbackGenerator()
+                            warningFeedback.notificationOccurred(.error)
+                        }
                     } label: {
                         Image(systemName: "minus.circle.fill")
                             .font(.system(size: 28))
