@@ -293,7 +293,7 @@ struct CalendarView: View {
         else { return 0 }
     }
     private func isConsumedUnderGoal(for date: Date) -> Bool {
-        consumedCaloriesValue(for: date) <= goalsManager.goalValue(for: .calories, on: date)
+        consumedCaloriesValue(for: date) <= goalsManager.goalValue(for: .calories, on: date) + burnedCaloriesValue(for: date)
     }
 }
 
