@@ -84,7 +84,7 @@ struct OnboardingInputCellDouble: View {
                 text = numberFormatter.string(from: NSNumber(value: value)) ?? ""
             }
         }
-        .frame(width: 200, height: 100)
+        .frame(width: 180, height: 100)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(colorScheme == .dark ? .white : .black)

@@ -99,7 +99,7 @@ struct OnboardingInputCellInt: View {
             }
             .frame(height: 30) // Fixes the height of the input container.
         }
-        .frame(width: 200, height: 100) // Defines the overall size of the cell.
+        .frame(width: 180, height: 100) // Defines the overall size of the cell.
         .background(
             // Uses a rounded rectangle background that adapts to the color scheme with a subtle shadow.
             RoundedRectangle(cornerRadius: 20)

@@ -75,7 +75,7 @@ struct OnboardingInputCellString: View {
                 text = value
             }
         }
-        .frame(width: 200, height: 100) // Define a fixed overall size for the cell.
+        .frame(width: 180, height: 100) // Define a fixed overall size for the cell.
         .background(
             // Background with rounded corners and a subtle shadow.
             RoundedRectangle(cornerRadius: 20)

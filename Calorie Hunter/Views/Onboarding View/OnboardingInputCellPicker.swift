@@ -80,7 +80,7 @@ struct OnboardingInputCellPicker: View {
             .padding(.horizontal, 10)
         }
         // Set a fixed size for the input cell.
-        .frame(width: 200, height: 100)
+        .frame(width: 180, height: 100)
         .background(
             // A rounded rectangle background with a subtle shadow.
             RoundedRectangle(cornerRadius: 20)

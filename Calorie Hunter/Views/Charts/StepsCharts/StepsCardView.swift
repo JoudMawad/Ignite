@@ -37,16 +37,8 @@ struct StepsCardView: View {
             CountingNumberText(number: animatedSteps)
                 .foregroundColor(colorScheme == .dark ? .black : .white)
             
-            // Progress view showing visual feedback of steps progress.
-            StepsProgressView(viewModel: viewModel,
-                              stepsViewModel: stepsViewModel,
-                              onStepsChange: onStepsChange)
-            
             // Distance display
             HStack {
-                Image(systemName: "map.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.blue)
                 // Compute and display distance in km with one decimal
                 let rawKm = animatedDistance / 1000
                 let roundedKm = (rawKm * 10).rounded() / 10
@@ -55,7 +47,14 @@ struct StepsCardView: View {
                     .foregroundColor(colorScheme == .dark ? .black : .white)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 4)
+            .padding(.top, -5)
+            
+            // Progress view showing visual feedback of steps progress.
+            StepsProgressView(viewModel: viewModel,
+                              stepsViewModel: stepsViewModel,
+                              onStepsChange: onStepsChange)
+            
+            
         }
         .padding(.horizontal)
         .frame(width: 120, height: 140)

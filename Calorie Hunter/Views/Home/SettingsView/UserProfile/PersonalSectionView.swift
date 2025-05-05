@@ -35,61 +35,118 @@ struct PersonalInfoSectionView: View {
                         .font(.largeTitle)
                         .bold()
                 }
-                
-                AnimatedCard {
-                    OnboardingProfilePicCell(
-                        isShowingImagePicker: $isShowingImagePicker,
-                        profileImage: $imageVM.profileImage
-                    )
+                HStack {
+                    
+                    
+                    AnimatedCard {
+                        OnboardingProfilePicCell(
+                            isShowingImagePicker: $isShowingImagePicker,
+                            profileImage: $imageVM.profileImage
+                        )
+                    }
+                    
+                    AnimatedCard {
+                        OnboardingInputCellString(
+                            title: "Name",
+                            placeholder: viewModel.name,
+                            systemImageName: "person.fill",
+                            value: $viewModel.name
+                        )
+                    }
                 }
                 
-                AnimatedCard {
-                    OnboardingInputCellString(
-                        title: "Name",
-                        placeholder: viewModel.name,
-                        systemImageName: "person.fill",
-                        value: $viewModel.name
-                    )
+                HStack {
+                    
+                    AnimatedCard {
+                        OnboardingInputCellDouble(
+                            title: "Weight (kg)",
+                            placeholder: String(viewModel.currentWeight),
+                            systemImageName: "scalemass",
+                            value: $viewModel.currentWeight
+                        )
+                    }
+                    
+                    
+                    
+                    AnimatedCard {
+                        OnboardingInputCellInt(
+                            title: "Height (cm)",
+                            placeholder: String(viewModel.height),
+                            systemImageName: "ruler.fill",
+                            value: $viewModel.height
+                        )
+                    }
                 }
                 
-                AnimatedCard {
-                    OnboardingInputCellInt(
-                        title: "Age",
-                        placeholder: String(viewModel.age),
-                        systemImageName: "number.circle",
-                        value: $viewModel.age
-                    )
+                HStack {
+                    
+                    AnimatedCard {
+                        OnboardingInputCellInt(
+                            title: "Age",
+                            placeholder: String(viewModel.age),
+                            systemImageName: "number.circle",
+                            value: $viewModel.age
+                        )
+                    }
+                    
+                    
+                    
+                    AnimatedCard {
+                        OnboardingInputCellPicker(
+                            title: "Gender",
+                            systemImageName: "person.2.fill",
+                            options: ["Male", "Female", "Other"],
+                            selection: $viewModel.gender
+                        )
+                    }
                 }
                 
-                AnimatedCard {
-                    OnboardingInputCellInt(
-                        title: "Height (cm)",
-                        placeholder: String(viewModel.height),
-                        systemImageName: "ruler.fill",
-                        value: $viewModel.height
-                    )
-                }
-                
-                AnimatedCard {
-                    OnboardingInputCellDouble(
-                        title: "Weight (kg)",
-                        placeholder: String(viewModel.currentWeight),
-                        systemImageName: "scalemass",
-                        value: $viewModel.currentWeight
-                    )
-                }
-                
-                AnimatedCard {
-                    OnboardingInputCellPicker(
-                        title: "Gender",
-                        systemImageName: "person.2.fill",
-                        options: ["Male", "Female", "Other"],
-                        selection: $viewModel.gender
-                    )
+                AnimatedCard{
+                    ActivitySliderView(level: $viewModel.activityLevel) { lvl in
+                        viewModel.activityLevel = lvl
+                        viewModel.dailyBurnedCaloriesGoal = lvl.extraBurned
+                        viewModel.dailyStepsGoal = [
+                            .sedentary:      5_000,
+                            .lightlyActive:  7_500,
+                            .moderatelyActive: 10_000,
+                            .veryActive:     12_500
+                        ][lvl]!
+                        viewModel.dailyWaterGoal = [
+                            .sedentary:      1.5,
+                            .lightlyActive:  2.0,
+                            .moderatelyActive: 2.5,
+                            .veryActive:     3.0
+                        ][lvl]!
+                    }
+                    .onAppear {
+                        viewModel.loadProfile()
+                    }
                 }
             }
             .padding(.top, -40)
-            .padding(.horizontal)
+            
+        }
+    }
+}
+
+struct PersonalInfoSectionView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            PersonalInfoSectionView(
+                viewModel: UserProfileViewModel(),
+                isShowingImagePicker: .constant(false)
+            )
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .preferredColorScheme(.light)
+
+            PersonalInfoSectionView(
+                viewModel: UserProfileViewModel(),
+                isShowingImagePicker: .constant(false)
+            )
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .preferredColorScheme(.dark)
         }
     }
 }

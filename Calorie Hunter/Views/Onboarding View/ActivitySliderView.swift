@@ -86,7 +86,7 @@ struct ActivitySliderView: View {
             .foregroundColor(colorScheme == .dark ? .black : .white)
             .padding(.horizontal, -2)
         }
-        .frame(maxWidth: 350)
+        .frame(maxWidth: 365)
         .padding(.vertical, 16)
         .shadow(color: Color.primary.opacity(0.1), radius: 5, x: 0, y: 2)
         .background(

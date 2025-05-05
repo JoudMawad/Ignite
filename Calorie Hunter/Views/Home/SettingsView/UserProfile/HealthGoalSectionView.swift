@@ -14,43 +14,49 @@ struct HealthGoalsSectionView: View {
                         .padding(.top)
                 }
                 
-                
-                
-                AnimatedCard {
-                    OnboardingInputCellDouble(
-                        title: "Goal Weight",
-                        placeholder: String(viewModel.goalWeight),
-                        systemImageName: "target",
-                        value: $viewModel.goalWeight
-                    )
+                HStack {
+                    
+                    AnimatedCard {
+                        OnboardingInputCellDouble(
+                            title: "Goal Weight",
+                            placeholder: String(viewModel.goalWeight),
+                            systemImageName: "target",
+                            value: $viewModel.goalWeight
+                        )
+                    }
+                    
+                    AnimatedCard {
+                        OnboardingInputCellInt(
+                            title: "Goal Calories",
+                            placeholder: String(viewModel.dailyCalorieGoal),
+                            systemImageName: "flame.fill",
+                            value: $viewModel.dailyCalorieGoal
+                        )
+                    }
+                    
                 }
                 
-                AnimatedCard {
-                    OnboardingInputCellInt(
-                        title: "Goal Calories",
-                        placeholder: String(viewModel.dailyCalorieGoal),
-                        systemImageName: "flame.fill",
-                        value: $viewModel.dailyCalorieGoal
-                    )
+                HStack {
+                    
+                    AnimatedCard {
+                        OnboardingInputCellInt(
+                            title: "Steps Goal",
+                            placeholder: String(viewModel.dailyStepsGoal),
+                            systemImageName: "figure.walk",
+                            value: $viewModel.dailyStepsGoal
+                        )
+                    }
+                    
+                    AnimatedCard {
+                        OnboardingInputCellInt(
+                            title: "Activity Goal",
+                            placeholder: String(viewModel.dailyBurnedCaloriesGoal),
+                            systemImageName: "flame",
+                            value: $viewModel.dailyBurnedCaloriesGoal
+                        )
+                    }
                 }
-                
-                AnimatedCard {
-                    OnboardingInputCellInt(
-                        title: "Steps Goal",
-                        placeholder: String(viewModel.dailyStepsGoal),
-                        systemImageName: "figure.walk",
-                        value: $viewModel.dailyStepsGoal
-                    )
-                }
-                
-                AnimatedCard {
-                    OnboardingInputCellInt(
-                        title: "Activity Goal",
-                        placeholder: String(viewModel.dailyBurnedCaloriesGoal),
-                        systemImageName: "flame",
-                        value: $viewModel.dailyBurnedCaloriesGoal
-                    )
-                }
+                    
 
                 AnimatedCard {
                     OnboardingInputCellDouble(
@@ -74,28 +80,9 @@ struct HealthGoalsSectionView: View {
                     .onAppear {
                         viewModel.loadProfile()
                     }
-                                            }
-                AnimatedCard{
-                    ActivitySliderView(level: $viewModel.activityLevel) { lvl in
-                        viewModel.activityLevel = lvl
-                        viewModel.dailyBurnedCaloriesGoal = lvl.extraBurned
-                        viewModel.dailyStepsGoal = [
-                            .sedentary:      5_000,
-                            .lightlyActive:  7_500,
-                            .moderatelyActive: 10_000,
-                            .veryActive:     12_500
-                        ][lvl]!
-                        viewModel.dailyWaterGoal = [
-                            .sedentary:      1.5,
-                            .lightlyActive:  2.0,
-                            .moderatelyActive: 2.5,
-                            .veryActive:     3.0
-                        ][lvl]!
-                    }
-                    .onAppear {
-                        viewModel.loadProfile()
-                    }
                 }
+                                            
+                
                     
             }
             .padding(.horizontal)

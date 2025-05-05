@@ -39,7 +39,7 @@ struct OnboardingProfilePicCell: View {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)  // Fills the frame while maintaining aspect ratio.
-                        .frame(width: 201, height: 108)    // Explicit frame matching the cell's dimensions.
+                        .frame(width: 181, height: 101)    // Explicit frame matching the cell's dimensions.
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .offset(y: -14.7) // Adjusts vertical positioning for better visual balance.
                 } else {
@@ -52,7 +52,7 @@ struct OnboardingProfilePicCell: View {
             }
             .padding(.vertical, 10)
         }
-        .frame(width: 200, height: 105)
+        .frame(width: 180, height: 100)
         .background(
             // Background with rounded corners and a subtle shadow.
             RoundedRectangle(cornerRadius: 20)
