@@ -1,6 +1,6 @@
-
 import SwiftUI
 import HealthKit
+import CoreData
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -23,6 +23,10 @@ struct Calorie_HunterApp: App {
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
     @StateObject var userProfileVM = UserProfileViewModel()
+    @StateObject private var foodViewModel = FoodViewModel(
+        context: PersistenceController.shared.container.viewContext
+    )
+    @Environment(\.scenePhase) private var scenePhase
     
     // Control the display of the splash screen
     @State private var showSplash = true
@@ -34,6 +38,7 @@ struct Calorie_HunterApp: App {
                 ContentView()
                     .environmentObject(burnedCaloriesViewModel)
                     .environmentObject(userProfileVM)
+                    .environmentObject(foodViewModel)
                     .fullScreenCover(isPresented: Binding(
                         get: { !hasCompletedOnboarding },
                         set: { _ in }
@@ -58,6 +63,11 @@ struct Calorie_HunterApp: App {
                         showSplash = false
                     }
                 }
+            }
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                foodViewModel.loadEntries()
             }
         }
     }
