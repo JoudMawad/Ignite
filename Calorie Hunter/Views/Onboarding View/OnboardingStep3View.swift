@@ -31,6 +31,7 @@ struct OnboardingStep3View: View {
     /// Controls the display of a custom alert when validation fails.
     @State private var showCustomAlert = false
     
+    
     /// Initial blur value for input fields to be animated away.
     @State private var inputBlur: CGFloat = 10
     /// Initial blur value for the button to be animated away.
@@ -111,14 +112,38 @@ struct OnboardingStep3View: View {
                             value: $stagingBurnedCaloriesGoal
                         )
                         
-                                                    CalorieGoalSliderView(
-                                                        age: viewModel.age,
-                                                        height: Double(viewModel.height),
-                                                        weight: viewModel.startWeight,
-                                                        gender: viewModel.gender
-                                                    ) { newGoal in
-                                                        stagingCalorieGoal = newGoal
-                                                    }
+                        CalorieGoalSliderView(
+                            age: viewModel.age,
+                            height: Double(viewModel.height),
+                            weight: viewModel.currentWeight,
+                            gender: viewModel.gender,
+                            weeklyChange: $viewModel.weeklyWeightChangeGoal
+                        ) { newGoal in
+                            viewModel.dailyCalorieGoal = newGoal
+                        }
+                        .onAppear {
+                            viewModel.loadProfile()
+                        }
+                        
+                        ActivitySliderView(level: $viewModel.activityLevel) { lvl in
+                            viewModel.activityLevel = lvl
+                            viewModel.dailyBurnedCaloriesGoal = lvl.extraBurned
+                            viewModel.dailyStepsGoal = [
+                                .sedentary:      5_000,
+                                .lightlyActive:  7_500,
+                                .moderatelyActive: 10_000,
+                                .veryActive:     12_500
+                            ][lvl]!
+                            viewModel.dailyWaterGoal = [
+                                .sedentary:      1.5,
+                                .lightlyActive:  2.0,
+                                .moderatelyActive: 2.5,
+                                .veryActive:     3.0
+                            ][lvl]!
+                        }
+                        .onAppear {
+                            viewModel.loadProfile()
+                        }
                     }
                     .transition(.opacity) // Fade in the input fields.
                     .blur(radius: inputBlur) // Apply an initial blur.

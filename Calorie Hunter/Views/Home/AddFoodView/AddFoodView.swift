@@ -24,6 +24,7 @@ struct AddFoodView: View {
     // MARK: - Scanning State
     @State private var isShowingScanner = false
     @State private var scannedCode: String? = nil
+    @State private var expandedFoodID: UUID? = nil
 
     // MARK: - View State
     @State private var searchText: String = ""
@@ -66,33 +67,38 @@ struct AddFoodView: View {
     // MARK: - Filtered Foods
     /// Applies search text, scanned code, and usage counts to the combined foods list.
     private var filteredFoods: [FoodItem] {
-        // Determine the base list
-        let baseList: [FoodItem]
-        if let product = viewModel.currentProduct {
-            // Show the recently fetched product
-            baseList = [product]
-        } else if let code = scannedCode, !code.isEmpty,
-                  let local = viewModel.findFoodByBarcode(code) {
-            // Show local match for scanned barcode
-            baseList = [local]
-        } else if !searchText.isEmpty {
-            // Filter by search text
-            baseList = combinedFoods.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
-            }
-        } else {
-            // Default to full list
-            baseList = combinedFoods
-        }
-        // Sort by usage count descending, then name ascending
-        return baseList.sorted {
-            let countA = usageCounts[$0.name] ?? 0
-            let countB = usageCounts[$1.name] ?? 0
+        // Sorting closure by usage count and name
+        let sortByUsageAndName: (FoodItem, FoodItem) -> Bool = { a, b in
+            let countA = usageCounts[a.name] ?? 0
+            let countB = usageCounts[b.name] ?? 0
             if countA != countB {
                 return countA > countB
             } else {
-                return $0.name < $1.name
+                return a.name < b.name
             }
+        }
+
+        // If an API product is present, show it first
+        if let product = viewModel.currentProduct {
+            let rest = combinedFoods.filter { $0.id != product.id }
+            return [product] + rest.sorted(by: sortByUsageAndName)
+        }
+        // If a scanned barcode matches a local item, show it first
+        else if let code = scannedCode, !code.isEmpty,
+                  let local = viewModel.findFoodByBarcode(code) {
+            let rest = combinedFoods.filter { $0.id != local.id }
+            return [local] + rest.sorted(by: sortByUsageAndName)
+        }
+        // If the user is typing search text, filter and sort
+        else if !searchText.isEmpty {
+            let baseList = combinedFoods.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText)
+            }
+            return baseList.sorted(by: sortByUsageAndName)
+        }
+        // Default: full list sorted by usage and name
+        else {
+            return combinedFoods.sorted(by: sortByUsageAndName)
         }
     }
 
@@ -204,7 +210,12 @@ struct AddFoodView: View {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(displayedFoods, id: \.id) { food in
-                                FoodRowView(food: food, viewModel: viewModel, mealType: preselectedMealType)
+                                FoodRowView(
+                                    food: food,
+                                    viewModel: viewModel,
+                                    mealType: preselectedMealType,
+                                    isExpanded: food.id == expandedFoodID
+                                )
                                     .background(colorScheme == .dark ? Color.black : Color.white)
                                     .onAppear {
                                         loadMoreFoodsIfNeeded(currentItem: food)
@@ -277,8 +288,9 @@ struct AddFoodView: View {
         viewModel.currentProduct = nil
         viewModel.errorMessage = nil
         searchText = ""
-        if let _ = viewModel.findFoodByBarcode(code) {
+        if let local = viewModel.findFoodByBarcode(code) {
             scannedCode = code
+            expandedFoodID = local.id
             return
         }
         Task {
@@ -289,8 +301,9 @@ struct AddFoodView: View {
             } else {
                 errorFeedback.notificationOccurred(.error)
             }
-            if viewModel.currentProduct != nil {
+            if let p = viewModel.currentProduct {
                 scannedCode = code
+                expandedFoodID = p.id
             } else {
                 scannedCode = code
                 presentManualEntry()

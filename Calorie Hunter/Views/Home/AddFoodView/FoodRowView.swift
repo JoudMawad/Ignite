@@ -7,12 +7,27 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
     @ObservedObject var viewModel: VM
     @Environment(\.colorScheme) var colorScheme
     let mealType: String
+    /// Controls whether the row is initially expanded
+    var isExpanded: Bool = false
 
     /// Haptic feedback generator for add action.
     private let feedbackGenerator = UINotificationFeedbackGenerator()
 
-    @State private var isExpanded = false
+    @State private var expanded: Bool
     @State private var gramsInput = ""
+
+    init(
+        food: FoodItem,
+        viewModel: VM,
+        mealType: String,
+        isExpanded: Bool = false
+    ) {
+        self.food = food
+        self.viewModel = viewModel
+        self.mealType = mealType
+        self.isExpanded = isExpanded
+        _expanded = State(initialValue: isExpanded)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -23,10 +38,10 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
                 Spacer()
                 Button {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        isExpanded.toggle()
+                        expanded.toggle()
                     }
                 } label: {
-                    Image(systemName: isExpanded ? "chevron.up" : "plus.circle")
+                    Image(systemName: expanded ? "chevron.up" : "plus.circle")
                         .font(.system(size: 22))
                         .foregroundColor(.primary)
                 }
@@ -51,7 +66,7 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
                     // Always play success haptic after logging consumption
                     feedbackGenerator.notificationOccurred(.success)
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        isExpanded = false
+                        expanded = false
                     }
                     gramsInput = ""
                 }){
@@ -69,14 +84,14 @@ struct FoodRowView<VM: FoodAddingViewModel>: View {
             .padding()
             .background(Color(.clear))
             .cornerRadius(8)
-            .frame(maxHeight: isExpanded ? .none : 0)
-            .opacity(isExpanded ? 1 : 0)
+      .frame(maxHeight: expanded ? .none : 0)
+            .opacity(expanded ? 1 : 0)
             .clipped()
             
                 
                 
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isExpanded)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: expanded)
         .padding(.horizontal)
     }
 }

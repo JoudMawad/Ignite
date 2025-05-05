@@ -57,6 +57,7 @@
         <attribute name="steps" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
     </entity>
     <entity name="UserProfile" representedClassName="UserProfile" syncable="YES">
+        <attribute name="activityLevel" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="age" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="currentWeight" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="dailyBurnedCaloriesGoal" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
@@ -69,6 +70,7 @@
         <attribute name="name" attributeType="String"/>
         <attribute name="profileImageData" optional="YES" attributeType="Binary"/>
         <attribute name="startWeight" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="weeklyWeightChangeGoal" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
     </entity>
     <entity name="WeightEntry" representedClassName="WeightEntry" syncable="YES" codeGenerationType="class">
         <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>

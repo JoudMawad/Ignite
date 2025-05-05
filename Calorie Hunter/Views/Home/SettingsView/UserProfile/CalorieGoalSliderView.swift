@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreData
 
 struct CalorieGoalSliderView: View {
     @Environment(\.colorScheme) var colorScheme
@@ -9,10 +10,25 @@ struct CalorieGoalSliderView: View {
     var height: Double
     var weight: Double
     var gender: String
-    var onGoalChange: ((Int) -> Void)? = nil
+    /// Bound to the user's weekly weight change goal stored in Core Data.
+    @Binding var weeklyChange: Double
+    var onCalorieGoalChange: ((Int) -> Void)? = nil
 
-    // MARK: – State
-    @State private var weeklyChange: Double = 0.0  // –0.5…+0.5 kg/week
+    init(
+        age: Int,
+        height: Double,
+        weight: Double,
+        gender: String,
+        weeklyChange: Binding<Double>,
+        onCalorieGoalChange: ((Int) -> Void)? = nil
+    ) {
+        self.age = age
+        self.height = height
+        self.weight = weight
+        self.gender = gender
+        self._weeklyChange = weeklyChange
+        self.onCalorieGoalChange = onCalorieGoalChange
+    }
 
     // MARK: – Computed
     private var bmr: Double {
@@ -89,7 +105,7 @@ struct CalorieGoalSliderView: View {
                                 weeklyChange = snapped
                                 UIImpactFeedbackGenerator(style: .light)
                                     .impactOccurred()
-                                onGoalChange?(dailyCalorieGoal)
+                                onCalorieGoalChange?(dailyCalorieGoal)
                             }
                         }
                 )
@@ -118,18 +134,25 @@ struct CalorieGoalSliderView: View {
 }
 
 struct CalorieGoalSliderView_Previews: PreviewProvider {
+    @State static private var previewWeeklyChange: Double = 0.0
     static var previews: some View {
         Group {
             CalorieGoalSliderView(
-                age: 30, height: 175, weight: 70, gender: "male"
-            )
+                age: 30, height: 175, weight: 70, gender: "male",
+                weeklyChange: $previewWeeklyChange
+            ) { newCal in
+                print("New cal goal: \(newCal)")
+            }
             .previewLayout(.sizeThatFits)
             .padding()
             .preferredColorScheme(.light)
 
             CalorieGoalSliderView(
-                age: 30, height: 175, weight: 70, gender: "male"
-            )
+                age: 30, height: 175, weight: 70, gender: "male",
+                weeklyChange: $previewWeeklyChange
+            ) { newCal in
+                print("New cal goal: \(newCal)")
+            }
             .previewLayout(.sizeThatFits)
             .padding()
             .preferredColorScheme(.dark)

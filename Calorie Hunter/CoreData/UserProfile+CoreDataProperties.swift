@@ -41,6 +41,10 @@ extension UserProfile {
     @NSManaged public var dailyBurnedCaloriesGoal: Int32
     // The user's daily Water Intake goal.
     @NSManaged public var dailyWaterGoal: Double
+    /// The user's weekly weight change goal (kg per week; negative to lose, positive to gain).
+    @NSManaged public var weeklyWeightChangeGoal: Double
+    /// The user's activity level (0=sedentary, 1=lightlyActive, 2=moderatelyActive, 3=veryActive).
+    @NSManaged public var activityLevel: Int32
     
     
 }

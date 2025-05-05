@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HealthGoalsSectionView: View {
     @ObservedObject var viewModel: UserProfileViewModel
+    @State private var activityLevel: ActivityLevel = .sedentary
     
     var body: some View {
         ScrollView {
@@ -61,17 +62,41 @@ struct HealthGoalsSectionView: View {
                 }
                 
                 AnimatedCard {
-                                            CalorieGoalSliderView(
-                                                age: viewModel.age,
-                                                height: Double(viewModel.height),
-                                                weight: viewModel.startWeight,
-                                                gender: viewModel.gender
-                                            ) { newGoal in
-                                                viewModel.dailyCalorieGoal = newGoal
+                    CalorieGoalSliderView(
+                        age: viewModel.age,
+                        height: Double(viewModel.height),
+                        weight: viewModel.currentWeight,
+                        gender: viewModel.gender,
+                        weeklyChange: $viewModel.weeklyWeightChangeGoal
+                    ) { newGoal in
+                        viewModel.dailyCalorieGoal = newGoal
+                    }
+                    .onAppear {
+                        viewModel.loadProfile()
+                    }
                                             }
-                    
-                    
+                AnimatedCard{
+                    ActivitySliderView(level: $viewModel.activityLevel) { lvl in
+                        viewModel.activityLevel = lvl
+                        viewModel.dailyBurnedCaloriesGoal = lvl.extraBurned
+                        viewModel.dailyStepsGoal = [
+                            .sedentary:      5_000,
+                            .lightlyActive:  7_500,
+                            .moderatelyActive: 10_000,
+                            .veryActive:     12_500
+                        ][lvl]!
+                        viewModel.dailyWaterGoal = [
+                            .sedentary:      1.5,
+                            .lightlyActive:  2.0,
+                            .moderatelyActive: 2.5,
+                            .veryActive:     3.0
+                        ][lvl]!
+                    }
+                    .onAppear {
+                        viewModel.loadProfile()
+                    }
                 }
+                    
             }
             .padding(.horizontal)
         }

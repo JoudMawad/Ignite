@@ -29,6 +29,10 @@ class UserProfileViewModel: ObservableObject {
     @Published var startWeightValue: Double = 70.0
     @Published var currentWeightValue: Double = 70.0
     @Published var goalWeightValue: Double = 65.0
+    /// User’s weekly weight change goal (kg per week; negative to lose, positive to gain)
+    @Published var weeklyWeightChangeGoalValue: Double = 0.0
+    /// User’s activity level as an integer (0=sedentary…3=veryActive)
+    @Published var activityLevelValue: Int = 0
 
     // Managers to handle weight history and HealthKit weight updates.
     private let weightHistoryManager = WeightHistoryManager.shared
@@ -107,7 +111,7 @@ class UserProfileViewModel: ObservableObject {
                     self.dailyCalorieGoalValue = newCalorieGoal
                 }
             }
-            
+
             // Update daily steps goal if needed.
             let newStepsGoal = Int(profile.dailyStepsGoal)
             if newStepsGoal != dailyStepsGoalValue {
@@ -115,7 +119,7 @@ class UserProfileViewModel: ObservableObject {
                     self.dailyStepsGoalValue = newStepsGoal
                 }
             }
-            
+
             // Update daily burned calories goal.
             let newBurnedGoal = Int(profile.dailyBurnedCaloriesGoal)
             if newBurnedGoal != dailyBurnedCaloriesGoalValue {
@@ -123,7 +127,7 @@ class UserProfileViewModel: ObservableObject {
                     self.dailyBurnedCaloriesGoalValue = newBurnedGoal
                 }
             }
-            
+
             // Update daily water goal if it has changed.
             let newWaterGoal = profile.dailyWaterGoal
             if newWaterGoal != dailyWaterGoalValue {
@@ -131,7 +135,7 @@ class UserProfileViewModel: ObservableObject {
                     self.dailyWaterGoalValue = newWaterGoal
                 }
             }
-            
+
             // Update start weight.
             let newStartWeight = profile.startWeight
             if newStartWeight != startWeightValue {
@@ -139,7 +143,7 @@ class UserProfileViewModel: ObservableObject {
                     self.startWeightValue = newStartWeight
                 }
             }
-            
+
             // Update current weight.
             let newCurrentWeight = profile.currentWeight
             if newCurrentWeight != currentWeightValue {
@@ -147,12 +151,27 @@ class UserProfileViewModel: ObservableObject {
                     self.currentWeightValue = newCurrentWeight
                 }
             }
-            
+
             // Update goal weight.
             let newGoalWeight = profile.goalWeight
             if newGoalWeight != goalWeightValue {
                 DispatchQueue.main.async {
                     self.goalWeightValue = newGoalWeight
+                }
+            }
+
+            // Update weekly weight change goal.
+            let newWeeklyChange = profile.weeklyWeightChangeGoal
+            if newWeeklyChange != weeklyWeightChangeGoalValue {
+                DispatchQueue.main.async {
+                    self.weeklyWeightChangeGoalValue = newWeeklyChange
+                }
+            }
+            // Update activity level.
+            let newActivityLevel = Int(profile.activityLevel)
+            if newActivityLevel != activityLevelValue {
+                DispatchQueue.main.async {
+                    self.activityLevelValue = newActivityLevel
                 }
             }
         }
@@ -206,6 +225,8 @@ class UserProfileViewModel: ObservableObject {
                     self.startWeightValue   = existingProfile.startWeight
                     self.currentWeightValue = existingProfile.currentWeight
                     self.goalWeightValue    = existingProfile.goalWeight
+                    self.weeklyWeightChangeGoalValue = existingProfile.weeklyWeightChangeGoal
+                    self.activityLevelValue = Int(existingProfile.activityLevel)
                 }
             } else {
                 self.profile = nil
@@ -403,6 +424,28 @@ class UserProfileViewModel: ObservableObject {
         set {
             objectWillChange.send()
             profile?.gender = newValue
+            scheduleSave()
+        }
+    }
+
+    /// Returns and sets the user's weekly weight change goal (kg/week).
+    var weeklyWeightChangeGoal: Double {
+        get { weeklyWeightChangeGoalValue }
+        set {
+            objectWillChange.send()
+            weeklyWeightChangeGoalValue = newValue
+            profile?.weeklyWeightChangeGoal = newValue
+            scheduleSave()
+        }
+    }
+
+    /// Returns and sets the user's activity level.
+    var activityLevel: ActivityLevel {
+        get { ActivityLevel(rawValue: activityLevelValue) ?? .sedentary }
+        set {
+            objectWillChange.send()
+            activityLevelValue = newValue.rawValue
+            profile?.activityLevel = Int32(newValue.rawValue)
             scheduleSave()
         }
     }
