@@ -1,6 +1,7 @@
 // FoodViewModel.swift
 
 import Foundation
+import HealthKit
 import CoreData
 
 /// FoodViewModel manages a collection of FoodItem objects, including:
@@ -11,9 +12,9 @@ import CoreData
 @MainActor
 final class FoodViewModel: ObservableObject, FoodAddingViewModel {
     // MARK: - Published Properties
-
+    
     @Published var foodItems: [FoodItem] = []
-
+    
     /// Today’s total calories.
     @Published var totalCalories: Int = 0
     /// Today’s total protein.
@@ -22,12 +23,12 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
     @Published var totalCarbs: Double = 0
     /// Today’s total fat.
     @Published var totalFat: Double = 0
-
+    
     /// The product fetched from the API
     @Published var currentProduct: FoodItem?
     /// Error message if fetching fails
     @Published var errorMessage: String?
-
+    
     // MARK: - FoodAddingViewModel Conformance
     /// All available foods fetched from Core Data.
     var allFoods: [FoodItem] {
@@ -55,23 +56,24 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
             return []
         }
     }
-
+    
     /// Finds a food by barcode.
     func findFood(byBarcode code: String) -> FoodItem? {
         return findFoodByBarcode(code)
     }
-
+    
     // MARK: - Internal Managers
-
-    /// Handles history and midnight reset.
-    private let calorieHistoryManager = CalorieHistoryManager()
+    
     private let context: NSManagedObjectContext
+    private let nutritionHistoryManager = NutritionHistoryManager.shared
 
+    
     // MARK: - Initialization
-
+    
     init(context: NSManagedObjectContext) {
         self.context = context
         loadEntries()
+      
     }
 
     /// Logs a consumption event for a given FoodItem and updates today’s history entry.
@@ -108,6 +110,37 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
         do {
             // 3. Save the consumption and reload diary entries
             try context.save()
+            // Write this consumption into HealthKit
+            let eatenDate = entry.dateEaten!
+            let entryCalories = foodEntity.calories * (grams / 100.0)
+            let entryProtein  = foodEntity.protein  * (grams / 100.0)
+            let entryCarbs    = foodEntity.carbs    * (grams / 100.0)
+            let entryFat      = foodEntity.fat      * (grams / 100.0)
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryEnergyConsumed,
+                quantity: entryCalories,
+                date: eatenDate
+            ) { _, _ in }
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryProtein,
+                quantity: entryProtein,
+                date: eatenDate
+            ) { _, _ in }
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryCarbohydrates,
+                quantity: entryCarbs,
+                date: eatenDate
+            ) { _, _ in }
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryFatTotal,
+                quantity: entryFat,
+                date: eatenDate
+            ) { _, _ in }
+
             loadEntries()
             objectWillChange.send()
 
@@ -128,14 +161,33 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
             formatter.dateFormat = "yyyy-MM-dd"
             let dateString = formatter.string(from: Date())
 
-            // 6. Fetch or create the CalorieEntry for today
-            let historyReq: NSFetchRequest<CalorieEntry> = CalorieEntry.fetchRequest()
+            // 6. Fetch or create the NutritionEntry for today
+            let historyReq: NSFetchRequest<NutritionEntry> = NutritionEntry.fetchRequest()
             historyReq.predicate = NSPredicate(format: "dateString == %@", dateString)
-            let historyEntry = (try? context.fetch(historyReq))?.first ?? CalorieEntry(context: context)
+            let historyEntry = (try? context.fetch(historyReq))?.first ?? NutritionEntry(context: context)
             historyEntry.dateString = dateString
-            historyEntry.calories = Int32(todaysCalories)
 
-            // 7. Save the updated history
+            // Set all four nutrient totals
+            historyEntry.calories = Double(todaysCalories)
+            // Compute today’s protein, carbs and fat from the same entries:
+            let todaysProtein = todaysEntries.reduce(0.0) { sum, entry in
+                guard let per100 = entry.food?.protein else { return sum }
+                return sum + per100 * (entry.gramsConsumed / 100.0)
+            }
+            let todaysCarbs = todaysEntries.reduce(0.0) { sum, entry in
+                guard let per100 = entry.food?.carbs else { return sum }
+                return sum + per100 * (entry.gramsConsumed / 100.0)
+            }
+            let todaysFat = todaysEntries.reduce(0.0) { sum, entry in
+                guard let per100 = entry.food?.fat else { return sum }
+                return sum + per100 * (entry.gramsConsumed / 100.0)
+            }
+
+            historyEntry.protein = todaysProtein
+            historyEntry.carbs   = todaysCarbs
+            historyEntry.fat     = todaysFat
+
+            // 7. Save the updated history entry
             try context.save()
         } catch {
             print("Error logging consumption or updating history: \(error)")
@@ -255,12 +307,22 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
 
     /// Fetches historical calories for a specific past date.
     func totalCaloriesForDate(_ date: Date) -> Int {
-        calorieHistoryManager.totalCaloriesForDate(date)
+        // Fetch only the calories field from the nutrition manager
+        let ds = {
+            let f = DateFormatter()
+            f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: date)
+        }()
+        let entry = nutritionHistoryManager
+            .nutritionForPeriod(days: 1)
+            .first { $0.date == ds }
+        return Int(entry?.calories ?? 0)
     }
     
     /// Returns the total calories for each of the last `days` days.
     func totalCalories(forLast days: Int) -> [(date: String, calories: Int)] {
-        calorieHistoryManager.totalCaloriesForPeriod(days: days)
+        nutritionHistoryManager.nutritionForPeriod(days: days)
+            .map { (date: $0.date, calories: Int($0.calories)) }
     }
     
     /// Removes a food entry from today's diary by its UUID (consumption entry).
@@ -270,6 +332,29 @@ final class FoodViewModel: ObservableObject, FoodAddingViewModel {
         do {
             let entries = try context.fetch(request)
             for entry in entries {
+                // Remove this consumption from HealthKit
+                if let eatenDate = entry.dateEaten {
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryEnergyConsumed,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryProtein,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryCarbohydrates,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryFatTotal,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                }
                 context.delete(entry)
             }
             try context.save()

@@ -1,6 +1,7 @@
 // DateFoodViewModel.swift
 import Foundation
 import CoreData
+import HealthKit
 
 @MainActor
 final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
@@ -43,6 +44,7 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
     }
 
     // MARK: - Dependencies
+    private let lastImportKey = "lastNutritionImportDate"
     private let context: NSManagedObjectContext
     let date: Date
 
@@ -51,6 +53,31 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
         self.date = Calendar.current.startOfDay(for: date)
         self.context = context
         loadEntries()
+        
+        // Figure out where to start importing
+        let lastImport = UserDefaults.standard.object(forKey: lastImportKey) as? Date
+        let startDate  = lastImport
+        ?? Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+        
+        // Now only import from startDate → today
+        HealthKitManager.shared.requestAuthorization { success, _ in
+            guard success else { return }
+            NutritionManager().updateHistoricalNutrition(startDate: startDate, endDate: Date()) {
+                // Update the “last import” so we don’t refetch this again
+                UserDefaults.standard.set(Date(), forKey: self.lastImportKey)
+                
+                // Finally, refresh today’s totals
+                if let today = NutritionHistoryManager.shared.nutritionForPeriod(days: 1).first {
+                    DispatchQueue.main.async {
+                        self.totalCalories = Int(today.calories)
+                        self.totalProtein  = today.protein
+                        self.totalCarbs    = today.carbs
+                        self.totalFat      = today.fat
+                        self.objectWillChange.send()
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Loading Data
@@ -87,10 +114,27 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
 
     // MARK: - Totals Calculation
     private func updateTotals() {
-        totalCalories = foodEntries.reduce(0) { $0 + $1.calories }
-        totalProtein  = foodEntries.reduce(0) { $0 + $1.protein }
-        totalCarbs    = foodEntries.reduce(0) { $0 + $1.carbs }
-        totalFat      = foodEntries.reduce(0) { $0 + $1.fat }
+        // First, attempt to load NutritionEntry for this date
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let ds = formatter.string(from: date)
+
+        let req: NSFetchRequest<NutritionEntry> = NutritionEntry.fetchRequest()
+        req.predicate = NSPredicate(format: "dateString == %@", ds)
+
+        if let hist = (try? context.fetch(req))?.first {
+            // Use historical HealthKit-imported values
+            totalCalories = Int(hist.calories)
+            totalProtein  = hist.protein
+            totalCarbs    = hist.carbs
+            totalFat      = hist.fat
+        } else {
+            // Fallback to summing manual consumption entries
+            totalCalories = foodEntries.reduce(0) { $0 + $1.calories }
+            totalProtein  = foodEntries.reduce(0) { $0 + $1.protein }
+            totalCarbs    = foodEntries.reduce(0) { $0 + $1.carbs }
+            totalFat      = foodEntries.reduce(0) { $0 + $1.fat }
+        }
     }
 
     /// Returns total calories for a given meal type on this date.
@@ -171,6 +215,36 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
         entry.mealType = mealType
         do {
             try context.save()
+            // Write this consumption into HealthKit
+            let eatenDate = entry.dateEaten!
+            let entryCalories = foodEntity.calories * (grams / 100.0)
+            let entryProtein  = foodEntity.protein  * (grams / 100.0)
+            let entryCarbs    = foodEntity.carbs    * (grams / 100.0)
+            let entryFat      = foodEntity.fat      * (grams / 100.0)
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryEnergyConsumed,
+                quantity: entryCalories,
+                date: eatenDate
+            ) { _, _ in }
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryProtein,
+                quantity: entryProtein,
+                date: eatenDate
+            ) { _, _ in }
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryCarbohydrates,
+                quantity: entryCarbs,
+                date: eatenDate
+            ) { _, _ in }
+
+            HealthKitManager.shared.saveNutritionSample(
+                type: .dietaryFatTotal,
+                quantity: entryFat,
+                date: eatenDate
+            ) { _, _ in }
             loadEntries()
         } catch {
             print("Error saving consumption for date \(date):", error)
@@ -182,7 +256,32 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
         req.predicate = NSPredicate(format: "id == %@", id as CVarArg)
         do {
             let entries = try context.fetch(req)
-            for e in entries { context.delete(e) }
+            for e in entries {
+                // Remove this consumption from HealthKit
+                if let eatenDate = e.dateEaten {
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryEnergyConsumed,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryProtein,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryCarbohydrates,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                    HealthKitManager.shared.deleteNutritionSamples(
+                        type: .dietaryFatTotal,
+                        start: eatenDate,
+                        end: eatenDate
+                    ) { _, _ in }
+                }
+                context.delete(e)
+            }
             try context.save()
             loadEntries()
         } catch {

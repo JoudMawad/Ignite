@@ -17,7 +17,11 @@ final class HealthKitManager {
               let stepType = HKObjectType.quantityType(forIdentifier: .stepCount),
               let walkingdistance = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning),
               let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
-              let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
+              let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater),
+              let energyConsumedType = HKObjectType.quantityType(forIdentifier: .dietaryEnergyConsumed),
+              let proteinType         = HKObjectType.quantityType(forIdentifier: .dietaryProtein),
+              let carbsType           = HKObjectType.quantityType(forIdentifier: .dietaryCarbohydrates),
+              let fatType             = HKObjectType.quantityType(forIdentifier: .dietaryFatTotal) else {
             // If any of the required types are not available, complete with false.
             completion(false, nil)
             return
@@ -30,7 +34,11 @@ final class HealthKitManager {
             workoutType,
             activeEnergyType,
             bodyMassType,
-            waterType
+            waterType,
+            energyConsumedType,
+            proteinType,
+            carbsType,
+            fatType
         ]
         let typesToRead: Set<HKObjectType> = [
             bodyMassType,
@@ -38,7 +46,11 @@ final class HealthKitManager {
             walkingdistance,
             activeEnergyType,
             workoutType,
-            waterType
+            waterType,
+            energyConsumedType,
+            proteinType,
+            carbsType,
+            fatType
         ]
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             completion(success, error)
@@ -54,6 +66,10 @@ final class HealthKitManager {
         enableBackgroundDelivery(for: .stepCount)
         // Enable background delivery for Water data.
         enableBackgroundDelivery(for: .dietaryWater)
+        enableBackgroundDelivery(for: .dietaryEnergyConsumed)
+        enableBackgroundDelivery(for: .dietaryProtein)
+        enableBackgroundDelivery(for: .dietaryCarbohydrates)
+        enableBackgroundDelivery(for: .dietaryFatTotal)
     }
     
     /// Deletes all workout samples between two dates from HealthKit.
@@ -193,6 +209,56 @@ final class HealthKitManager {
                                       start: date,
                                       end: date)
         healthStore.save(sample) { success, error in
+            DispatchQueue.main.async {
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Saves a nutrition sample (calories, protein, carbs, or fat) to HealthKit.
+    func saveNutritionSample(
+        type identifier: HKQuantityTypeIdentifier,
+        quantity: Double,
+        date: Date,
+        completion: @escaping (Bool, Error?) -> Void
+    ) {
+        guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
+            completion(false, nil)
+            return
+        }
+        let unit: HKUnit = (identifier == .dietaryEnergyConsumed)
+            ? .kilocalorie()
+            : .gram()
+        let sample = HKQuantitySample(
+            type: type,
+            quantity: HKQuantity(unit: unit, doubleValue: quantity),
+            start: date,
+            end: date
+        )
+        healthStore.save(sample) { success, error in
+            DispatchQueue.main.async {
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Deletes nutrition samples of a given type between two dates from HealthKit.
+    func deleteNutritionSamples(
+        type identifier: HKQuantityTypeIdentifier,
+        start: Date,
+        end: Date,
+        completion: @escaping (Bool, Error?) -> Void
+    ) {
+        guard let type = HKObjectType.quantityType(forIdentifier: identifier) else {
+            completion(false, nil)
+            return
+        }
+        let predicate = HKQuery.predicateForSamples(
+            withStart: start,
+            end:   nil,
+            options: .strictStartDate
+        )
+        healthStore.deleteObjects(of: type, predicate: predicate) { success, _, error in
             DispatchQueue.main.async {
                 completion(success, error)
             }
