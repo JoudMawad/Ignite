@@ -9,7 +9,7 @@ struct WeeklyCalorieChartView: View {
     
     /// Retrieves calorie data for the last 7 days.
     var calorieData: [(date: String, calories: Int)] {
-        viewModel.totalCalories(forLast: 7)
+        viewModel.totalCalories(forLast: 8)
     }
     
     /// Formats the raw calorie data to map each day of the week to its calorie count.

@@ -9,7 +9,7 @@ struct WeeklyWaterChartView: View {
     
     /// Retrieve raw water data for the past 7 days.
     var rawWaterData: [(date: String, water: Double)] {
-        waterManager.waterIntakesForPeriod(days: 7)
+        waterManager.waterIntakesForPeriod(days: 8)
     }
     
     /// Group the raw water data into daily intervals.

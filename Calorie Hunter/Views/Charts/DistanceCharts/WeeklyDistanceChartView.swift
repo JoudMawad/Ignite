@@ -7,7 +7,7 @@ struct WeeklyDistanceChartView: View {
 
     /// Raw distance data (meters) for the last 7 days.
     var rawDistanceData: [(date: String, distance: Double)] {
-        stepsManager.distancesForPeriod(days: 7)
+        stepsManager.distancesForPeriod(days: 8)
     }
 
     /// Group into daily buckets with abbreviated weekdays.

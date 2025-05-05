@@ -38,34 +38,17 @@ struct FoodArcView: View {
     /// Returns an array of colors for the nutrient gradient.
     /// Colors are chosen based on the nutrient and adapted to the current color scheme.
     private func gradientFor(nutrient: String) -> [Color] {
-        // Define dark and light variations for red, blue, and green.
-        let darkRed = Color(red: 0.6, green: 0, blue: 0)
-        let darkRed1 = Color(red: 0.3, green: 0, blue: 0)
-        let darkBlue = Color(red: 0, green: 0, blue: 0.6)
-        let darkBlue1 = Color(red: 0, green: 0, blue: 0.3)
-        let darkGreen = Color(red: 0, green: 0.6, blue: 0)
-        let darkGreen1 = Color(red: 0, green: 0.3, blue: 0)
-        let lightRed = Color(red: 1.3, green: 0, blue: 0)
-        let lightRed1 = Color(red: 1.5, green: 0, blue: 0)
-        let lightBlue = Color(red: 0, green: 0, blue: 1.8)
-        let lightBlue1 = Color(red: 0, green: 0, blue: 2.0)
-        let lightGreen = Color(red: 0, green: 1.2, blue: 0)
-        let lightGreen1 = Color(red: 0, green: 1, blue: 0)
+
+        let darkGreen2 = Color(red: 0, green: 0.8, blue: 0)
         
         // Select gradient colors based on the nutrient type and current color scheme.
         switch nutrient {
         case "Protein":
-            return colorScheme == .light
-                ? [lightRed1, lightRed, lightRed1]
-                : [darkRed1, darkRed, darkRed1]
+            return [.pink, .purple, .pink]
         case "Carbs":
-            return colorScheme == .light
-                ? [lightGreen, lightGreen1, lightGreen]
-                : [darkGreen1, darkGreen, darkGreen1]
+            return [.blue, .cyan, .blue]
         case "Fat":
-            return colorScheme == .light
-                ? [lightBlue1, lightBlue, lightBlue1]
-                : [darkBlue1, darkBlue, darkBlue1]
+            return [.green, darkGreen2, .green]
         default:
             return [Color.gray]
         }

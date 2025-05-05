@@ -9,7 +9,7 @@ struct WeeklyBurnedCaloriesChartView: View {
     
     /// Retrieves burned calories data for the last 7 days.
     var burnedCaloriesData: [(date: String, burnedCalories: Double)] {
-        burnedCaloriesManager.burnedCaloriesForPeriod(days: 7)
+        burnedCaloriesManager.burnedCaloriesForPeriod(days: 8)
     }
     
     /// Groups daily burned calories data by day, using abbreviated weekday labels.

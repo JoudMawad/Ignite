@@ -9,7 +9,7 @@ struct WeeklyStepsChartView: View {
 
     /// Retrieve raw step data for the last 7 days.
     var rawStepsData: [(date: String, steps: Int)] {
-        stepsManager.stepsForPeriod(days: 7)
+        stepsManager.stepsForPeriod(days: 8)
     }
     
     /// Group the raw steps data into daily data points.

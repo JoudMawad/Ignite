@@ -21,25 +21,16 @@ struct ChartGradientHelper {
     ///   - colorScheme: The current color scheme of the app.
     /// - Returns: An array of Color values used to create a gradient.
     static func gradientForNutrient(_ name: String, colorScheme: ColorScheme) -> [Color] {
-        // Define dark color variants.
-        let darkRed = Color(red: 0.6, green: 0, blue: 0)
-        let darkBlue = Color(red: 0, green: 0, blue: 0.6)
-        let darkGreen = Color(red: 0, green: 0.6, blue: 0)
-        
-        // Define light color variants.
-        let lightRed = Color(red: 1, green: 0, blue: 0)
-        let lightBlue = Color(red: 0, green: 0, blue: 1)
-        let lightGreen = Color(red: 0, green: 1, blue: 0)
         
         // Return the appropriate gradient based on the nutrient name and color scheme.
         switch name.lowercased() {
         case "protein":
-            return colorScheme == .light ? [lightRed] : [darkRed]
+            return [.purple]
         case "carbs":
             // Currently using a single color for carbs; adjust as needed for more complex gradients.
-            return colorScheme == .light ? [lightGreen] : [darkGreen]
+            return [.blue]
         case "fat":
-            return colorScheme == .light ? [lightBlue] : [darkBlue]
+            return [.green]
         default:
             // Return a default light gray gradient if the nutrient doesn't match known names.
             return [Color.gray.opacity(0.3)]
