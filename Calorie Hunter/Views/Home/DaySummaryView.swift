@@ -60,6 +60,7 @@ struct DaySummaryView: View {
                 )
             }
             HStack(spacing: 12) {
+                
                 MetricCardView(
                     iconName: "figure.walk",
                     title: "Steps",

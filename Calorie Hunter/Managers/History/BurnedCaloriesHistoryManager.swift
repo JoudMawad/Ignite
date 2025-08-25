@@ -23,8 +23,15 @@ class BurnedCaloriesHistoryManager: ObservableObject {
     /// Adds historical burned calories data to our stored history.
     /// - Parameter caloriesData: An array of tuples. Each tuple has a date string and the calories burned on that day.
     func importHistoricalBurnedCalories(_ caloriesData: [(date: String, burnedCalories: Double)]) {
-        viewContext.perform { // <- This is the critical fix!
+        // Compute today's key once and skip persisting today's provisional value
+        let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"; fmt.timeZone = .current
+        let todayKey = fmt.string(from: Date())
+
+        viewContext.perform { // keep on the context's queue
             for entry in caloriesData {
+                // Only persist finalized days (strictly before today)
+                guard entry.date < todayKey else { continue }
+
                 let fetchRequest: NSFetchRequest<BurnedCaloriesEntry> = BurnedCaloriesEntry.fetchRequest()
                 fetchRequest.predicate = NSPredicate(format: "dateString == %@", entry.date)
                 do {
@@ -48,14 +55,19 @@ class BurnedCaloriesHistoryManager: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone.current
         let key = formatter.string(from: date)
-        let fetchRequest: NSFetchRequest<BurnedCaloriesEntry> = BurnedCaloriesEntry.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "dateString == %@", key)
-        do {
-            let results = try viewContext.fetch(fetchRequest)
-            return results.first?.burnedCalories ?? 0
-        } catch {
-            return 0
+
+        var value: Double = 0
+        viewContext.performAndWait {
+            let fetchRequest: NSFetchRequest<BurnedCaloriesEntry> = BurnedCaloriesEntry.fetchRequest()
+            fetchRequest.predicate = NSPredicate(format: "dateString == %@", key)
+            do {
+                let results = try self.viewContext.fetch(fetchRequest)
+                value = results.first?.burnedCalories ?? 0
+            } catch {
+                value = 0
+            }
         }
+        return value
     }
     
     // MARK: - Retrieving Data
@@ -68,18 +80,20 @@ class BurnedCaloriesHistoryManager: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone.current
-        
-        for i in 0..<days {
-            if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
-                let dateString = formatter.string(from: date)
-                let fetchRequest: NSFetchRequest<BurnedCaloriesEntry> = BurnedCaloriesEntry.fetchRequest()
-                fetchRequest.predicate = NSPredicate(format: "dateString == %@", dateString)
-                do {
-                    let entry = try viewContext.fetch(fetchRequest).first
-                    let value = entry?.burnedCalories ?? 0
-                    results.append((dateString, value))
-                } catch {
-                    results.append((dateString, 0))
+
+        viewContext.performAndWait {
+            for i in 0..<days {
+                if let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) {
+                    let dateString = formatter.string(from: date)
+                    let fetchRequest: NSFetchRequest<BurnedCaloriesEntry> = BurnedCaloriesEntry.fetchRequest()
+                    fetchRequest.predicate = NSPredicate(format: "dateString == %@", dateString)
+                    do {
+                        let entry = try self.viewContext.fetch(fetchRequest).first
+                        let value = entry?.burnedCalories ?? 0
+                        results.append((dateString, value))
+                    } catch {
+                        results.append((dateString, 0))
+                    }
                 }
             }
         }
@@ -90,13 +104,15 @@ class BurnedCaloriesHistoryManager: ObservableObject {
 
     /// Clears all the stored burned calories data.
     func clearData() {
-        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = BurnedCaloriesEntry.fetchRequest()
-        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-        do {
-            try viewContext.execute(deleteRequest)
-            saveContext()
-        } catch {
-            // Handle error if needed
+        viewContext.perform {
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = BurnedCaloriesEntry.fetchRequest()
+            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+            do {
+                try self.viewContext.execute(deleteRequest)
+                self.saveContext()
+            } catch {
+                // Handle error if needed
+            }
         }
     }
     

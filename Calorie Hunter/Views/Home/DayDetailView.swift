@@ -107,6 +107,7 @@ struct DayDetailCardView: View {
                         goal: GoalsManager.shared.goalValue(for: .burnedCalories, on: date),
                         gradientColors: [Color.pink, Color.orange]
                     )
+                
                     MetricCardView(
                         iconName: "figure.walk",
                         title: "Steps",
@@ -115,6 +116,7 @@ struct DayDetailCardView: View {
                         goal: GoalsManager.shared.goalValue(for: .steps, on: date),
                         gradientColors: [Color.cyan, Color.green]
                     )
+                 
                     MetricCardView(
                         iconName: "drop.fill",
                         title: "Water",

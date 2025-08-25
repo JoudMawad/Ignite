@@ -132,8 +132,15 @@ final class StepsManager {
         fetchHistoricalDailySteps(startDate: startDate, endDate: endDate) { fetchedSteps in
             // Save the fetched steps to our local variable.
             self.importedSteps = fetchedSteps
-            // Pass the fetched steps data to the shared StepsHistoryManager for further handling.
-            StepsHistoryManager.shared.importHistoricalSteps(fetchedSteps)
+
+            // Exclude today’s steps; only persist finalized days
+            let todayKey = {
+                let fmt = DateFormatter(); fmt.dateFormat = "yyyy-MM-dd"; fmt.timeZone = .current
+                return fmt.string(from: Date())
+            }()
+            let finalized = fetchedSteps.filter { $0.date < todayKey }
+
+            StepsHistoryManager.shared.importHistoricalSteps(finalized)
             // Call the completion handler to signal that the update is finished.
             completion()
         }

@@ -14,8 +14,17 @@ class StepsHistoryManager: ObservableObject {
     /// Imports the fetched steps data into Core Data.
     /// - Parameter stepsData: An array of tuples where each tuple contains a date string and the steps count.
     func importHistoricalSteps(_ stepsData: [(date: String, steps: Int)]) {
+        // Skip persisting today's steps; today's value is displayed live, not stored
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = .current
+        let todayKey = fmt.string(from: Date())
+
         viewContext.perform {
             for entry in stepsData {
+                // Only import finalized days (strictly before today)
+                guard entry.date < todayKey else { continue }
+
                 let fetchRequest: NSFetchRequest<StepsEntry> = StepsEntry.fetchRequest()
                 fetchRequest.predicate = NSPredicate(format: "dateString == %@", entry.date)
                 do {
@@ -24,7 +33,6 @@ class StepsHistoryManager: ObservableObject {
                     obj.dateString = entry.date
                     obj.steps = Int64(entry.steps)
                 } catch {
-                    // Handle error if needed
                 }
             }
             self.saveContext()

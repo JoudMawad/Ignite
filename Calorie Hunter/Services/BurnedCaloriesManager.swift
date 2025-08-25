@@ -1,9 +1,6 @@
 import HealthKit
 import Foundation
 
-// Add CoreData import for integration
-import CoreData
-
 // Extend Notification.Name to include a custom notification for when HealthKit's burned calories data changes.
 extension Notification.Name {
     static let healthKitBurnedCaloriesDataChanged = Notification.Name("healthKitBurnedCaloriesDataChanged")
@@ -16,9 +13,6 @@ final class BurnedCaloriesManager {
     // HealthKit store used for all HealthKit queries.
     let healthStore = HKHealthStore()
     
-    // Core Data viewContext for optional direct updates (not strictly required, but useful for atomicity)
-    private let viewContext = PersistenceController.shared.container.viewContext
-
     // Private initializer ensures this class is used as a singleton.
     private init() { }
     
@@ -45,7 +39,7 @@ final class BurnedCaloriesManager {
             return
         }
         let interval = DateComponents(day: 1)
-        let anchorDate = Calendar.current.startOfDay(for: startDate)
+        let anchorDate = Calendar.autoupdatingCurrent.startOfDay(for: startDate)
         let query = HKStatisticsCollectionQuery(quantityType: caloriesType,
                                                 quantitySamplePredicate: nil,
                                                 options: .cumulativeSum,
@@ -80,53 +74,31 @@ final class BurnedCaloriesManager {
             completion(0)
             return
         }
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: Date(), options: .strictStartDate)
-        let sampleQuery = HKSampleQuery(sampleType: caloriesType,
-                                        predicate: predicate,
-                                        limit: HKObjectQueryNoLimit,
-                                        sortDescriptors: nil) { [weak self] _, samples, error in
-            guard let self = self else {
-                completion(0)
-                return
+        let startOfDay = Calendar.autoupdatingCurrent.startOfDay(for: Date())
+        var interval = DateComponents(); interval.day = 1
+        let q = HKStatisticsCollectionQuery(quantityType: caloriesType,
+                                            quantitySamplePredicate: nil,
+                                            options: .cumulativeSum,
+                                            anchorDate: startOfDay,
+                                            intervalComponents: interval)
+        q.initialResultsHandler = { _, results, _ in
+            guard let results else { completion(0); return }
+            var total = 0.0
+            results.enumerateStatistics(from: startOfDay, to: Date()) { stats, _ in
+                total = stats.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
             }
-            guard let samples = samples as? [HKQuantitySample], error == nil else {
-                completion(0)
-                return
-            }
-            let totalCalories = samples.reduce(0.0) { sum, sample in
-                sum + sample.quantity.doubleValue(for: HKUnit.kilocalorie())
-            }
-            // --- Core Data integration (optional but keeps latest up-to-date) ---
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            formatter.timeZone = TimeZone.current
-            let todayKey = formatter.string(from: Date())
-            let fetchRequest: NSFetchRequest<BurnedCaloriesEntry> = BurnedCaloriesEntry.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "dateString == %@", todayKey)
-            do {
-                let results = try self.viewContext.fetch(fetchRequest)
-                let entry = results.first ?? BurnedCaloriesEntry(context: self.viewContext)
-                entry.dateString = todayKey
-                entry.burnedCalories = totalCalories
-                try self.viewContext.save()
-            } catch {
-                // Silently ignore, don't disrupt app flow
-            }
-            // ---
-            completion(totalCalories)
+            completion(total)
         }
-        healthStore.execute(sampleQuery)
+        healthStore.execute(q)
     }
     
     /// Sets up an observer query to watch for any changes in burned calories data.
     func startObservingBurnedCaloriesChanges() {
         guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
+        healthStore.enableBackgroundDelivery(for: caloriesType, frequency: .immediate) { _, _ in }
+
         let query = HKObserverQuery(sampleType: caloriesType, predicate: nil) { [weak self] _, completionHandler, _ in
-            guard let self = self else {
-                completionHandler()
-                return
-            }
+            guard let self = self else { completionHandler(); return }
             self.fetchLatestBurnedCalories { latestCalories in
                 NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged,
                                                 object: nil,

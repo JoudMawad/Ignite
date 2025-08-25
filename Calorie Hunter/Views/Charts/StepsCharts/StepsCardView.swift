@@ -7,16 +7,9 @@ struct StepsCardView: View {
     @ObservedObject var stepsViewModel: StepsViewModel
     // Adapts UI styling based on the current light/dark mode.
     @Environment(\.colorScheme) var colorScheme
-    // Animated value for smooth transitions in the displayed step count.
-    @State private var animatedSteps: Double = 0
-    /// Animated value for smooth transitions in the displayed distance.
-    @State private var animatedDistance: Double = 0
     
     // Closure to trigger additional actions when steps change (currently unused).
     var onStepsChange: () -> Void = {}
-    
-    /// Static flag to ensure the initial animation only plays once per app session.
-    private static var hasAnimatedSteps = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -33,18 +26,20 @@ struct StepsCardView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Animated number text displaying the current step count.
-            CountingNumberText(number: animatedSteps)
+            // Step count (mirrors Health app Today)
+            CountingNumberText(number: Double(stepsViewModel.currentSteps))
                 .foregroundColor(colorScheme == .dark ? .black : .white)
+                .animation(.easeInOut(duration: 0.5), value: stepsViewModel.currentSteps)
             
             // Distance display
             HStack {
                 // Compute and display distance in km with one decimal
-                let rawKm = animatedDistance / 1000
+                let rawKm = stepsViewModel.currentDistance / 1000
                 let roundedKm = (rawKm * 10).rounded() / 10
                 Text(String(format: "%.1f km", roundedKm))
                     .font(.system(size: 16, weight: .bold, design: .rounded))
                     .foregroundColor(colorScheme == .dark ? .black : .white)
+                    .animation(.easeInOut(duration: 0.5), value: stepsViewModel.currentDistance)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, -5)
@@ -64,31 +59,5 @@ struct StepsCardView: View {
                 .fill(colorScheme == .dark ? .white : .black)
                 .shadow(radius: 3)
         )
-        .onAppear {
-            if Self.hasAnimatedSteps {
-                animatedSteps = Double(stepsViewModel.currentSteps)
-                animatedDistance = stepsViewModel.currentDistance
-            } else {
-                animatedSteps = 0
-                animatedDistance = 0
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    animatedSteps = Double(stepsViewModel.currentSteps)
-                    animatedDistance = stepsViewModel.currentDistance
-                }
-                Self.hasAnimatedSteps = true
-            }
-        }
-        .onReceive(stepsViewModel.$currentSteps) { newValue in
-            // Animate any subsequent changes in step count.
-            withAnimation(.easeInOut(duration: 0.5)) {
-                animatedSteps = Double(newValue)
-            }
-        }
-        // Animate on distance change
-        .onReceive(stepsViewModel.$currentDistance) { newValue in
-            withAnimation(.easeInOut(duration: 0.5)) {
-                animatedDistance = newValue
-            }
-        }
     }
 }

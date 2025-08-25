@@ -6,10 +6,11 @@ import CoreData
 class StepsViewModel: ObservableObject {
     private let healthKitManager = HealthKitManager.shared
     private let stepsManager = StepsManager()
-    private var observerQuery: HKObserverQuery?
     /// Observer for live distance updates
     private var distanceObserverQuery: HKObserverQuery?
     private let viewContext = PersistenceController.shared.container.viewContext
+    /// Observer for app foreground/scene activation
+    private var foregroundObserver: NSObjectProtocol?
 
     // MARK: - Published Properties
 
@@ -19,18 +20,28 @@ class StepsViewModel: ObservableObject {
     @Published var currentDistance: Double = 0.0
 
     init() {
-        // Load today’s saved values from Core Data
-        self.currentSteps = fetchStepsFromCoreData(for: Date())
+        // Load today’s saved distance value from Core Data
         self.currentDistance = fetchDistanceFromCoreData(for: Date())
 
         // Request HealthKit permissions and import historical data
         requestAuthorization()
 
-        // Observe live updates to steps
-        startObservingSteps()
         // Observe live distance updates
         startObservingDistance()
         // Optionally: set up periodic refresh for live distance if needed
+
+        // Refresh steps whenever app becomes active
+        foregroundObserver = NotificationCenter.default.addObserver(forName: UIScene.didActivateNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.fetchTodayStepsViaCollection { total in
+                self?.updateSteps(total)
+            }
+        }
+    }
+
+    deinit {
+        if let observer = foregroundObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     // MARK: - Authorization & Initial Imports
@@ -43,16 +54,17 @@ class StepsViewModel: ObservableObject {
             let end   = Date()
             self.importHistoricalSteps(from: start, to: end)
             self.importHistoricalDistance(from: start, to: end)
+            self.fetchTodayStepsViaCollection { [weak self] total in
+                DispatchQueue.main.async { self?.currentSteps = total }
+            }
         }
     }
 
     private func importHistoricalSteps(from start: Date, to end: Date) {
         stepsManager.fetchHistoricalDailySteps(startDate: start, endDate: end) { data in
-            // Persist and update today’s value
-            StepsHistoryManager.shared.importHistoricalSteps(data)
-            if let today = data.first(where: { $0.date == self.dateString(from: Date()) }) {
-                self.updateSteps(today.steps)
-            }
+            let todayKey = self.dateString(from: Date())
+            let finalized = data.filter { $0.date < todayKey }
+            StepsHistoryManager.shared.importHistoricalSteps(finalized)
         }
     }
 
@@ -66,20 +78,6 @@ class StepsViewModel: ObservableObject {
     }
 
     // MARK: - Live Observing
-
-    private func startObservingSteps() {
-        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else { return }
-        observerQuery = HKObserverQuery(sampleType: stepType, predicate: nil) { [weak self] _, completion, error in
-            guard let self = self, error == nil else { completion(); return }
-            self.fetchLatestSteps { count in
-                self.updateSteps(count)
-                completion()
-            }
-        }
-        if let query = observerQuery {
-            healthKitManager.healthStore.execute(query)
-        }
-    }
 
     /// Begins observing HealthKit for live walking/running distance updates.
     private func startObservingDistance() {
@@ -121,30 +119,34 @@ class StepsViewModel: ObservableObject {
     }
 
     private func fetchLatestSteps(completion: @escaping (Int) -> Void) {
-        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
-            completion(0)
-            return
+        fetchTodayStepsViaCollection(completion: completion)
+    }
+
+    private func fetchTodayStepsViaCollection(completion: @escaping (Int) -> Void) {
+        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
+            completion(0); return
         }
-        let startOfDay = Calendar.current.startOfDay(for: Date())
-        let predicate  = HKQuery.predicateForSamples(withStart: startOfDay, end: Date(), options: .strictStartDate)
-        let query = HKSampleQuery(sampleType: stepType,
-                                   predicate: predicate,
-                                   limit: HKObjectQueryNoLimit,
-                                   sortDescriptors: nil) { _, samples, error in
-            guard let samples = samples as? [HKQuantitySample], error == nil else {
-                completion(0)
-                return
+        let startOfDay = Calendar.autoupdatingCurrent.startOfDay(for: Date())
+        var interval = DateComponents(); interval.day = 1
+        let q = HKStatisticsCollectionQuery(quantityType: stepType,
+                                            quantitySamplePredicate: nil,
+                                            options: .cumulativeSum,
+                                            anchorDate: startOfDay,
+                                            intervalComponents: interval)
+        q.initialResultsHandler = { _, results, _ in
+            guard let results else { completion(0); return }
+            var total = 0.0
+            results.enumerateStatistics(from: startOfDay, to: Date()) { stats, _ in
+                total = stats.sumQuantity()?.doubleValue(for: HKUnit.count()) ?? 0
             }
-            let total = samples.reduce(0) { $0 + Int($1.quantity.doubleValue(for: .count())) }
-            completion(total)
+            completion(Int(total))
         }
-        healthKitManager.healthStore.execute(query)
+        healthKitManager.healthStore.execute(q)
     }
 
     // MARK: - Data Updates
 
     private func updateSteps(_ newValue: Int) {
-        saveStepsToCoreData(for: Date(), steps: newValue)
         DispatchQueue.main.async { self.currentSteps = newValue }
     }
 
@@ -160,24 +162,6 @@ class StepsViewModel: ObservableObject {
         fmt.dateFormat = "yyyy-MM-dd"
         fmt.timeZone   = .current
         return fmt.string(from: date)
-    }
-
-    private func fetchStepsFromCoreData(for date: Date) -> Int {
-        let req: NSFetchRequest<StepsEntry> = StepsEntry.fetchRequest()
-        req.predicate = NSPredicate(format: "dateString == %@", dateString(from: date))
-        return (try? viewContext.fetch(req).first?.steps).map(Int.init) ?? 0
-    }
-
-    private func saveStepsToCoreData(for date: Date, steps: Int) {
-        viewContext.perform {
-            let req: NSFetchRequest<StepsEntry> = StepsEntry.fetchRequest()
-            req.predicate = NSPredicate(format: "dateString == %@", self.dateString(from: date))
-            let obj = (try? self.viewContext.fetch(req).first) ?? StepsEntry(context: self.viewContext)
-            obj.dateString = self.dateString(from: date)
-            obj.steps      = Int64(steps)
-            try? self.viewContext.save()
-            DispatchQueue.main.async { self.objectWillChange.send() }
-        }
     }
 
     private func fetchDistanceFromCoreData(for date: Date) -> Double {
@@ -198,11 +182,21 @@ class StepsViewModel: ObservableObject {
         }
     }
 
+    private func fetchStepsFromCoreData(for date: Date) -> Int {
+        let req: NSFetchRequest<StepsEntry> = StepsEntry.fetchRequest()
+        req.predicate = NSPredicate(format: "dateString == %@", dateString(from: date))
+        return (try? viewContext.fetch(req).first?.steps).map(Int.init) ?? 0
+    }
+
     // MARK: - Public Fetchers
 
-    /// Returns steps for a specific date.
+    /// Returns steps for a specific date: live currentSteps for today, otherwise Core Data history.
     func steps(for date: Date) -> Int {
-        fetchStepsFromCoreData(for: date)
+        if Calendar.autoupdatingCurrent.isDateInToday(date) {
+            return currentSteps
+        } else {
+            return fetchStepsFromCoreData(for: date)
+        }
     }
 
     /// Returns distance for a specific date in meters.
