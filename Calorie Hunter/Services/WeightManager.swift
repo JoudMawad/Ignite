@@ -11,6 +11,53 @@ final class WeightManager {
     // A reference to HealthKit's health store, used to execute queries.
     private let healthStore: HKHealthStore
     
+    // MARK: - Anchored query storage
+    private let weightAnchorDefaultsKey = "HKAnchor.bodyMass"
+
+    private func loadAnchor() -> HKQueryAnchor? {
+        guard let data = UserDefaults.standard.data(forKey: weightAnchorDefaultsKey) else { return nil }
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: HKQueryAnchor.self, from: data)
+    }
+
+    private func saveAnchor(_ anchor: HKQueryAnchor) {
+        if let data = try? NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true) {
+            UserDefaults.standard.set(data, forKey: weightAnchorDefaultsKey)
+        }
+    }
+
+    // MARK: - Delta fetch via anchored query
+    /// Fetch only new/changed weight samples since the last anchor and store them.
+    /// - Parameters:
+    ///   - startDate: Optional lower bound to limit how far back the first fetch goes.
+    ///   - completion: Called on the main thread after storing samples.
+    func fetchWeightDeltasAndStore(since startDate: Date? = nil, completion: (() -> Void)? = nil) {
+        guard let type = HKObjectType.quantityType(forIdentifier: .bodyMass) else { completion?(); return }
+
+        let predicate: NSPredicate?
+        if let start = startDate {
+            predicate = HKQuery.predicateForSamples(withStart: start, end: nil, options: [])
+        } else {
+            predicate = nil
+        }
+
+        let query = HKAnchoredObjectQuery(type: type,
+                                          predicate: predicate,
+                                          anchor: loadAnchor(),
+                                          limit: HKObjectQueryNoLimit) { [weak self] _, samplesOrNil, _, newAnchor, error in
+            DispatchQueue.main.async {
+                defer { completion?() }
+                if let newAnchor = newAnchor { self?.saveAnchor(newAnchor) }
+                guard error == nil else { return }
+                let samples = (samplesOrNil as? [HKQuantitySample]) ?? []
+                if !samples.isEmpty {
+                    WeightHistoryManager.shared.applyHealthKitSamples(samples)
+                }
+            }
+        }
+
+        healthStore.execute(query)
+    }
+    
     // Initialize with a HealthKit store; by default, we use the shared store from HealthKitManager.
     init(healthStore: HKHealthStore = HealthKitManager.shared.healthStore) {
         self.healthStore = healthStore
@@ -101,20 +148,24 @@ final class WeightManager {
         healthStore.execute(query)
     }
     
-    /// Starts observing for any changes in the weight data.
-    /// When changes occur, a notification is posted so that other parts of the app can react to the updated data.
+    /// Starts observing for weight changes and enables background delivery.
+    /// When updates arrive, we fetch only the deltas via an anchored query,
+    /// store them into Core Data, then post a notification for the UI layer.
     func startObservingWeightChanges() {
-        // Get the HealthKit quantity type for body mass.
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
-        // Create an observer query that listens for changes in the weight data.
-        let query = HKObserverQuery(sampleType: weightType, predicate: nil) { _, completionHandler, _ in
-            // Post a notification indicating that the weight data has changed.
-            NotificationCenter.default.post(name: .healthKitWeightDataChanged, object: nil)
-            // Call the completion handler to signal that the update has been processed.
+
+        let observer = HKObserverQuery(sampleType: weightType, predicate: nil) { [weak self] _, completionHandler, _ in
+            self?.fetchWeightDeltasAndStore() {
+                NotificationCenter.default.post(name: .healthKitWeightDataChanged, object: nil)
+            }
+            // Per Apple guidance, call completionHandler promptly after kicking off work
             completionHandler()
         }
-        // Execute the observer query.
-        healthStore.execute(query)
+
+        healthStore.execute(observer)
+
+        // Background delivery so the app gets woken up for new samples
+        healthStore.enableBackgroundDelivery(for: weightType, frequency: .immediate) { _, _ in }
     }
     
     func saveWeightSample(_ weight: Double,

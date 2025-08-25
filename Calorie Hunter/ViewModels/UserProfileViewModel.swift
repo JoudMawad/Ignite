@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import Combine
 
 // UserProfileViewModel is responsible for managing the user's profile data,
 // including personal details, goals, and weight information.
@@ -39,6 +40,8 @@ class UserProfileViewModel: ObservableObject {
     private let weightManager = WeightManager()
     // A DispatchWorkItem to manage delayed re-imports when HealthKit data changes.
     private var reimportWorkItem: DispatchWorkItem?
+    private var cancellables = Set<AnyCancellable>()
+    private var suppressWeightAutoSave = false
     
     // The Core Data context for fetching and saving the user profile.
     private var context: NSManagedObjectContext
@@ -91,6 +94,21 @@ class UserProfileViewModel: ObservableObject {
                 self.updateWeightFromHealthKit()
             }
         }
+        // Debounce user-driven current weight edits: write to HealthKit after 5s of inactivity
+        $currentWeightValue
+            .dropFirst() // ignore the initial assignment when the view appears
+            .removeDuplicates(by: { abs($0 - $1) < 0.0001 })
+            // Snapshot whether this change was programmatic at the time it happened
+            .map { [weak self] value -> (value: Double, suppressed: Bool) in
+                (value, self?.suppressWeightAutoSave ?? false)
+            }
+            // Only allow user-driven changes through
+            .filter { !$0.suppressed }
+            .map { $0.value }
+            .sink { newValue in
+                WeightHistoryManager.shared.saveWeight(for: Date(), weight: newValue, writeToHealthKit: true)
+            }
+            .store(in: &cancellables)
     }
     
     // Remove observers on deinitialization to avoid memory leaks.
@@ -148,7 +166,11 @@ class UserProfileViewModel: ObservableObject {
             let newCurrentWeight = profile.currentWeight
             if newCurrentWeight != currentWeightValue {
                 DispatchQueue.main.async {
+                    // Mute autosave so Core Data–driven refreshes don't write back to HealthKit
+                    self.suppressWeightAutoSave = true
                     self.currentWeightValue = newCurrentWeight
+                    // Re-enable autosave on next runloop tick
+                    DispatchQueue.main.async { [weak self] in self?.suppressWeightAutoSave = false }
                 }
             }
 
@@ -221,12 +243,18 @@ class UserProfileViewModel: ObservableObject {
                     self.goalsManager.updateGoal(Double(existingProfile.dailyStepsGoal), for: GoalType.steps, on: Date())
                     self.goalsManager.updateGoal(Double(existingProfile.dailyBurnedCaloriesGoal), for: GoalType.burnedCalories, on: Date())
                     self.dailyWaterGoalValue = existingProfile.dailyWaterGoal
+
+                    // ---- Begin suppression for weight-driven autosave ----
+                    self.suppressWeightAutoSave = true
                     // sync weights into your @Published state
                     self.startWeightValue   = existingProfile.startWeight
                     self.currentWeightValue = existingProfile.currentWeight
                     self.goalWeightValue    = existingProfile.goalWeight
                     self.weeklyWeightChangeGoalValue = existingProfile.weeklyWeightChangeGoal
                     self.activityLevelValue = Int(existingProfile.activityLevel)
+                    // Re-enable autosave next runloop so user edits still get saved to HealthKit
+                    DispatchQueue.main.async { [weak self] in self?.suppressWeightAutoSave = false }
+                    // ---- End suppression ----
                 }
             } else {
                 self.profile = nil
@@ -242,7 +270,7 @@ class UserProfileViewModel: ObservableObject {
         guard context.hasChanges else { return }
         do {
             try context.save()
-            print("✅ Profile saved")
+            print("Profile saved")
         } catch {
             print("Error saving profile: \(error)")
         }
@@ -258,10 +286,22 @@ class UserProfileViewModel: ObservableObject {
             if let profile = self.profile {
                 profile.currentWeight = newWeight
                 self.saveProfile()
-                // Save today's weight in Core Data for weight history tracking.
-                WeightHistoryManager.shared.saveWeight(for: Date(), weight: newWeight)
+                // Save today's weight locally; do NOT echo to HealthKit here.
+                WeightHistoryManager.shared.saveWeight(for: Date(), weight: newWeight, writeToHealthKit: false)
             }
         }
+    }
+
+    /// Programmatic setter for weight (e.g., when syncing from HealthKit) that avoids triggering the debounce write-back.
+    func setWeightFromSystem(_ value: Double) {
+        suppressWeightAutoSave = true
+        if let profile = self.profile {
+            profile.currentWeight = value
+            self.saveProfile()
+        }
+        self.currentWeightValue = value
+        // Re-enable autosave on the next run loop so user edits still trigger the pipeline
+        DispatchQueue.main.async { [weak self] in self?.suppressWeightAutoSave = false }
     }
     
     /// Fetches the latest weight from HealthKit and updates the profile if newer data is available.
@@ -284,7 +324,7 @@ class UserProfileViewModel: ObservableObject {
             DispatchQueue.main.async {
                 // If there's no stored entry or the new sample is more recent, update the current weight.
                 if storedDate == nil || newSampleDate > storedDate! {
-                    self.updateCurrentWeight(newWeight)
+                    self.setWeightFromSystem(newWeight)
                 }
             }
         }
