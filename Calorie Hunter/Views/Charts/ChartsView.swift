@@ -86,12 +86,14 @@ struct ChartsView: View {
                     .scrollVisualEffect()
                     
                     // MARK: BMR Charts Carousel with visual effect
+                    /*
                     ChartCarouselView(charts: [
                         AnyView(WeeklyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(MonthlyBMRChartView(viewModel: userProfileViewModel)),
                         AnyView(YearlyBMRChartView(viewModel: userProfileViewModel))
                     ])
                     .scrollVisualEffect()
+                     */
                     
                     // MARK: Water Charts Carousel with visual effect
                     ChartCarouselView(charts: [
@@ -110,12 +112,14 @@ struct ChartsView: View {
                     .scrollVisualEffect()
 
                     // MARK: Distance Charts Carousel with visual effect
+                    /*
                     ChartCarouselView(charts: [
                         AnyView(WeeklyDistanceChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(MonthlyDistanceChartView(stepsManager: StepsHistoryManager.shared)),
                         AnyView(YearlyDistanceChartView(stepsManager: StepsHistoryManager.shared))
                     ])
                     .scrollVisualEffect()
+                     */
                 }
                 // Ensure the background covers the full scrollable area.
                 .background(Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all))

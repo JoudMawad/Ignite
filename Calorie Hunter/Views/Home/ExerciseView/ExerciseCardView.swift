@@ -113,8 +113,7 @@ struct ExerciseCardView: View {
 // MARK: - Helpers
 private func formatDuration(_ duration: TimeInterval) -> String {
     let minutes = Int(duration) / 60
-    let seconds = Int(duration) % 60
-    return String(format: "%dm %ds", minutes, seconds)
+    return String(format: "%d min", minutes)
 }
 
 #if DEBUG

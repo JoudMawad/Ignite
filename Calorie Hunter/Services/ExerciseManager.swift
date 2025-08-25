@@ -80,6 +80,10 @@ extension HKWorkoutActivityType {
 final class ExerciseManager {
     private let healthKitManager = HealthKitManager()
     
+    func startObservingWorkouts(onChange: @escaping () -> Void) {
+        healthKitManager.startWorkoutObserver(onChange: onChange)
+    }
+    
     /// Fetches workouts from HealthKit within the given date range and maps them to Exercise models.
     func fetchExercises(start: Date, end: Date, completion: @escaping ([Exercise]) -> Void) {
         healthKitManager.fetchWorkouts(start: start, end: end) { workouts, error in

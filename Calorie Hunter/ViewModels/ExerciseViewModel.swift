@@ -3,8 +3,9 @@ import Combine
 import HealthKit
 import SwiftUI
 
+@MainActor
 final class ExerciseViewModel: ObservableObject {
-    @Published var exercises: [Exercise] = []
+    @Published private(set) var exercises: [Exercise] = []
     @Published var errorMessage: String?
 
     private let exerciseManager = ExerciseManager()
@@ -43,6 +44,23 @@ final class ExerciseViewModel: ObservableObject {
                     // Handle deletion error
                     self.errorMessage = error?.localizedDescription ?? "Failed to delete exercise."
                 }
+            }
+        }
+    }
+
+    func startHealthKitSync() {
+        // 1) Initial load (today)
+        let start = Calendar.current.startOfDay(for: Date())
+        exerciseManager.fetchExercises(start: start, end: Date()) { [weak self] items in
+            DispatchQueue.main.async { self?.exercises = items }
+        }
+
+        // 2) Observe future changes from WHOOP/Health
+        exerciseManager.startObservingWorkouts { [weak self] in
+            guard let self = self else { return }
+            let start = Calendar.current.startOfDay(for: Date())
+            self.exerciseManager.fetchExercises(start: start, end: Date()) { items in
+                DispatchQueue.main.async { self.exercises = items }
             }
         }
     }

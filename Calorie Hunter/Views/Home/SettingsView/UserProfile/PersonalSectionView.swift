@@ -100,28 +100,6 @@ struct PersonalInfoSectionView: View {
                         )
                     }
                 }
-                
-                AnimatedCard{
-                    ActivitySliderView(level: $viewModel.activityLevel) { lvl in
-                        viewModel.activityLevel = lvl
-                        viewModel.dailyBurnedCaloriesGoal = lvl.extraBurned
-                        viewModel.dailyStepsGoal = [
-                            .sedentary:      5_000,
-                            .lightlyActive:  7_500,
-                            .moderatelyActive: 10_000,
-                            .veryActive:     12_500
-                        ][lvl]!
-                        viewModel.dailyWaterGoal = [
-                            .sedentary:      1.5,
-                            .lightlyActive:  2.0,
-                            .moderatelyActive: 2.5,
-                            .veryActive:     3.0
-                        ][lvl]!
-                    }
-                    .onAppear {
-                        viewModel.loadProfile()
-                    }
-                }
             }
             .padding(.top, -40)
             

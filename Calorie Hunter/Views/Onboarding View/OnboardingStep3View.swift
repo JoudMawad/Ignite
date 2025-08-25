@@ -39,29 +39,19 @@ struct OnboardingStep3View: View {
 
     // Local staging state for onboarding inputs
     @State private var stagingGoalWeight: Double = 0
-    @State private var stagingStepsGoal: Int = 0
-    @State private var stagingBurnedCaloriesGoal: Int = 0
-    @State private var stagingCalorieGoal: Int = 0
+    @State private var stagingStepsGoal: Int = 10000
+    @State private var stagingBurnedCaloriesGoal: Int = 500
 
     // MARK: - Validation
     
     /// Validates that the goal weight and daily calorie goal are greater than zero.
     var isStep3Valid: Bool {
-        stagingGoalWeight > 0 && stagingCalorieGoal > 0
+        stagingGoalWeight > 0 && viewModel.dailyCalorieGoal > 0
     }
     
     // MARK: - Body
     
     var body: some View {
-        ZStack {
-            // Initialize staging from view model
-        }
-        .onAppear {
-            stagingGoalWeight = viewModel.goalWeight
-            stagingStepsGoal = viewModel.dailyStepsGoal
-            stagingBurnedCaloriesGoal = viewModel.dailyBurnedCaloriesGoal
-            stagingCalorieGoal = viewModel.dailyCalorieGoal
-        }
         ZStack {
             VStack {
                 Spacer()
@@ -96,21 +86,6 @@ struct OnboardingStep3View: View {
                             systemImageName: "target",
                             value: $stagingGoalWeight
                         )
-                       
-                        // Input field for setting the daily steps goal (Int value).
-                        OnboardingInputCellInt(
-                            title: "Steps Goal",
-                            placeholder: "....",
-                            systemImageName: "figure.walk",
-                            value: $stagingStepsGoal
-                        )
-                        // Input field for setting the daily burned calories goal (Int value).
-                        OnboardingInputCellInt(
-                            title: "Calories Burned",
-                            placeholder: "....",
-                            systemImageName: "flame",
-                            value: $stagingBurnedCaloriesGoal
-                        )
                         
                         CalorieGoalSliderView(
                             age: viewModel.age,
@@ -120,26 +95,6 @@ struct OnboardingStep3View: View {
                             weeklyChange: $viewModel.weeklyWeightChangeGoal
                         ) { newGoal in
                             viewModel.dailyCalorieGoal = newGoal
-                        }
-                        .onAppear {
-                            viewModel.loadProfile()
-                        }
-                        
-                        ActivitySliderView(level: $viewModel.activityLevel) { lvl in
-                            viewModel.activityLevel = lvl
-                            viewModel.dailyBurnedCaloriesGoal = lvl.extraBurned
-                            viewModel.dailyStepsGoal = [
-                                .sedentary:      5_000,
-                                .lightlyActive:  7_500,
-                                .moderatelyActive: 10_000,
-                                .veryActive:     12_500
-                            ][lvl]!
-                            viewModel.dailyWaterGoal = [
-                                .sedentary:      1.5,
-                                .lightlyActive:  2.0,
-                                .moderatelyActive: 2.5,
-                                .veryActive:     3.0
-                            ][lvl]!
                         }
                         .onAppear {
                             viewModel.loadProfile()
@@ -168,7 +123,11 @@ struct OnboardingStep3View: View {
                             viewModel.goalWeight = stagingGoalWeight
                             viewModel.dailyStepsGoal = stagingStepsGoal
                             viewModel.dailyBurnedCaloriesGoal = stagingBurnedCaloriesGoal
-                            viewModel.dailyCalorieGoal = stagingCalorieGoal
+                            viewModel.dailyWaterGoal = computedWaterGoalLiters(
+                                     weightKg: viewModel.currentWeight,
+                                     stepsGoal: stagingStepsGoal,
+                                     burnedKcalGoal: stagingBurnedCaloriesGoal
+                                 )
                             // Complete onboarding by updating persistent storage.
                             hasCompletedOnboarding = true
                             dismiss()
@@ -233,7 +192,23 @@ struct OnboardingStep3View: View {
                 .zIndex(1) // Ensure the alert is displayed on top.
             }
         }
+        .onAppear {
+            stagingGoalWeight = viewModel.goalWeight
+            stagingStepsGoal = viewModel.dailyStepsGoal
+            stagingBurnedCaloriesGoal = viewModel.dailyBurnedCaloriesGoal
+        }
     }
+}
+
+private func computedWaterGoalLiters(weightKg: Double, stepsGoal: Int, burnedKcalGoal: Int) -> Double {
+    let base = max(1.5, 0.035 * weightKg)  // ~35 ml/kg, min 1.5 L
+    var extra = 0.0
+    if stepsGoal >= 12_000 { extra += 0.5 }
+    else if stepsGoal >= 8_000 { extra += 0.3 }
+    if burnedKcalGoal >= 600 { extra += 0.3 }
+    else if burnedKcalGoal >= 300 { extra += 0.2 }
+    let total = base + extra
+    return (total * 10).rounded() / 10  // one decimal
 }
 
 struct OnboardingStep3View_Previews: PreviewProvider {

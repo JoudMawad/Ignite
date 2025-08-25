@@ -82,7 +82,7 @@ struct ManualEntryView: View {
                             .foregroundColor(.primary)
                             .lineLimit(1)
                             .truncationMode(.middle)
-
+                        /*
                         Spacer()
                         
                         Button("Scan Nutrition Label") { showLabelScanner = true }
@@ -94,6 +94,7 @@ struct ManualEntryView: View {
                                     if let v = facts.fat      { fat      = "\(v)" }
                                 }
                             }
+                         */
 
                     }
 

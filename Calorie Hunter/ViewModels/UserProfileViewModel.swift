@@ -61,8 +61,8 @@ class UserProfileViewModel: ObservableObject {
             blank.currentWeight        = 0.0
             blank.goalWeight           = 0.0
             blank.dailyCalorieGoal     = 0
-            blank.dailyStepsGoal       = 0
-            blank.dailyBurnedCaloriesGoal = 0
+            blank.dailyStepsGoal       = 10000
+            blank.dailyBurnedCaloriesGoal = 500
             blank.dailyWaterGoal       = 0.0
 
             do {

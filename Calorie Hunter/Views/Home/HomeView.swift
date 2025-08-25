@@ -92,9 +92,8 @@ struct HomeView: View {
                     
                     // MARK: - Exercise Card Section
                     ExerciseCardView(viewModel: exerciseViewModel)
-                        .onAppear {
-                            let startOfDay = Calendar.current.startOfDay(for: Date())
-                            exerciseViewModel.loadExercises(from: startOfDay, to: Date())
+                        .task {
+                            exerciseViewModel.startHealthKitSync()
                         }
                     
                     // MARK: - Calendar Section

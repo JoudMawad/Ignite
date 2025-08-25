@@ -293,4 +293,22 @@ final class HealthKitManager {
         }
         healthStore.execute(query)
     }
+    
+    // MARK: - Workout Observer
+    func startWorkoutObserver(onChange: @escaping () -> Void) {
+        let workoutType = HKObjectType.workoutType()
+
+        let obs = HKObserverQuery(sampleType: workoutType, predicate: nil) { _, _, error in
+            guard error == nil else { return }
+            onChange()
+        }
+        healthStore.execute(obs)
+
+        healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { _, _ in }
+    }
+
+    func enableBackgroundDeliveryForWorkouts() {
+        let workoutType = HKObjectType.workoutType()
+        healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { _, _ in }
+    }
 }

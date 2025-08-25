@@ -47,11 +47,8 @@ struct CalorieGoalSliderView: View {
         VStack(spacing: 10) {
             // — Header row
             HStack {
-                Text("Calorie Goal")
+                Text("Weight loss/gain per week")
                     .font(.headline)
-                Spacer()
-                Text("\(dailyCalorieGoal) kcal")
-                    .font(.subheadline)
             }
             .foregroundColor(colorScheme == .dark ? .black : .white)
             .padding(.horizontal, 8)
@@ -99,7 +96,7 @@ struct CalorieGoalSliderView: View {
                     DragGesture(minimumDistance: 0)
                         .onChanged { g in
                             let x = min(max(0, g.location.x), W)
-                            let raw = Double(x / W) - 0.5           // –0.5…+0.5
+                            let raw = Double(x / W) - 0.5
                             let snapped = (raw / 0.1).rounded() * 0.1
                             if snapped != weeklyChange {
                                 weeklyChange = snapped

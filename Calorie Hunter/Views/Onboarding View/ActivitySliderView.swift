@@ -1,98 +1,52 @@
 // ActivitySliderView.swift
-
+/*
 import SwiftUI
+import UIKit
 
 struct ActivitySliderView: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Bound to the current selection (0…3).
+    /// Bound to the current selection (0…3) as an enum.
     @Binding var level: ActivityLevel
 
     /// Fires whenever the user picks a new level.
     var onLevelChange: ((ActivityLevel) -> Void)? = nil
 
+    /// Match the Gender segmented control appearance.
+    init(level: Binding<ActivityLevel>, onLevelChange: ((ActivityLevel) -> Void)? = nil) {
+        self._level = level
+        self.onLevelChange = onLevelChange
+
+        UISegmentedControl.appearance().selectedSegmentTintColor = UIColor.systemBlue
+        UISegmentedControl.appearance().backgroundColor = UIColor.white
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
+    }
+
     var body: some View {
-        VStack(spacing: 10) {
-            // — Header row
-            HStack {
-                Text("Activity")
-                    .font(.headline)
-                Spacer()
-                Text(level.title)
-                    .font(.subheadline)
-            }
-            .foregroundColor(colorScheme == .dark ? .black : .white)
-            .padding(.horizontal, 12)
+        VStack(spacing: 4) {
+            Text("Activity")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(colorScheme == .dark ? .black : .white)
+                .padding(.bottom, 15)
 
-            // — Custom slider
-            GeometryReader { geo in
-                let W = geo.size.width
-                let maxIndex = ActivityLevel.allCases.count - 1
-                let norm = CGFloat(level.rawValue) / CGFloat(maxIndex)
-                let thumbX = norm * W
-
-                ZStack(alignment: .leading) {
-                    // Track background
-                    Capsule()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 4)
-
-                    // Filled portion
-                    Capsule()
-                        .fill(Color.blue)
-                        .frame(width: thumbX, height: 4)
-                    
-                    // Thumb
-                    Circle()
-                        .fill(colorScheme == .dark ? .black : .white)
-                        .frame(width: 18, height: 18)
-                        .shadow(radius: 1, y: 0.5)
-                        .offset(x: thumbX - 9)
-                }
-                .contentShape(Rectangle()) // expand hit area
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { g in
-                            let x = min(max(0, g.location.x), W)
-                            // snap into one of four buckets
-                            let rawIndex = (x / W) * CGFloat(maxIndex)
-                            let snapped = Int(rawIndex.rounded())
-                            let newLevel = ActivityLevel(rawValue: snapped)!
-                            if newLevel != level {
-                                level = newLevel
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                onLevelChange?(newLevel)
-                            }
-                        }
-                )
-            }
-            .frame(height: 30)
-            .padding(.horizontal, 43)
-
-            // — Ticks and labels under the track
-            HStack {
+            Picker("", selection: $level) {
                 ForEach(ActivityLevel.allCases) { lvl in
-                    Spacer()
-                    VStack(spacing: 4) {
-                        Circle()
-                            .frame(width: 6, height: 6)
-                            .foregroundColor(lvl == level ? Color.blue : Color.gray.opacity(0.5))
-                        Text(lvl.title)
-                            .font(.caption2)
-                    }
-                    Spacer()
+                    Text(lvl.title).tag(lvl)
                 }
             }
-            .foregroundColor(colorScheme == .dark ? .black : .white)
-            .padding(.horizontal, -2)
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal, 10)
         }
-        .frame(maxWidth: 365)
-        .padding(.vertical, 16)
-        .shadow(color: Color.primary.opacity(0.1), radius: 5, x: 0, y: 2)
+        .frame(width: 350, height: 100)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(colorScheme == .dark ? Color.white : Color.black)
+                .fill(Color.primary)
+                .shadow(radius: 3)
         )
+        .onChange(of: level) { oldValue, newValue in
+            onLevelChange?(newValue)
+        }
     }
 }
 
@@ -100,17 +54,19 @@ struct ActivitySliderView_Previews: PreviewProvider {
     @State static private var previewLevel: ActivityLevel = .sedentary
 
     static var previews: some View {
-        ActivitySliderView(level: $previewLevel) { newLevel in
-            // Preview callback (no-op)
-            print("Selected level: \(newLevel)")
-        }
-        .previewLayout(.sizeThatFits)
-        .padding()
-        .preferredColorScheme(.light)
-
-        ActivitySliderView(level: $previewLevel)
+        Group {
+            ActivitySliderView(level: $previewLevel) { newLevel in
+                print("Selected level: \(newLevel)")
+            }
             .previewLayout(.sizeThatFits)
             .padding()
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(.light)
+
+            ActivitySliderView(level: $previewLevel)
+                .previewLayout(.sizeThatFits)
+                .padding()
+                .preferredColorScheme(.dark)
+        }
     }
 }
+*/
