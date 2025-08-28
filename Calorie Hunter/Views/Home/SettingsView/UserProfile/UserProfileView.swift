@@ -16,6 +16,8 @@ struct UserProfileView: View {
     /// View model that handles user profile data and business logic.
     @ObservedObject var viewModel: UserProfileViewModel
     
+    @ObservedObject var goalsViewModel: GoalsViewModel
+    
     /// View model that handles profile image logic (e.g., loading and updating the image).
     @StateObject var imageVM = ProfileImageViewModel()
     
@@ -47,7 +49,7 @@ struct UserProfileView: View {
                         // ScrollView contains the form for user profile details.
                         ScrollView(showsIndicators: false) {
                             // FormContainerView handles the detailed user input fields.
-                            FormContainerView(viewModel: viewModel, isShowingImagePicker: $isShowingImagePicker)
+                            FormContainerView(viewModel: viewModel, goalsViewModel: goalsViewModel, isShowingImagePicker: $isShowingImagePicker)
                         }
                         // Tapping anywhere within the ScrollView dismisses the keyboard.
                         .onTapGesture {
@@ -88,6 +90,6 @@ struct UserProfileView: View {
 /// A preview provider for UserProfileView to enable live previews in Xcode.
 struct UserProfileView_Previews: PreviewProvider {
     static var previews: some View {
-        UserProfileView(viewModel: UserProfileViewModel())
+        UserProfileView(viewModel: UserProfileViewModel(), goalsViewModel: GoalsViewModel())
     }
 }

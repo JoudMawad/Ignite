@@ -9,6 +9,7 @@ struct ContentView: View {
     @StateObject var stepsviewModel = StepsViewModel()
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
     @EnvironmentObject var userProfileViewModel: UserProfileViewModel
+    @EnvironmentObject var goalsViewModel: GoalsViewModel
     @State private var selectedTab: Int = 0
     private let tapFeedback = UIImpactFeedbackGenerator(style: .light)
 
@@ -32,6 +33,7 @@ struct ContentView: View {
                 viewModel: viewModel,
                 stepsViewModel: stepsviewModel,
                 burnedCaloriesViewModel: burnedCaloriesViewModel,
+                goalsViewModel: goalsViewModel,
                 userProfileViewModel: userProfileViewModel
             )
             .environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)

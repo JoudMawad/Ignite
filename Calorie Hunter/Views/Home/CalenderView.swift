@@ -9,6 +9,7 @@ private let errorFeedback   = UINotificationFeedbackGenerator()
 struct CalendarView: View {
     // MARK: – Observed ViewModels
     @ObservedObject var userProfileViewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     @ObservedObject var stepsViewModel: StepsViewModel
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
     @ObservedObject var waterViewModel: WaterViewModel
@@ -35,12 +36,14 @@ struct CalendarView: View {
     init(
       selectedDate: Binding<Date?>,
       userProfileViewModel: UserProfileViewModel,
+      goalsViewModel: GoalsViewModel,
       stepsViewModel: StepsViewModel,
       burnedCaloriesViewModel: BurnedCaloriesViewModel,
       waterViewModel: WaterViewModel
     ) {
       self._selectedDate = selectedDate
       self.userProfileViewModel = userProfileViewModel
+      self.goalsViewModel = goalsViewModel
       self.stepsViewModel = stepsViewModel
       self.burnedCaloriesViewModel = burnedCaloriesViewModel
       self.waterViewModel = waterViewModel
@@ -90,6 +93,7 @@ struct CalendarView: View {
                     DayDetailCardView(
                         date: date,
                         userProfileViewModel: userProfileViewModel,
+                        goalsViewModel: goalsViewModel,
                         burnedCaloriesViewModel: burnedCaloriesViewModel,
                         waterViewModel: waterViewModel,
                         stepsViewModel: stepsViewModel,
@@ -120,6 +124,7 @@ struct CalendarView: View {
                         DayDetailCardView(
                             date: date,
                             userProfileViewModel: userProfileViewModel,
+                            goalsViewModel: goalsViewModel,
                             burnedCaloriesViewModel: burnedCaloriesViewModel,
                             waterViewModel: waterViewModel,
                             stepsViewModel: stepsViewModel,
@@ -302,6 +307,7 @@ struct CalendarView_Previews: PreviewProvider {
         CalendarView(
             selectedDate: .constant(nil),
             userProfileViewModel: UserProfileViewModel(),
+            goalsViewModel: GoalsViewModel(),
             stepsViewModel: StepsViewModel(),
             burnedCaloriesViewModel: BurnedCaloriesViewModel(),
             waterViewModel: WaterViewModel(container: PersistenceController.shared.container)

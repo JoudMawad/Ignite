@@ -4,7 +4,7 @@ struct BurnedCaloriesCardView: View {
     // View model tracking burned calories logic.
     @StateObject var burnedCaloriesviewModel = BurnedCaloriesViewModel()
     // User profile data needed for contextual display.
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     // Animated value used to smoothly update the calories display.
     @State private var animatedCalories: Double = 0
     // Adjusts styling based on the current UI color scheme.
@@ -37,7 +37,7 @@ struct BurnedCaloriesCardView: View {
             
             // Progress view reflecting the burned calories update.
             BurnedCaloriesProgressView(
-                viewModel: viewModel,
+                goalsViewModel: goalsViewModel,
                 burnedCaloriesViewModel: burnedCaloriesviewModel,
                 onBurnedCaloriesChange: { }
             )

@@ -7,6 +7,7 @@ struct SettingsView: View {
     
     /// The view model for managing the user profile data.
     @StateObject private var userProfileViewModel = UserProfileViewModel()
+    @StateObject private var goalsViewModel = GoalsViewModel()
     
     /// Provides the current color scheme (light or dark) for dynamic styling.
     @Environment(\.colorScheme) var colorScheme
@@ -39,7 +40,7 @@ struct SettingsView: View {
             // TabView that holds different settings screens.
             TabView {
                 // First tab for the user profile screen.
-                UserProfileView(viewModel: userProfileViewModel)
+                UserProfileView(viewModel: userProfileViewModel, goalsViewModel: goalsViewModel)
                     .tabItem {
                         Label("Profile", systemImage: "person.fill")
                     }

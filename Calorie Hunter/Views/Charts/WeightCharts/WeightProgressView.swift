@@ -2,23 +2,24 @@ import SwiftUI
 
 struct WeightProgressView: View {
     // Access the user profile data (start, current, and goal weights).
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     // Optional closure to trigger actions when weight changes (currently unused).
     var onWeightChange: () -> Void = {}
     
     /// The starting weight from the user profile.
     private var startWeight: Double {
-        viewModel.startWeightValue
+        userProfileViewModel.startWeightValue
     }
     
     /// The current weight from the user profile.
     private var currentWeight: Double {
-        viewModel.currentWeightValue
+        userProfileViewModel.currentWeightValue
     }
     
     /// The goal weight from the user profile.
     private var goalWeight: Double {
-        viewModel.goalWeightValue
+        goalsViewModel.goalWeightValue
     }
     
     /// Calculate the progress as a fraction of the weight difference achieved.

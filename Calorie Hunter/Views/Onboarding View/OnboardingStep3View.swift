@@ -8,7 +8,8 @@ struct OnboardingStep3View: View {
     // MARK: - Observed Objects and AppStorage
     
     /// The view model containing user profile data and goal settings.
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
     
     /// A persistent flag indicating whether onboarding has been completed.
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
@@ -46,7 +47,7 @@ struct OnboardingStep3View: View {
     
     /// Validates that the goal weight and daily calorie goal are greater than zero.
     var isStep3Valid: Bool {
-        stagingGoalWeight > 0 && viewModel.dailyCalorieGoal > 0
+        stagingGoalWeight > 0 && goalsViewModel.dailyCalorieGoal > 0
     }
     
     // MARK: - Body
@@ -88,16 +89,16 @@ struct OnboardingStep3View: View {
                         )
                         
                         CalorieGoalSliderView(
-                            age: viewModel.age,
-                            height: Double(viewModel.height),
-                            weight: viewModel.currentWeight,
-                            gender: viewModel.gender,
-                            weeklyChange: $viewModel.weeklyWeightChangeGoal
+                            age: userProfileViewModel.age,
+                            height: Double(userProfileViewModel.height),
+                            weight: userProfileViewModel.currentWeight,
+                            gender: userProfileViewModel.gender,
+                            weeklyChange: $goalsViewModel.weeklyWeightChangeGoal
                         ) { newGoal in
-                            viewModel.dailyCalorieGoal = newGoal
+                            goalsViewModel.dailyCalorieGoal = newGoal
                         }
                         .onAppear {
-                            viewModel.loadProfile()
+                            userProfileViewModel.loadProfile()
                         }
                     }
                     .transition(.opacity) // Fade in the input fields.
@@ -106,7 +107,7 @@ struct OnboardingStep3View: View {
                         withAnimation(.easeOut(duration: 1.0)) {
                             inputBlur = 0
                             // Set the starting weight equal to the current weight.
-                            viewModel.startWeight = viewModel.currentWeight
+                            userProfileViewModel.startWeight = userProfileViewModel.currentWeight
                         }
                     }
                 }
@@ -120,11 +121,11 @@ struct OnboardingStep3View: View {
                         if isStep3Valid {
                             let successFeedback = UINotificationFeedbackGenerator()
                             successFeedback.notificationOccurred(.success)
-                            viewModel.goalWeight = stagingGoalWeight
-                            viewModel.dailyStepsGoal = stagingStepsGoal
-                            viewModel.dailyBurnedCaloriesGoal = stagingBurnedCaloriesGoal
-                            viewModel.dailyWaterGoal = computedWaterGoalLiters(
-                                     weightKg: viewModel.currentWeight,
+                            goalsViewModel.goalWeight = stagingGoalWeight
+                            goalsViewModel.dailyStepsGoal = stagingStepsGoal
+                            goalsViewModel.dailyBurnedCaloriesGoal = stagingBurnedCaloriesGoal
+                            goalsViewModel.dailyWaterGoal = computedWaterGoalLiters(
+                                     weightKg: userProfileViewModel.currentWeight,
                                      stepsGoal: stagingStepsGoal,
                                      burnedKcalGoal: stagingBurnedCaloriesGoal
                                  )
@@ -193,9 +194,9 @@ struct OnboardingStep3View: View {
             }
         }
         .onAppear {
-            stagingGoalWeight = viewModel.goalWeight
-            stagingStepsGoal = viewModel.dailyStepsGoal
-            stagingBurnedCaloriesGoal = viewModel.dailyBurnedCaloriesGoal
+            stagingGoalWeight = goalsViewModel.goalWeight
+            stagingStepsGoal = goalsViewModel.dailyStepsGoal
+            stagingBurnedCaloriesGoal = goalsViewModel.dailyBurnedCaloriesGoal
         }
     }
 }
@@ -215,8 +216,9 @@ struct OnboardingStep3View_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             let context = PersistenceController.preview.container.viewContext
-            let viewModel = UserProfileViewModel(context: context)
-            OnboardingStep3View(viewModel: viewModel)
+            let userProfileViewModel = UserProfileViewModel(context: context)
+            let goalsViewModel = GoalsViewModel(context: context)
+            OnboardingStep3View(goalsViewModel: goalsViewModel, userProfileViewModel: userProfileViewModel)
         }
     }
 }

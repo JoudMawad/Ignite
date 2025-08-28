@@ -2,7 +2,7 @@ import SwiftUI
 
 struct StepsProgressView: View {
     // Access the user's profile data, including the daily steps goal.
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsviewModel: GoalsViewModel
     // Access the steps data from the steps view model.
     @ObservedObject var stepsViewModel: StepsViewModel
     // Closure to handle additional actions when steps change (currently unused).
@@ -10,7 +10,7 @@ struct StepsProgressView: View {
 
     /// Retrieve the daily steps goal from the user profile.
     private var dailyStepsGoal: Int {
-        viewModel.dailyStepsGoalValue
+        goalsviewModel.dailyStepsGoalValue
     }
     
     /// Compute the progress as a fraction of current steps to the daily goal.

@@ -23,6 +23,7 @@ struct Calorie_HunterApp: App {
     @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding: Bool = false
     @StateObject var burnedCaloriesViewModel = BurnedCaloriesViewModel()
     @StateObject var userProfileVM = UserProfileViewModel()
+    @StateObject var goalsViewModel = GoalsViewModel()
     @StateObject private var foodViewModel = FoodViewModel(
         context: PersistenceController.shared.container.viewContext
     )
@@ -38,13 +39,14 @@ struct Calorie_HunterApp: App {
                 ContentView()
                     .environmentObject(burnedCaloriesViewModel)
                     .environmentObject(userProfileVM)
+                    .environmentObject(goalsViewModel)
                     .environmentObject(foodViewModel)
                     .fullScreenCover(isPresented: Binding(
                         get: { !hasCompletedOnboarding },
                         set: { _ in }
                     )) {
                         NavigationStack {
-                            OnboardingStep1View(viewModel: userProfileVM)
+                            OnboardingStep1View(viewModel: userProfileVM, goalsViewModel: goalsViewModel)
                         }
                     }
                 

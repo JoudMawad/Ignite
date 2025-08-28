@@ -21,17 +21,10 @@ class UserProfileViewModel: ObservableObject {
     // Published property for the entire user profile.
     @Published var profile: UserProfile?
     
-    // Published properties for various goals and weight values.
+    // Published properties for weight and activity information.
     // Using separate properties ensures that UI updates immediately when these values change.
-    @Published var dailyCalorieGoalValue: Int = 1500
-    @Published var dailyStepsGoalValue: Int = 10000
-    @Published var dailyBurnedCaloriesGoalValue: Int = 500
-    @Published var dailyWaterGoalValue: Double = 2.0
     @Published var startWeightValue: Double = 70.0
     @Published var currentWeightValue: Double = 70.0
-    @Published var goalWeightValue: Double = 65.0
-    /// User’s weekly weight change goal (kg per week; negative to lose, positive to gain)
-    @Published var weeklyWeightChangeGoalValue: Double = 0.0
     /// User’s activity level as an integer (0=sedentary…3=veryActive)
     @Published var activityLevelValue: Int = 0
 
@@ -45,8 +38,6 @@ class UserProfileViewModel: ObservableObject {
     
     // The Core Data context for fetching and saving the user profile.
     private var context: NSManagedObjectContext
-    /// Manager for daily goal history.
-    private let goalsManager = GoalsManager.shared
 
     /// Initializes the view model with a Core Data context.
     /// It loads the user profile and sets up observers for Core Data changes and HealthKit updates.
@@ -63,17 +54,12 @@ class UserProfileViewModel: ObservableObject {
             blank.startWeight          = 0.0
             blank.currentWeight        = 0.0
             blank.goalWeight           = 0.0
-            blank.dailyCalorieGoal     = 0
-            blank.dailyStepsGoal       = 10000
-            blank.dailyBurnedCaloriesGoal = 500
-            blank.dailyWaterGoal       = 0.0
-
+            // Intentionally omit goal fields initialization
             do {
                try context.save()
             } catch {
                print("Error creating stub profile: \(error)")
             }
-
             self.profile = blank
         }
         // Observe Core Data changes so that if the profile updates, the published properties can be refreshed.
@@ -122,38 +108,6 @@ class UserProfileViewModel: ObservableObject {
     /// It updates the published properties if the corresponding values in the profile have changed.
     @objc private func contextObjectsDidChange(_ notification: Notification) {
         if let profile = profile {
-            // Update daily calorie goal if it has changed.
-            let newCalorieGoal = Int(profile.dailyCalorieGoal)
-            if newCalorieGoal != dailyCalorieGoalValue {
-                DispatchQueue.main.async {
-                    self.dailyCalorieGoalValue = newCalorieGoal
-                }
-            }
-
-            // Update daily steps goal if needed.
-            let newStepsGoal = Int(profile.dailyStepsGoal)
-            if newStepsGoal != dailyStepsGoalValue {
-                DispatchQueue.main.async {
-                    self.dailyStepsGoalValue = newStepsGoal
-                }
-            }
-
-            // Update daily burned calories goal.
-            let newBurnedGoal = Int(profile.dailyBurnedCaloriesGoal)
-            if newBurnedGoal != dailyBurnedCaloriesGoalValue {
-                DispatchQueue.main.async {
-                    self.dailyBurnedCaloriesGoalValue = newBurnedGoal
-                }
-            }
-
-            // Update daily water goal if it has changed.
-            let newWaterGoal = profile.dailyWaterGoal
-            if newWaterGoal != dailyWaterGoalValue {
-                DispatchQueue.main.async {
-                    self.dailyWaterGoalValue = newWaterGoal
-                }
-            }
-
             // Update start weight.
             let newStartWeight = profile.startWeight
             if newStartWeight != startWeightValue {
@@ -171,22 +125,6 @@ class UserProfileViewModel: ObservableObject {
                     self.currentWeightValue = newCurrentWeight
                     // Re-enable autosave on next runloop tick
                     DispatchQueue.main.async { [weak self] in self?.suppressWeightAutoSave = false }
-                }
-            }
-
-            // Update goal weight.
-            let newGoalWeight = profile.goalWeight
-            if newGoalWeight != goalWeightValue {
-                DispatchQueue.main.async {
-                    self.goalWeightValue = newGoalWeight
-                }
-            }
-
-            // Update weekly weight change goal.
-            let newWeeklyChange = profile.weeklyWeightChangeGoal
-            if newWeeklyChange != weeklyWeightChangeGoalValue {
-                DispatchQueue.main.async {
-                    self.weeklyWeightChangeGoalValue = newWeeklyChange
                 }
             }
             // Update activity level.
@@ -238,19 +176,11 @@ class UserProfileViewModel: ObservableObject {
             if let existingProfile = profiles.first {
                 DispatchQueue.main.async {
                     self.profile = existingProfile
-                    // Initialize goals for today based on stored profile values
-                    self.goalsManager.updateGoal(Double(existingProfile.dailyCalorieGoal), for: GoalType.calories, on: Date())
-                    self.goalsManager.updateGoal(Double(existingProfile.dailyStepsGoal), for: GoalType.steps, on: Date())
-                    self.goalsManager.updateGoal(Double(existingProfile.dailyBurnedCaloriesGoal), for: GoalType.burnedCalories, on: Date())
-                    self.dailyWaterGoalValue = existingProfile.dailyWaterGoal
-
                     // ---- Begin suppression for weight-driven autosave ----
                     self.suppressWeightAutoSave = true
                     // sync weights into your @Published state
                     self.startWeightValue   = existingProfile.startWeight
                     self.currentWeightValue = existingProfile.currentWeight
-                    self.goalWeightValue    = existingProfile.goalWeight
-                    self.weeklyWeightChangeGoalValue = existingProfile.weeklyWeightChangeGoal
                     self.activityLevelValue = Int(existingProfile.activityLevel)
                     // Re-enable autosave next runloop so user edits still get saved to HealthKit
                     DispatchQueue.main.async { [weak self] in self?.suppressWeightAutoSave = false }
@@ -378,6 +308,29 @@ class UserProfileViewModel: ObservableObject {
         }
     }
     
+    
+    /// Returns and sets the user's gender.
+    var gender: String {
+        get { profile?.gender ?? "Male" }
+        set {
+            objectWillChange.send()
+            profile?.gender = newValue
+            scheduleSave()
+        }
+    }
+
+
+    /// Returns and sets the user's activity level.
+    var activityLevel: ActivityLevel {
+        get { ActivityLevel(rawValue: activityLevelValue) ?? .sedentary }
+        set {
+            objectWillChange.send()
+            activityLevelValue = newValue.rawValue
+            profile?.activityLevel = Int32(newValue.rawValue)
+            scheduleSave()
+        }
+    }
+    
     /// Returns and sets the user's start weight.
     var startWeight: Double {
         get { startWeightValue }
@@ -402,91 +355,6 @@ class UserProfileViewModel: ObservableObject {
         updateCurrentWeight(rounded)
       }
     }
-
-    /// Returns and sets the user's goal weight.
-    var goalWeight: Double {
-        get { goalWeightValue }
-        set {
-            objectWillChange.send()
-            goalWeightValue = newValue
-            profile?.goalWeight = newValue
-            scheduleSave()
-        }
-    }
-    
-    /// Returns and sets the user's daily calorie goal.
-    var dailyCalorieGoal: Int {
-        get { dailyCalorieGoalValue }
-        set {
-            objectWillChange.send()
-            dailyCalorieGoalValue = newValue
-            profile?.dailyCalorieGoal = Int32(newValue)
-            scheduleSave()
-        }
-    }
-    
-    /// Returns and sets the user's daily steps goal.
-    var dailyStepsGoal: Int {
-        get { dailyStepsGoalValue }
-        set {
-            objectWillChange.send()
-            dailyStepsGoalValue = newValue
-            profile?.dailyStepsGoal = Int32(newValue)
-            scheduleSave()
-        }
-    }
-    
-    /// Returns and sets the user's daily burned calories goal.
-    var dailyBurnedCaloriesGoal: Int {
-        get { dailyBurnedCaloriesGoalValue }
-        set {
-            objectWillChange.send()
-            dailyBurnedCaloriesGoalValue = newValue
-            profile?.dailyBurnedCaloriesGoal = Int32(newValue)
-            scheduleSave()
-        }
-    }
-    
-    /// Returns and sets the user's daily water goal.
-    var dailyWaterGoal: Double {
-        get { dailyWaterGoalValue }
-        set {
-            objectWillChange.send()
-            dailyWaterGoalValue = newValue
-            profile?.dailyWaterGoal = newValue
-            scheduleSave()
-        }
-    }
-    
-    /// Returns and sets the user's gender.
-    var gender: String {
-        get { profile?.gender ?? "Male" }
-        set {
-            objectWillChange.send()
-            profile?.gender = newValue
-            scheduleSave()
-        }
-    }
-
-    /// Returns and sets the user's weekly weight change goal (kg/week).
-    var weeklyWeightChangeGoal: Double {
-        get { weeklyWeightChangeGoalValue }
-        set {
-            objectWillChange.send()
-            weeklyWeightChangeGoalValue = newValue
-            profile?.weeklyWeightChangeGoal = newValue
-            scheduleSave()
-        }
-    }
-
-    /// Returns and sets the user's activity level.
-    var activityLevel: ActivityLevel {
-        get { ActivityLevel(rawValue: activityLevelValue) ?? .sedentary }
-        set {
-            objectWillChange.send()
-            activityLevelValue = newValue.rawValue
-            profile?.activityLevel = Int32(newValue.rawValue)
-            scheduleSave()
-        }
-    }
 }
+
+   

@@ -2,7 +2,7 @@ import SwiftUI
 import Charts
 
 struct CalorieChartView: View {
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     @Environment(\.colorScheme) var colorScheme
     
     // Total calories consumed (eaten) for the day.
@@ -16,7 +16,7 @@ struct CalorieChartView: View {
             let size = min(geometry.size.width, geometry.size.height)
             
             // Retrieve base calorie goal and convert values to Double for calculations.
-            let baseGoal = Double(viewModel.dailyCalorieGoalValue)
+            let baseGoal = Double(goalsViewModel.dailyCalorieGoalValue)
             let B = Double(burnedCalories)
             let C = Double(totalCalories)
             
@@ -89,7 +89,7 @@ struct CalorieChartView: View {
             // Ensure the ZStack fills the available space.
             .frame(width: geometry.size.width, height: geometry.size.height)
             // Animate changes when the combined calories values or goal update.
-            .animation(.easeInOut(duration: 0.5), value: totalCalories + burnedCalories + viewModel.dailyCalorieGoalValue)
+            .animation(.easeInOut(duration: 0.5), value: totalCalories + burnedCalories + goalsViewModel.dailyCalorieGoalValue)
         }
     }
 }

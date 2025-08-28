@@ -9,7 +9,7 @@ import SwiftUI
 
 struct BurnedCaloriesProgressView: View {
     // Observed user profile for accessing goal values.
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     // Observed view model tracking burned calories.
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
     // Closure called when burned calories change (currently unused).
@@ -17,7 +17,7 @@ struct BurnedCaloriesProgressView: View {
     
     /// Retrieves the user's daily burned calories goal.
     private var dailyBurnedCaloriesGoal: Int {
-        viewModel.dailyBurnedCaloriesGoalValue
+        goalsViewModel.dailyBurnedCaloriesGoalValue
     }
     
     /// Calculates the progress ratio based on current burned calories relative to the goal.

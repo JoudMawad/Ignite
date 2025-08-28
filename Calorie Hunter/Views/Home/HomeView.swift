@@ -19,6 +19,8 @@ struct HomeView: View {
     
     /// The view model providing user profile information.
     @ObservedObject var userProfileViewModel: UserProfileViewModel
+    
+    @ObservedObject var goalsViewModel: GoalsViewModel
 
     // MARK: - Environment
     
@@ -48,11 +50,13 @@ struct HomeView: View {
     init(viewModel: FoodViewModel,
          stepsViewModel: StepsViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
+         goalsViewModel: GoalsViewModel,
          userProfileViewModel: UserProfileViewModel) {
         self.viewModel = viewModel
         self.stepsViewModel = stepsViewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.userProfileViewModel = userProfileViewModel
+        self.goalsViewModel = goalsViewModel
 
         // Configure transparent navigation bar appearance.
         let appearance = UINavigationBarAppearance()
@@ -78,9 +82,9 @@ struct HomeView: View {
                         chartsCardSection
                         VStack {
                             // Displays a card with step count information.
-                            StepsCardView(viewModel: userProfileViewModel, stepsViewModel: stepsViewModel)
+                            StepsCardView(goalsViewModel: goalsViewModel, stepsViewModel: stepsViewModel)
                             // Displays a card with burned calories information.
-                            BurnedCaloriesCardView(burnedCaloriesviewModel: burnedCaloriesViewModel, viewModel: userProfileViewModel)
+                            BurnedCaloriesCardView(burnedCaloriesviewModel: burnedCaloriesViewModel, goalsViewModel: goalsViewModel)
                         }
                     }
                     
@@ -100,6 +104,7 @@ struct HomeView: View {
                     CalendarView(
                         selectedDate: $selectedDate,
                         userProfileViewModel: userProfileViewModel,
+                        goalsViewModel: goalsViewModel,
                         stepsViewModel: stepsViewModel,
                         burnedCaloriesViewModel: burnedCaloriesViewModel,
                         waterViewModel: waterViewModel
@@ -179,7 +184,7 @@ struct HomeView: View {
                     // TabView for switching between different chart views.
                     TabView {
                         CalorieChartView(
-                            viewModel: userProfileViewModel,
+                            goalsViewModel: goalsViewModel,
                             totalCalories: viewModel.totalCalories,
                             burnedCalories: Int(burnedCaloriesViewModel.currentBurnedCalories)
                         )
@@ -207,7 +212,8 @@ struct HomeView: View {
 private var waterSection: some View {
     WaterProgressView(
         waterViewModel: waterViewModel,
-        profileViewModel: userProfileViewModel
+        profileViewModel: userProfileViewModel,
+        goalsViewModel: goalsViewModel
     )
 }
     

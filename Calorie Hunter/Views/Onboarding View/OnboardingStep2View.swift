@@ -9,6 +9,7 @@ struct OnboardingStep2View: View {
     
     /// The view model holding user profile data.
     @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
 
     // MARK: - Environment
     
@@ -184,7 +185,7 @@ struct OnboardingStep2View: View {
         }
         // MARK: Navigation to Next Step
         .navigationDestination(isPresented: $navigateToStep3) {
-            OnboardingStep3View(viewModel: viewModel)
+            OnboardingStep3View(goalsViewModel: goalsViewModel, userProfileViewModel: viewModel)
         }
     }
 }
@@ -194,7 +195,8 @@ struct OnboardingStep2View_Previews: PreviewProvider {
         NavigationStack {
             let context = PersistenceController.preview.container.viewContext
             let viewModel = UserProfileViewModel(context: context)
-            OnboardingStep2View(viewModel: viewModel)
+            let goalsViewModel = GoalsViewModel(context: context)
+            OnboardingStep2View(viewModel: viewModel, goalsViewModel: goalsViewModel)
         }
     }
 }

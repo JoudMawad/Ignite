@@ -4,6 +4,7 @@ import UIKit
 struct FormContainerView: View {
     // ViewModel holding user profile data.
     @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     // Adapt UI styling based on the current color scheme.
     @Environment(\.colorScheme) var colorScheme
     // Binding to control the presentation of an image picker.
@@ -38,7 +39,7 @@ struct FormContainerView: View {
     /// Computes the percentage of weight goal achieved based on start, current, and goal weights.
     var goalAchievementPercentage: Double {
         let startWeight = viewModel.startWeight
-        let goalWeight = viewModel.goalWeight
+        let goalWeight = goalsViewModel.goalWeight
         let currentWeight = viewModel.currentWeight
         let totalChangeNeeded = startWeight - goalWeight
         if totalChangeNeeded == 0 { return 0 }
@@ -78,7 +79,7 @@ struct FormContainerView: View {
                     .padding()
                     
                     // MARK: - Weight Progress Indicator
-                    WeightProgressView(viewModel: viewModel, onWeightChange: { })
+                    WeightProgressView(userProfileViewModel: viewModel, goalsViewModel: goalsViewModel, onWeightChange: { })
                         .padding(.top, -40)
                         .padding(.horizontal)
                     
@@ -106,7 +107,7 @@ struct FormContainerView: View {
                         
                         // Health Goals Section as a tappable NavigationLink.
                         NavigationLink(
-                            destination: DetailedHealthGoalsView(viewModel: viewModel)
+                            destination: DetailedHealthGoalsView(goalsViewModel: goalsViewModel, userProfileViewModel: viewModel)
                         ) {
                             HStack {
                                 Spacer()

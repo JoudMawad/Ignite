@@ -8,6 +8,7 @@ struct DayDetailCardView: View {
 
     let date: Date
     @ObservedObject var userProfileViewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     @ObservedObject var burnedCaloriesViewModel: BurnedCaloriesViewModel
     @ObservedObject var waterViewModel: WaterViewModel
     @ObservedObject var stepsViewModel: StepsViewModel
@@ -21,6 +22,7 @@ struct DayDetailCardView: View {
 
     init(date: Date,
          userProfileViewModel: UserProfileViewModel,
+         goalsViewModel: GoalsViewModel,
          burnedCaloriesViewModel: BurnedCaloriesViewModel,
          waterViewModel: WaterViewModel,
          stepsViewModel: StepsViewModel,
@@ -28,6 +30,7 @@ struct DayDetailCardView: View {
          onBack: @escaping () -> Void) {
         self.date = date
         self.userProfileViewModel = userProfileViewModel
+        self.goalsViewModel = goalsViewModel
         self.burnedCaloriesViewModel = burnedCaloriesViewModel
         self.waterViewModel = waterViewModel
         self.stepsViewModel = stepsViewModel
@@ -42,6 +45,20 @@ struct DayDetailCardView: View {
     private static let displayFormatter: DateFormatter = {
         let f = DateFormatter(); f.dateStyle = .medium; return f
     }()
+
+    private func goalValue(for type: GoalType, on date: Date) -> Double {
+        if Calendar.current.isDateInToday(date) {
+            switch type {
+            case .calories:       return Double(goalsViewModel.dailyCalorieGoal)
+            case .burnedCalories: return Double(goalsViewModel.dailyBurnedCaloriesGoal)
+            case .steps:          return Double(goalsViewModel.dailyStepsGoal)
+            case .water:          return goalsViewModel.dailyWaterGoal
+            default:               return GoalsManager.shared.goalValue(for: type, on: date)
+            }
+        } else {
+            return GoalsManager.shared.goalValue(for: type, on: date)
+        }
+    }
 
     // MARK: – Computed
     private var consumedCalories: Double {
@@ -61,7 +78,7 @@ struct DayDetailCardView: View {
         consumedCalories - burnedCalories
     }
     private var remainingCalories: Double {
-        Double(userProfileViewModel.dailyCalorieGoal) - netCalories
+        goalValue(for: .calories, on: date) - netCalories
     }
     private var fullDateText: String {
         Self.displayFormatter.string(from: date)
@@ -96,7 +113,7 @@ struct DayDetailCardView: View {
                         title: "Consumed",
                         valueText: "\(Int(consumedCalories)) kcal",
                         current: consumedCalories,
-                        goal: GoalsManager.shared.goalValue(for: .calories, on: date),
+                        goal: goalValue(for: .calories, on: date),
                         gradientColors: [Color.orange, Color.red]
                     )
                     MetricCardView(
@@ -104,7 +121,7 @@ struct DayDetailCardView: View {
                         title: "Burned",
                         valueText: "\(Int(burnedCalories)) kcal",
                         current: burnedCalories,
-                        goal: GoalsManager.shared.goalValue(for: .burnedCalories, on: date),
+                        goal: goalValue(for: .burnedCalories, on: date),
                         gradientColors: [Color.pink, Color.orange]
                     )
                 
@@ -113,7 +130,7 @@ struct DayDetailCardView: View {
                         title: "Steps",
                         valueText: "\(stepsViewModel.steps(for: date))",
                         current: Double(stepsViewModel.steps(for: date)),
-                        goal: GoalsManager.shared.goalValue(for: .steps, on: date),
+                        goal: goalValue(for: .steps, on: date),
                         gradientColors: [Color.cyan, Color.green]
                     )
                  
@@ -122,7 +139,7 @@ struct DayDetailCardView: View {
                         title: "Water",
                         valueText: String(format: "%.1f L", waterViewModel.waterAmount(for: date)),
                         current: waterViewModel.waterAmount(for: date),
-                        goal: GoalsManager.shared.goalValue(for: .water, on: date),
+                        goal: goalValue(for: .water, on: date),
                         gradientColors: [Color.blue, Color.cyan]
                     )
                 }
@@ -144,6 +161,7 @@ struct DayDetailCardView_Previews: PreviewProvider {
         DayDetailCardView(
             date: Date(),
             userProfileViewModel: UserProfileViewModel(),
+            goalsViewModel: GoalsViewModel(),
             burnedCaloriesViewModel: BurnedCaloriesViewModel(),
             waterViewModel: WaterViewModel(container: PersistenceController.shared.container),
             stepsViewModel: StepsViewModel(),

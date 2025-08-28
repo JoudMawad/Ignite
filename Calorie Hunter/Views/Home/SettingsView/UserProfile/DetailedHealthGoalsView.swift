@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct DetailedHealthGoalsView: View {
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
+    @ObservedObject var userProfileViewModel: UserProfileViewModel
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -10,7 +11,7 @@ struct DetailedHealthGoalsView: View {
                 .edgesIgnoringSafeArea(.all)
             VStack() {
                 
-                HealthGoalsSectionView(viewModel: viewModel)
+                HealthGoalsSectionView(goalsViewModel: goalsViewModel, userprofileviewModel: userProfileViewModel)
                 
             }
             .navigationBarTitleDisplayMode(.inline)

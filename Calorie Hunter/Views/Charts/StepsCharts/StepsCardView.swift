@@ -2,7 +2,7 @@ import SwiftUI
 
 struct StepsCardView: View {
     // Observed user profile for accessing user-specific settings.
-    @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     // Observed steps view model providing current steps data.
     @ObservedObject var stepsViewModel: StepsViewModel
     // Adapts UI styling based on the current light/dark mode.
@@ -45,7 +45,7 @@ struct StepsCardView: View {
             .padding(.top, -5)
             
             // Progress view showing visual feedback of steps progress.
-            StepsProgressView(viewModel: viewModel,
+            StepsProgressView(goalsviewModel: goalsViewModel,
                               stepsViewModel: stepsViewModel,
                               onStepsChange: onStepsChange)
             

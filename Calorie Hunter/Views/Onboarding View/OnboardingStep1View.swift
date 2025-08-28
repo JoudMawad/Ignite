@@ -8,6 +8,7 @@ struct OnboardingStep1View: View {
     
     /// The view model that holds user profile data.
     @ObservedObject var viewModel: UserProfileViewModel
+    @ObservedObject var goalsViewModel: GoalsViewModel
     
     /// A view model dedicated to handling profile image logic.
     @StateObject var imageVM = ProfileImageViewModel()
@@ -211,7 +212,7 @@ struct OnboardingStep1View: View {
         }
         // MARK: Navigation to Next Onboarding Step
         .navigationDestination(isPresented: $navigateToStep2) {
-            OnboardingStep2View(viewModel: viewModel)
+            OnboardingStep2View(viewModel: viewModel, goalsViewModel: goalsViewModel)
         }
         // MARK: Image Picker Sheet
         .sheet(isPresented: $isShowingImagePicker) {
@@ -226,7 +227,8 @@ struct OnboardingStep1View_Previews: PreviewProvider {
         NavigationStack { // Using NavigationStack for iOS 16+
             let context = PersistenceController.preview.container.viewContext
             let viewModel = UserProfileViewModel(context: context)
-            OnboardingStep1View(viewModel: viewModel)
+            let goalsViewModel = GoalsViewModel(context: context)
+            OnboardingStep1View(viewModel: viewModel, goalsViewModel: goalsViewModel)
         }
     }
 }
