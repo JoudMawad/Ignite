@@ -18,11 +18,25 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
 
     /// All foods available for search/listing (catalog + user‐saved)
     var allFoods: [FoodItem] {
+        allFoodsCache
+    }
+
+    // Reuse formatters to avoid allocation churn
+    private static let isoFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
+    }()
+
+    // Cache for catalog foods so we don't fetch on every access
+    private var allFoodsCache: [FoodItem] = []
+
+    private func loadAllFoodsCatalogIfNeeded() {
+        guard allFoodsCache.isEmpty else { return }
         let request: NSFetchRequest<FoodEntity> = FoodEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \FoodEntity.name, ascending: true)]
+        request.returnsObjectsAsFaults = false
         do {
             let entities = try context.fetch(request)
-            return entities.map { fe in
+            allFoodsCache = entities.map { fe in
                 FoodItem(
                     id: fe.id ?? UUID(),
                     name: fe.name ?? "",
@@ -32,14 +46,13 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
                     fat: fe.fat,
                     grams: fe.grams,
                     mealType: fe.mealType ?? "",
-                    date: date,          // default date for new logs
+                    date: date,
                     isUserAdded: fe.isUserAdded,
                     barcode: fe.barcode
                 )
             }
         } catch {
             print("Error fetching catalog foods: \(error)")
-            return []
         }
     }
 
@@ -52,28 +65,25 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
     init(date: Date, context: NSManagedObjectContext) {
         self.date = Calendar.current.startOfDay(for: date)
         self.context = context
+        loadAllFoodsCatalogIfNeeded()
         loadEntries()
         
-        // Figure out where to start importing
-        let lastImport = UserDefaults.standard.object(forKey: lastImportKey) as? Date
-        let startDate  = lastImport
-        ?? Calendar.current.date(byAdding: .year, value: -1, to: Date())!
-        
-        // Now only import from startDate → today
-        HealthKitManager.shared.requestAuthorization { success, _ in
-            guard success else { return }
-            NutritionManager().updateHistoricalNutrition(startDate: startDate, endDate: Date()) {
-                // Update the “last import” so we don’t refetch this again
-                UserDefaults.standard.set(Date(), forKey: self.lastImportKey)
-                
-                // Finally, refresh today’s totals
-                if let today = NutritionHistoryManager.shared.nutritionForPeriod(days: 1).first {
-                    DispatchQueue.main.async {
-                        self.totalCalories = Int(today.calories)
-                        self.totalProtein  = today.protein
-                        self.totalCarbs    = today.carbs
-                        self.totalFat      = today.fat
-                        self.objectWillChange.send()
+        // Only run the HealthKit nutrition import when this VM is for *today*
+        if Calendar.current.isDateInToday(self.date) {
+            let lastImport = UserDefaults.standard.object(forKey: lastImportKey) as? Date
+            let startDate  = lastImport ?? Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+
+            HealthKitManager.shared.requestAuthorization { [weak self] success, _ in
+                guard success, let self = self else { return }
+                NutritionManager().updateHistoricalNutrition(startDate: startDate, endDate: Date()) {
+                    UserDefaults.standard.set(Date(), forKey: self.lastImportKey)
+                    if let today = NutritionHistoryManager.shared.nutritionForPeriod(days: 1).first {
+                        DispatchQueue.main.async {
+                            self.totalCalories = Int(today.calories)
+                            self.totalProtein  = today.protein
+                            self.totalCarbs    = today.carbs
+                            self.totalFat      = today.fat
+                        }
                     }
                 }
             }
@@ -84,6 +94,7 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
     func loadEntries() {
         let request: NSFetchRequest<ConsumptionEntity> = ConsumptionEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \ConsumptionEntity.dateEaten, ascending: true)]
+        request.returnsObjectsAsFaults = false
         let start = date
         let end = Calendar.current.date(byAdding: .day, value: 1, to: start)!
         request.predicate = NSPredicate(format: "dateEaten >= %@ AND dateEaten < %@", start as NSDate, end as NSDate)
@@ -115,9 +126,7 @@ final class DateFoodViewModel: ObservableObject, FoodAddingViewModel {
     // MARK: - Totals Calculation
     private func updateTotals() {
         // First, attempt to load NutritionEntry for this date
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let ds = formatter.string(from: date)
+        let ds = Self.isoFormatter.string(from: date)
 
         let req: NSFetchRequest<NutritionEntry> = NutritionEntry.fetchRequest()
         req.predicate = NSPredicate(format: "dateString == %@", ds)

@@ -25,7 +25,16 @@ struct CalendarView: View {
     @State private var currentDate = Date()
     @State private var showFullOverview: Bool = false
 
+    // Cached month data (keyed by ISO yyyy-MM-dd)
+    @State private var monthConsumedByDay: [String: Double] = [:]
+    @State private var monthBurnedByDay:   [String: Double] = [:]
+    @State private var monthGoalByDay:     [String: Double] = [:]
+
     private let goalsManager = GoalsManager.shared
+
+    private static let isoFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; return f
+    }()
 
     /// Namespace for matched-geometry effect when expanding a day cell.
     @Namespace private var dayTransition
@@ -89,6 +98,7 @@ struct CalendarView: View {
                     }
                 )
                 .transition(.move(edge: .bottom))
+                /*
                 .fullScreenCover(isPresented: $showFullOverview) {
                     DayDetailCardView(
                         date: date,
@@ -103,7 +113,7 @@ struct CalendarView: View {
                         showFullOverview = false
                         selectedDate = nil
                     }
-                }
+                }*/
             }
             
             // Calendar view on top, only when no date is selected
@@ -119,6 +129,7 @@ struct CalendarView: View {
                         .fill(colorScheme == .dark ? .white : .black)
                 )
                 .transition(.move(edge: .top))
+                /*
                 .fullScreenCover(isPresented: $showFullOverview) {
                     if let date = selectedDate {
                         DayDetailCardView(
@@ -135,6 +146,7 @@ struct CalendarView: View {
                         }
                     }
                 }
+                */
             }
         }
         .padding(.vertical, 10)
@@ -145,6 +157,9 @@ struct CalendarView: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(radius: 3)
         .animation(.interactiveSpring(response: 0.5, dampingFraction: 0.7), value: selectedDate)
+        .task(id: startOfMonth(currentDate)) {
+            loadMonthData(for: currentDate)
+        }
     }
 
     // MARK: – Subviews
@@ -274,6 +289,50 @@ struct CalendarView: View {
     }
 
     // MARK: – Helpers
+    private func startOfMonth(_ date: Date) -> Date {
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.year, .month], from: date)
+        return cal.date(from: comps) ?? date
+    }
+
+    private func loadMonthData(for month: Date) {
+        let cal = Calendar.current
+        let first = startOfMonth(month)
+        guard let range = cal.range(of: .day, in: .month, for: month) else { return }
+
+        var consumed: [String: Double] = [:]
+        var burned:   [String: Double] = [:]
+        var goals:    [String: Double] = [:]
+
+        // Preload burned history in bulk
+        let burnedHistory = BurnedCaloriesHistoryManager.shared.burnedCaloriesForPeriod(days: 120)
+        let burnedMap = Dictionary(uniqueKeysWithValues: burnedHistory.map { ($0.date, $0.burnedCalories) })
+
+        for d in 1...range.count {
+            guard let day = cal.date(byAdding: .day, value: d - 1, to: first) else { continue }
+            let key = Self.isoFormatter.string(from: day)
+
+            // Consumed: compute once per day (using existing VM but outside of body)
+            let vm = DateFoodViewModel(date: day, context: context)
+            consumed[key] = Double(vm.totalCalories)
+
+            // Burned: from history (and live for today)
+            if cal.isDateInToday(day) {
+                burned[key] = burnedCaloriesViewModel.currentBurnedCalories
+            } else {
+                burned[key] = burnedMap[key] ?? 0
+            }
+
+            // Goal: from GoalsManager once
+            goals[key] = goalsManager.goalValue(for: .calories, on: day)
+        }
+
+        // Commit to state once to minimize invalidations
+        monthConsumedByDay = consumed
+        monthBurnedByDay   = burned
+        monthGoalByDay     = goals
+    }
+
     private func monthYearString(from date: Date) -> String {
         let f = DateFormatter(); f.dateFormat = "LLLL yyyy"
         return f.string(from: date)
@@ -288,17 +347,19 @@ struct CalendarView: View {
         return f.string(from: date)
     }
     private func consumedCaloriesValue(for date: Date) -> Double {
-        Double(DateFoodViewModel(date: date, context: context).totalCalories)
+        let key = Self.isoFormatter.string(from: date)
+        return monthConsumedByDay[key] ?? 0
     }
     private func burnedCaloriesValue(for date: Date) -> Double {
-        let iso = DateFormatter.isoDate.string(from: date)
-        let history = BurnedCaloriesHistoryManager.shared.burnedCaloriesForPeriod(days: 30)
-        if let e = history.first(where: { $0.date == iso }) { return e.burnedCalories }
-        else if Calendar.current.isDateInToday(date) { return burnedCaloriesViewModel.currentBurnedCalories }
-        else { return 0 }
+        let key = Self.isoFormatter.string(from: date)
+        return monthBurnedByDay[key] ?? 0
     }
     private func isConsumedUnderGoal(for date: Date) -> Bool {
-        consumedCaloriesValue(for: date) <= goalsManager.goalValue(for: .calories, on: date) + burnedCaloriesValue(for: date)
+        let key = Self.isoFormatter.string(from: date)
+        let consumed = monthConsumedByDay[key] ?? 0
+        let goal     = monthGoalByDay[key] ?? goalsManager.goalValue(for: .calories, on: date)
+        let burned   = monthBurnedByDay[key] ?? 0
+        return consumed <= goal + burned
     }
 }
 

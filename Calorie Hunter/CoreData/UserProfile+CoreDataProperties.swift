@@ -27,6 +27,8 @@ extension UserProfile {
     @NSManaged public var height: Int32
     // The user's daily calorie goal.
     @NSManaged public var dailyCalorieGoal: Int32
+    // The user's daily Protein goal.
+    @NSManaged public var dailyProteinGoal: Int32
     // The user's starting weight.
     @NSManaged public var startWeight: Double
     // The user's current weight.

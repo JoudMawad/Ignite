@@ -1,4 +1,4 @@
-import SwiftUI
+/*import SwiftUI
 import CoreData
 import HealthKit
 import Combine
@@ -19,6 +19,12 @@ struct DayDetailCardView: View {
     @State private var showContent = false
     @State private var animatedCalories: Double = 0
     @StateObject private var dateFoodViewModel: DateFoodViewModel
+
+    // Cached goals for the selected day (avoid Core Data fetches in body)
+    @State private var goalCalories: Double = 0
+    @State private var goalBurned:   Double = 0
+    @State private var goalSteps:    Double = 0
+    @State private var goalWater:    Double = 0
 
     init(date: Date,
          userProfileViewModel: UserProfileViewModel,
@@ -45,6 +51,22 @@ struct DayDetailCardView: View {
     private static let displayFormatter: DateFormatter = {
         let f = DateFormatter(); f.dateStyle = .medium; return f
     }()
+
+    // Load goals for a specific day. Today reads from GoalsViewModel; past days from GoalsManager.
+    @MainActor
+    private func loadGoalsForDay(_ d: Date) async {
+        if Calendar.current.isDateInToday(d) {
+            goalCalories = Double(goalsViewModel.dailyCalorieGoal)
+            goalBurned   = Double(goalsViewModel.dailyBurnedCaloriesGoal)
+            goalSteps    = Double(goalsViewModel.dailyStepsGoal)
+            goalWater    = goalsViewModel.dailyWaterGoal
+        } else {
+            goalCalories = GoalsManager.shared.goalValue(for: .calories,       on: d)
+            goalBurned   = GoalsManager.shared.goalValue(for: .burnedCalories, on: d)
+            goalSteps    = GoalsManager.shared.goalValue(for: .steps,          on: d)
+            goalWater    = GoalsManager.shared.goalValue(for: .water,          on: d)
+        }
+    }
 
     private func goalValue(for type: GoalType, on date: Date) -> Double {
         if Calendar.current.isDateInToday(date) {
@@ -78,7 +100,7 @@ struct DayDetailCardView: View {
         consumedCalories - burnedCalories
     }
     private var remainingCalories: Double {
-        goalValue(for: .calories, on: date) - netCalories
+        goalCalories - netCalories
     }
     private var fullDateText: String {
         Self.displayFormatter.string(from: date)
@@ -113,7 +135,7 @@ struct DayDetailCardView: View {
                         title: "Consumed",
                         valueText: "\(Int(consumedCalories)) kcal",
                         current: consumedCalories,
-                        goal: goalValue(for: .calories, on: date),
+                        goal: goalCalories,
                         gradientColors: [Color.orange, Color.red]
                     )
                     MetricCardView(
@@ -121,7 +143,7 @@ struct DayDetailCardView: View {
                         title: "Burned",
                         valueText: "\(Int(burnedCalories)) kcal",
                         current: burnedCalories,
-                        goal: goalValue(for: .burnedCalories, on: date),
+                        goal: goalBurned,
                         gradientColors: [Color.pink, Color.orange]
                     )
                 
@@ -130,7 +152,7 @@ struct DayDetailCardView: View {
                         title: "Steps",
                         valueText: "\(stepsViewModel.steps(for: date))",
                         current: Double(stepsViewModel.steps(for: date)),
-                        goal: goalValue(for: .steps, on: date),
+                        goal: goalSteps,
                         gradientColors: [Color.cyan, Color.green]
                     )
                  
@@ -139,7 +161,7 @@ struct DayDetailCardView: View {
                         title: "Water",
                         valueText: String(format: "%.1f L", waterViewModel.waterAmount(for: date)),
                         current: waterViewModel.waterAmount(for: date),
-                        goal: goalValue(for: .water, on: date),
+                        goal: goalWater,
                         gradientColors: [Color.blue, Color.cyan]
                     )
                 }
@@ -151,6 +173,12 @@ struct DayDetailCardView: View {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                 showContent = true
             }
+        }
+        .task(id: Calendar.current.startOfDay(for: date)) {
+            await loadGoalsForDay(date)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            Task { await loadGoalsForDay(Date()) }
         }
     }
 }
@@ -171,3 +199,4 @@ struct DayDetailCardView_Previews: PreviewProvider {
         .environment(\.managedObjectContext, ctx)
     }
 }
+*/

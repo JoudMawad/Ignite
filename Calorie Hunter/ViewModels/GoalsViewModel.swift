@@ -28,6 +28,18 @@ final class GoalsViewModel: ObservableObject {
             scheduleSave()
         }
     }
+    
+    // MARK: -- Protein Goal
+    @Published var dailyProteinGoalValue: Int = 160
+    var dailyProteinGoal: Int {
+        get { dailyProteinGoalValue }
+        set {
+            objectWillChange.send()
+            dailyProteinGoalValue = newValue
+            profile?.dailyProteinGoal = Int32(newValue)
+            scheduleSave()
+        }
+    }
 
     // MARK: -- Steps Goal
     @Published var dailyStepsGoalValue: Int = 10000
@@ -113,16 +125,17 @@ final class GoalsViewModel: ObservableObject {
             let profiles = try context.fetch(request)
             if let existing = profiles.first {
                 self.profile = existing
-                // Initialize goal values from persisted profile (same logic as before)
+                // Initialize goal values from persisted profile
                 dailyCalorieGoalValue        = Int(existing.dailyCalorieGoal)
+                dailyProteinGoalValue        = Int(existing.dailyProteinGoal)
                 dailyStepsGoalValue          = Int(existing.dailyStepsGoal)
                 dailyBurnedCaloriesGoalValue = Int(existing.dailyBurnedCaloriesGoal)
                 dailyWaterGoalValue          = existing.dailyWaterGoal
                 weeklyWeightChangeGoalValue  = existing.weeklyWeightChangeGoal
                 goalWeightValue              = existing.goalWeight
 
-                // Keep GoalsManager in sync for "today" (same calls as before)
                 goalsManager.updateGoal(Double(existing.dailyCalorieGoal),        for: GoalType.calories,       on: Date())
+                goalsManager.updateGoal(Double(existing.dailyProteinGoal),        for: GoalType.calories,       on: Date())
                 goalsManager.updateGoal(Double(existing.dailyStepsGoal),          for: GoalType.steps,          on: Date())
                 goalsManager.updateGoal(Double(existing.dailyBurnedCaloriesGoal), for: GoalType.burnedCalories, on: Date())
             } else {
@@ -147,6 +160,11 @@ final class GoalsViewModel: ObservableObject {
         let newCal = Int(profile.dailyCalorieGoal)
         if newCal != dailyCalorieGoalValue {
             DispatchQueue.main.async { self.dailyCalorieGoalValue = newCal }
+        }
+        
+        let newPro = Int(profile.dailyProteinGoal)
+        if newCal != dailyProteinGoalValue {
+            DispatchQueue.main.async { self.dailyProteinGoalValue = newPro }
         }
 
         let newSteps = Int(profile.dailyStepsGoal)

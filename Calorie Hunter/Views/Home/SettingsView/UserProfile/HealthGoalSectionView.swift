@@ -58,14 +58,24 @@ struct HealthGoalsSectionView: View {
                     }
                 }
                     
-
-                AnimatedCard {
-                    OnboardingInputCellDouble(
-                        title: "Water Goal (L)",
-                        placeholder: String(goalsViewModel.dailyWaterGoal),
-                        systemImageName: "drop.fill",
-                        value: $goalsViewModel.dailyWaterGoal
-                    )
+                HStack {
+                    AnimatedCard {
+                        OnboardingInputCellDouble(
+                            title: "Water Goal (L)",
+                            placeholder: String(goalsViewModel.dailyWaterGoal),
+                            systemImageName: "drop.fill",
+                            value: $goalsViewModel.dailyWaterGoal
+                        )
+                    }
+                    
+                    AnimatedCard {
+                        OnboardingInputCellInt(
+                            title: "Protein Goal (G)",
+                            placeholder: String(goalsViewModel.dailyProteinGoal),
+                            systemImageName: "drop.fill",
+                            value: $goalsViewModel.dailyProteinGoal
+                        )
+                    }
                 }
                 
                 AnimatedCard {
