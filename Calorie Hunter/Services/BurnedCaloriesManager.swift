@@ -1,39 +1,71 @@
 import HealthKit
 import Foundation
 
-// Extend Notification.Name to include a custom notification for when HealthKit's burned calories data changes.
+
 extension Notification.Name {
     static let healthKitBurnedCaloriesDataChanged = Notification.Name("healthKitBurnedCaloriesDataChanged")
 }
 
-// BurnedCaloriesManager is a singleton that handles HealthKit interactions for active energy (burned calories).
 final class BurnedCaloriesManager {
-    // Shared instance to allow global access.
+    // MARK: - Singleton & Store
     static let shared = BurnedCaloriesManager()
-    // HealthKit store used for all HealthKit queries.
     let healthStore = HKHealthStore()
-    
-    // Private initializer ensures this class is used as a singleton.
-    private init() { }
-    
-    /// Requests authorization from the user to read active energy burned data.
+
+    // MARK: - Internal State
+    private var observerQuery: HKObserverQuery?
+    private var anchoredQuery: HKAnchoredObjectQuery?
+    private var anchor: HKQueryAnchor?
+    private var totalTodayKCal: Double = 0
+    private var debounceWorkItem: DispatchWorkItem?
+    private var isStarted = false
+
+    private var dayChangeObserver: NSObjectProtocol?
+
+    private init() {}
+
+    // MARK: - Authorization
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         guard let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
             completion(false, nil)
             return
         }
-        let typesToRead: Set<HKObjectType> = [activeEnergyType]
-        let typesToShare: Set<HKSampleType> = []
-        healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
+        healthStore.requestAuthorization(toShare: [], read: [activeEnergyType]) { success, error in
             completion(success, error)
         }
     }
-    
-    /// Fetches historical burned calories data grouped by day.
+
+    // MARK: - Public API
+    func startObservingBurnedCaloriesChanges() {
+        guard !isStarted else { return }
+        isStarted = true
+
+        resetIfNewDay()
+        fetchIncrementalBurnedCalories()
+        startObserver()
+
+        dayChangeObserver = NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main) { [weak self] _ in
+            self?.handleMidnightRollOver()
+        }
+    }
+
+    func stopObserving() {
+        if let q = observerQuery { healthStore.stop(q) }
+        if let q = anchoredQuery { healthStore.stop(q) }
+        observerQuery = nil
+        anchoredQuery = nil
+        debounceWorkItem?.cancel()
+        debounceWorkItem = nil
+        if let obs = dayChangeObserver { NotificationCenter.default.removeObserver(obs) }
+        dayChangeObserver = nil
+        isStarted = false
+    }
+
+    func currentTotalTodayKCal() -> Double { totalTodayKCal }
+
+    // MARK: - Historical API (unchanged behavior)
     func fetchHistoricalDailyBurnedCalories(startDate: Date,
                                             endDate: Date,
-                                            completion: @escaping ([(date: String, burnedCalories: Double)]) -> Void)
-    {
+                                            completion: @escaping ([(date: String, burnedCalories: Double)]) -> Void) {
         guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else {
             completion([])
             return
@@ -46,19 +78,16 @@ final class BurnedCaloriesManager {
                                                 anchorDate: anchorDate,
                                                 intervalComponents: interval)
         query.initialResultsHandler = { _, results, error in
-            guard error == nil else {
-                completion([])
-                return
-            }
+            guard error == nil else { completion([]); return }
             var dailyBurnedCalories: [(date: String, burnedCalories: Double)] = []
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
-            formatter.timeZone = TimeZone.current
+            formatter.timeZone = .current
             results?.enumerateStatistics(from: startDate, to: endDate) { statistics, _ in
                 let dateStr = formatter.string(from: statistics.startDate)
                 if let sumQuantity = statistics.sumQuantity() {
-                    let burnedCalories = sumQuantity.doubleValue(for: HKUnit.kilocalorie())
-                    dailyBurnedCalories.append((date: dateStr, burnedCalories: burnedCalories))
+                    let kcal = sumQuantity.doubleValue(for: .kilocalorie())
+                    dailyBurnedCalories.append((date: dateStr, burnedCalories: kcal))
                 } else {
                     dailyBurnedCalories.append((date: dateStr, burnedCalories: 0))
                 }
@@ -67,45 +96,80 @@ final class BurnedCaloriesManager {
         }
         healthStore.execute(query)
     }
-    
-    /// Fetches the latest burned calories from the start of today until now.
-    func fetchLatestBurnedCalories(completion: @escaping (Double) -> Void) {
-        guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else {
-            completion(0)
-            return
-        }
-        let startOfDay = Calendar.autoupdatingCurrent.startOfDay(for: Date())
-        var interval = DateComponents(); interval.day = 1
-        let q = HKStatisticsCollectionQuery(quantityType: caloriesType,
-                                            quantitySamplePredicate: nil,
-                                            options: .cumulativeSum,
-                                            anchorDate: startOfDay,
-                                            intervalComponents: interval)
-        q.initialResultsHandler = { _, results, _ in
-            guard let results else { completion(0); return }
-            var total = 0.0
-            results.enumerateStatistics(from: startOfDay, to: Date()) { stats, _ in
-                total = stats.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
-            }
-            completion(total)
-        }
-        healthStore.execute(q)
-    }
-    
-    /// Sets up an observer query to watch for any changes in burned calories data.
-    func startObservingBurnedCaloriesChanges() {
-        guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
-        healthStore.enableBackgroundDelivery(for: caloriesType, frequency: .immediate) { _, _ in }
 
-        let query = HKObserverQuery(sampleType: caloriesType, predicate: nil) { [weak self] _, completionHandler, _ in
-            guard let self = self else { completionHandler(); return }
-            self.fetchLatestBurnedCalories { latestCalories in
-                NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged,
-                                                object: nil,
-                                                userInfo: ["latestCalories": latestCalories])
-                completionHandler()
-            }
+    // MARK: - Efficient Observer + Anchored Fetch
+    private func startObserver() {
+        guard let type = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
+
+        healthStore.enableBackgroundDelivery(for: type, frequency: .immediate, withCompletion: { _, _ in })
+
+        observerQuery = HKObserverQuery(sampleType: type, predicate: todayPredicate()) { [weak self] _, completionHandler, _ in
+            guard let self else { completionHandler(); return }
+            self.fetchIncrementalBurnedCalories { completionHandler() }
         }
-        healthStore.execute(query)
+        if let q = observerQuery { healthStore.execute(q) }
+    }
+
+    /// Fetch only the *new* samples since the last anchor and update the running total.
+    private func fetchIncrementalBurnedCalories(completion: (() -> Void)? = nil) {
+        guard let type = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else { completion?(); return }
+
+        anchoredQuery = HKAnchoredObjectQuery(type: type,
+                                              predicate: todayPredicate(),
+                                              anchor: anchor,
+                                              limit: HKObjectQueryNoLimit) { [weak self] _, samplesOrNil, _, newAnchor, _ in
+            guard let self else { completion?(); return }
+            self.anchor = newAnchor
+
+            let samples = (samplesOrNil as? [HKQuantitySample]) ?? []
+            if !samples.isEmpty {
+                let added = samples.reduce(0.0) { partial, sample in
+                    partial + sample.quantity.doubleValue(for: .kilocalorie())
+                }
+                self.totalTodayKCal += added
+                self.postDebouncedUpdate()
+            }
+            completion?()
+        }
+        if let q = anchoredQuery { healthStore.execute(q) }
+    }
+
+    // MARK: - Helpers
+    private func todayPredicate() -> NSPredicate? {
+        let cal = Calendar.autoupdatingCurrent
+        let start = cal.startOfDay(for: Date())
+        let end = cal.date(byAdding: .day, value: 1, to: start)!
+        return HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+    }
+
+    private func handleMidnightRollOver() {
+        anchor = nil
+        totalTodayKCal = 0
+        postDebouncedUpdate()
+        fetchIncrementalBurnedCalories()
+    }
+
+    private func resetIfNewDay() {
+        let key = "BurnedCaloriesManager.lastStartOfDay"
+        let cal = Calendar.autoupdatingCurrent
+        let todayStart = cal.startOfDay(for: Date())
+        if let last = UserDefaults.standard.object(forKey: key) as? Date, cal.isDate(last, inSameDayAs: todayStart) {
+        } else {
+            anchor = nil
+            totalTodayKCal = 0
+        }
+        UserDefaults.standard.set(todayStart, forKey: key)
+    }
+
+    private func postDebouncedUpdate() {
+        debounceWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            NotificationCenter.default.post(name: .healthKitBurnedCaloriesDataChanged,
+                                            object: nil,
+                                            userInfo: ["latestCalories": self.totalTodayKCal])
+        }
+        debounceWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(8)) { work.perform() }
     }
 }
